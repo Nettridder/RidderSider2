@@ -356,6 +356,14 @@ function adminSongsPage() {
     },
     songCountForGenre(genreId) { return this.db.song_genres.filter(link => link.genre_id === genreId).length },
     emptySongForm,
+    /* File picked for a row: a PDF is always sheet music, so the type follows the file. */
+    pickSongFile(row, event) {
+      const file = event.target.files[0];
+      if (!file) return;
+      row.file = file.name;
+      if (/\.pdf$/i.test(file.name)) row.type = 'sheet';
+      else if (row.type === 'sheet') row.type = 'audio';
+    },
     addFileRow(form) { form.files.push({ rowKey: ++this.rowKey, id: null, name: '', voice: '', type: 'audio', startNote: '', file: '' }) },
     songFormFromRow(song) {
       return {

@@ -154,8 +154,11 @@
 .song-admin-list { --columns: minmax(0, 1.3fr) minmax(0, 1fr) 11rem auto; --columns-narrow: minmax(0, 1fr) auto; }
 .genre-admin-list { --columns: minmax(0, 1fr) 6rem auto; --columns-narrow: minmax(0, 1fr) auto; }
 .genre-admin-list .admin-list__row { min-height: 3.4rem; }
-.song-file-row { grid-template-columns: minmax(0, 1.2fr) 5.6rem 7.6rem 5.6rem minmax(0, 1.3fr) auto; }
-.song-file-row__remove { align-self: end; }
+/* Name, voice, type, start note and the remove button on the first line; the file gets its own full-width line. */
+.song-file-row { grid-template-columns: minmax(0, 1fr) 5.6rem 7.6rem 5.6rem auto; }
+.song-file-row__remove { align-self: end; grid-column: -2; grid-row: 1; }
+.song-file-row__file { grid-column: 1 / -1; }
+.song-file-row__file .file-picker__name { flex: 1; }
 .genre-section { margin-top: 3rem; }
 .genre-add { display: flex; gap: 0.6rem; max-width: 28rem; margin-bottom: 0.4rem; }
 .genre-add__error { margin-bottom: 0.6rem; }

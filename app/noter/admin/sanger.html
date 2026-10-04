@@ -170,7 +170,7 @@
             <div class="field song-file-row__file"><span>Fil</span>
               <div class="file-picker">
                 <label class="file-picker__button">
-                  <input type="file" class="visually-hidden" :accept="fileRow.type === 'sheet' ? '.pdf' : 'audio/*'" @change="fileRow.file = $event.target.files[0] ? $event.target.files[0].name : fileRow.file">
+                  <input type="file" class="visually-hidden" accept=".pdf,application/pdf,audio/*" @change="pickSongFile(fileRow, $event)">
                   <span x-text="fileRow.file ? 'Bytt fil' : 'Velg fil'"></span>
                 </label>
                 <span class="file-picker__name" x-text="fileRow.file ? fileRow.file.split('/').pop() : (fileRow.type === 'pitch' ? 'Ingen fil, spilles som tone' : 'Ingen fil valgt')"></span>
