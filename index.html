@@ -41,9 +41,9 @@
   #about .order-1 { order: 1; }
 }
 /* Gold shine over the logo: a soft gold spot cut to the line drawing (logo.jpg) that moves as you scroll. */
-.gold { display: inline-block; position: relative; width: 100%; }
-.gold img { display: block; width: 100%; height: auto; object-fit: contain; }
-.gold::after { content: ""; position: absolute; inset: 0; pointer-events: none; background: radial-gradient(closest-side at 40% 30%, gold, rgba(255, 255, 255, 0) 100%) no-repeat; background-size: 60% 60%; background-position: 40% var(--glare-y, 30%); -webkit-mask: url(/images/logo.jpg) center / contain no-repeat; mask: url(/images/logo.jpg) center / contain no-repeat; mix-blend-mode: screen; filter: blur(3px); }
+.gold { display: inline-block; position: relative;}
+.gold img { display: block; width: 100%; height: auto; object-fit: contain; -webkit-user-drag: none;}
+.gold::after { content: ""; position: absolute; inset: 0; pointer-events: none; background-image: radial-gradient(closest-side at 40% 30%, gold, rgba(255, 255, 255, 0) 100%); background-repeat: no-repeat; background-size: var(--background-size, 60% 60%); /* Use a single CSS variable for vertical glare position (set by JS) */ background-position: 40% var(--glare-y, 30%); -webkit-mask-image: url('../img/logo.jpg'); -webkit-mask-repeat: no-repeat; -webkit-mask-position: center; -webkit-mask-size: contain; mask-image: url('../img/logo.jpg'); mask-repeat: no-repeat; mask-position: center; mask-size: contain; mix-blend-mode: screen; opacity: 1; filter: blur(3px); will-change: background-position, opacity; transition: opacity 200ms linear; }
 
 /* ---------- bli en ridder ---------- */
 #call-to-action { background: linear-gradient(rgba(0, 0, 0, .6), rgba(0, 0, 0, .6)), url(/images/carousel/ArmeRiddereLQ-3.jpg) fixed center / cover; padding: 80px 0; }

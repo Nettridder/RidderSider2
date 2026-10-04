@@ -96,7 +96,7 @@ function profilePage() {
       const subject = this.contactSubject;
       const body = this.contactMessage;
       if (!body.trim()) return;
-      const mailto = `mailto:nettridder@example.com?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+      const mailto = `mailto:nettridder@armeriddere.no?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
       window.location.href = mailto;
       this.contactMessage = '';
       this.$store.ui.notify('Email klar for sending.');
