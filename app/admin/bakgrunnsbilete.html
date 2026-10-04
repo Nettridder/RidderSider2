@@ -22,18 +22,18 @@
       </div>
     </div>
 
-    <form class="admin-form" @submit.prevent="uploadBackground()" novalidate aria-labelledby="upload-background-title">
+    <form class="admin-form" @submit.prevent="uploadBackground($event)" novalidate aria-labelledby="upload-background-title">
       <h2 id="upload-background-title" class="section-title">Last opp bilde</h2>
       <div class="field">
-        <span>Bilde (JPG eller PNG)</span>
+        <span>Bilde (JPG, PNG eller WebP, maks 15 MB)</span>
         <div class="file-picker">
-          <label class="file-picker__button"><input class="visually-hidden" type="file" accept="image/*" @change="pickFile($event)" :aria-invalid="uploadSubmitted && !pickedFileName ? 'true' : null"><span x-text="pickedFileName ? 'Bytt bilde' : 'Velg bilde'"></span></label>
+          <label class="file-picker__button"><input class="visually-hidden" type="file" accept="image/jpeg,image/png,image/webp" @change="pickFile($event)" :aria-invalid="uploadSubmitted && !pickedFileName ? 'true' : null"><span x-text="pickedFileName ? 'Bytt bilde' : 'Velg bilde'"></span></label>
           <span class="file-picker__name" x-text="pickedFileName || 'Ingen fil valgt'"></span>
         </div>
         <span class="field-error" x-show="uploadSubmitted && !pickedFileName">Velg et bilde å laste opp.</span>
       </div>
       <p class="hint background-upload__hint">Sesongbilder, for eksempel julebilder, kan lastes opp én gang og slås av og på når det passer.</p>
-      <div class="admin-form__actions"><button class="button" type="submit">Last opp</button></div>
+      <div class="admin-form__actions"><button class="button" type="submit" :disabled="uploading" x-text="uploading ? 'Laster opp …' : 'Last opp'"></button></div>
     </form>
 
     <div class="admin-list-header">
@@ -52,8 +52,7 @@
       <template x-for="background in db.login_backgrounds" :key="background.id">
         <li class="background-tile" :class="!background.is_active && 'background-tile--inactive'">
           <div class="background-tile__image">
-            <img x-show="previews[background.id]" :src="previews[background.id]" alt="">
-            <span x-show="!previews[background.id]" x-text="background.file"></span>
+            <img :src="backgroundUrl(background)" alt="" loading="lazy">
           </div>
           <div class="background-tile__body">
             <p class="background-tile__name" x-text="background.file"></p>
@@ -73,20 +72,26 @@
 
     <form class="admin-form fixed-backgrounds" @submit.prevent="saveFixedBackgrounds()" aria-labelledby="fixed-backgrounds-title">
       <h2 id="fixed-backgrounds-title" class="section-title">Faste bakgrunner</h2>
-      <div class="form-grid">
-        <label class="field" for="app-background">Appen
-          <select id="app-background" class="input" x-model="appBackground">
-            <option value="">Ingen (standard)</option>
-            <template x-for="background in db.login_backgrounds" :key="background.id"><option :value="background.file" x-text="background.file" :selected="background.file === appBackground"></option></template>
-          </select>
-        </label>
-        <label class="field" for="attendance-background">Opptellingssiden
-          <select id="attendance-background" class="input" x-model="attendanceBackground">
-            <option value="">Ingen (standard)</option>
-            <template x-for="background in db.login_backgrounds" :key="background.id"><option :value="background.file" x-text="background.file" :selected="background.file === attendanceBackground"></option></template>
-          </select>
-        </label>
-      </div>
+      <!-- Pick by clicking an image (no dropdowns). One radio group per place; "Ingen" = the default dark background. -->
+      <template x-for="place in FIXED_PLACES" :key="place.key">
+        <fieldset class="background-choice">
+          <legend x-text="place.label"></legend>
+          <div class="background-choice__grid">
+            <label class="background-choice__option">
+              <input class="visually-hidden" type="radio" :name="place.key" value="" x-model="$data[place.key]">
+              <span class="background-choice__image background-choice__image--none">Ingen</span>
+              <span class="background-choice__name">Standard</span>
+            </label>
+            <template x-for="background in db.login_backgrounds" :key="background.id">
+              <label class="background-choice__option">
+                <input class="visually-hidden" type="radio" :name="place.key" :value="background.file" x-model="$data[place.key]">
+                <span class="background-choice__image"><img :src="backgroundUrl(background)" alt="" loading="lazy"></span>
+                <span class="background-choice__name" x-text="background.file"></span>
+              </label>
+            </template>
+          </div>
+        </fieldset>
+      </template>
       <p class="hint background-upload__hint" x-show="!db.login_backgrounds.length">Last opp et bilde først for å kunne velge det her.</p>
       <div class="admin-form__actions"><button class="button" type="submit">Lagre</button></div>
     </form>

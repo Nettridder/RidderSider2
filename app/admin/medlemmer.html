@@ -168,9 +168,10 @@
     <div class="field">
       <span>Profilbilde</span>
       <div class="file-picker">
-        <label class="file-picker__button"><input class="visually-hidden" type="file" accept="image/*" @change="FORM.new_image_name = $event.target.files[0] ? $event.target.files[0].name : FORM.new_image_name"><span x-text="FORM.new_image_name || FORM.id ? 'Bytt bilde' : 'Velg bilde'"></span></label>
-        <span class="file-picker__name" x-text="FORM.new_image_name || (FORM.id ? FORM.image_file : 'Ingen fil valgt')"></span>
+        <label class="file-picker__button"><input class="visually-hidden" type="file" accept="image/jpeg,image/png,image/webp" @change="pickImage($event, FORM)"><span x-text="FORM.new_image_name || FORM.image_file ? 'Bytt bilde' : 'Velg bilde'"></span></label>
+        <span class="file-picker__name" x-text="FORM.new_image_name || FORM.image_file || 'Ingen fil valgt'"></span>
       </div>
+      <span class="hint">JPG, PNG eller WebP, maks 15 MB. Lagres i storage/images/profile/ når du lagrer medlemmet.</span>
     </div>
   </div>
 </template>

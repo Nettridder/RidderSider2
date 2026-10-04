@@ -42,7 +42,7 @@ function is_public_media(string $path): bool
   if (str_starts_with($path, 'images/public/') || str_starts_with($path, 'images/backgrounds/')) return true;
   if (str_starts_with($path, 'images/profile/') && substr_count($path, '/') === 2) {
     return (bool) query(
-      'SELECT 1 FROM members WHERE status = \'active\' AND show_public = 1 AND image_file = ? LIMIT 1',
+      'SELECT 1 FROM members WHERE show_public = 1 AND image_file = ? LIMIT 1',   // current and former (public Medlemmer page)
       [basename($path)]
     )->fetchColumn();
   }

@@ -219,7 +219,7 @@ An admin can kick a member off every device by deleting their tokens.
 3. ✅ Build `_lib/` + `.htaccess` + `me.php` / `login.php` / `logout.php`. Wire up the login page and the event-based keepalive.
 4. ✅ Build `bootstrap.php` and switch `global.js` to it.
 5. ✅ Build `save.php` + `permissions.php`. Convert the save functions one module at a time: songs, then members, then documents.
-6. ½ done: `media.php` and `storageUrl` are built; `upload.php` is still open.
+6. ✅ `media.php`, `storageUrl` and `upload.php` are built (profile images, backgrounds and documents).
 7. ✅ Build the password reset flow + `mail.php` + the two new pages.
 8. ½ done: `public.php`, `contact.php` and the three `.html` pages are built; `calendar.php` is still open.
 9. Write `010_import_old.sql` and rehearse the import from an `old_*` dump in the dev DB until it is correct.
@@ -480,3 +480,42 @@ Still open / needs Kristian:
 - Each card shows the rank and the years, e.g. "Storridder · 2015–2021". The years are left out when unknown. Photos are slightly greyed.
 - To hide a former member from the public page, turn off `show_public`.
 - Member photos on the public page (current and former) are square boxes. Every photo fills its box and is cropped to fit (`object-fit: cover`), so no background shows. Wide photos lose the sides. Tall photos keep the top and lose the bottom, as on the old site. The rank frames (Storridder etc.) stay around the photo. A missing photo shows `images/UkjendRidder.jpg`.
+
+### 2026-10-05: image uploads (profile pictures and backgrounds)
+- New endpoint `api/upload.php` (POST, multipart). It stores the file **and** saves it in the database in one step:
+  - `kind=profile` + `member_id` puts the file in `storage/images/profile/` and sets `members.image_file`. Admin may do this for any member, and a member for themself.
+  - `kind=background` puts the file in `storage/images/backgrounds/` and adds a `login_backgrounds` row, switched on. Only Admin may do this.
+- The file must really be a JPG, PNG or WebP image. This is checked from its content, not its name. The limit is 15 MB.
+- The file gets a new, safe name, e.g. "Ola Nordmann (2).JPG" becomes `ola-nordmann-2-3f9a1c.jpg`. Nothing is ever overwritten.
+- If the database step fails, the file is removed again.
+- `image_file` is still not writable through `save.php`. It only changes through an upload, so nobody can point it at another file.
+- In the app, `$store.app.uploadImage(kind, file, memberId)` is in `app/js/global.js`.
+  - Admin → Medlemmer: the picked image is uploaded when the member is saved (new or edited).
+  - Admin → Bakgrunnsbilete: "Last opp" sends the image. The tiles now show the real image from storage.
+- `media.php`: profile images of **former** members with `show_public` are now public too, because the public Medlemmer page shows them.
+- Old files are kept when a member's image is replaced or a background is deleted. Clean them up by hand in storage/ if needed.
+- Tested on a local MariaDB:
+  - Admin uploads a profile image for another member and a background.
+  - A member uploads their own profile image.
+  - A normal member gets 403 for another member's image and for backgrounds.
+  - A PHP file named .jpg is refused. Without login: 401. No file: 400.
+  - Upload in the browser works on both admin pages, including a new member with an image.
+- On Domeneshop: the folders `storage/images/profile/` and `storage/images/backgrounds/` must exist. upload.php creates them if missing.
+
+### 2026-10-05: document upload, background picker without dropdowns
+- `api/upload.php` also takes documents: `kind=document`. Only Admin may do this.
+  - With `title`, it adds a new document.
+  - With `document_id`, it replaces the file of that document.
+  - The file goes to `storage/documents/`, and `documents.file` holds `documents/<name>`.
+- Allowed files are PDF, DOCX and DOC, max 30 MB, checked from the content. A Word file must also have the matching extension, so a random zip renamed to .pdf or .docx is refused.
+- The app uses `$store.app.upload(kind, file, extra)` (it was `uploadImage`).
+  - Admin → Dokumenter "Last opp" sends the file.
+  - "Rediger" saves the title through `save.php` and, if a new file was picked, uploads it.
+- `permissions.php`: the file columns can no longer be changed through `save.php`.
+  - `documents`: only `title` can change (update and delete).
+  - `login_backgrounds`: only `is_active` can change (update and delete).
+  - New rows only come from `upload.php`.
+- Admin → Bakgrunnsbilete → "Faste bakgrunner" has no dropdowns any more. For Appen and Opptellingssiden you click an image tile, or "Ingen" (Standard). The chosen tile has an orange frame.
+- Tested on a local MariaDB:
+  - The API: PDF and DOCX upload, replacing a file, a zip named .pdf refused, .txt refused, no title refused, a normal member refused, `save.php` refusing `file`, and a member downloading a document.
+  - In the browser: upload, editing with a new file, and the tile picker saved and still selected after reload.

@@ -110,7 +110,15 @@ function adminDocumentsPage() {
       this.newDocument = this.emptyDocument();
       this.editedDocument = this.emptyDocument();
     },
-    emptyDocument() { return { id: null, title: '', file: '', new_file: '', submitted: false } },
+    uploading: false,
+    emptyDocument() { return { id: null, title: '', file: '', new_file: '', new_upload: null, submitted: false } },
+    /* The picked file is kept on the form and sent to api/upload.php when the form is saved. */
+    pickDocument(event, form) {
+      const file = event.target.files[0];
+      if (!file) return;
+      form.new_upload = file;
+      form.new_file = file.name;
+    },
     get listedDocuments() { return this.app.documentsNewestFirst.filter(document => this.matchesSearch(document.title, document.file)) },
     fileType(file) { return (file.split('.').pop() || '').toUpperCase() },
     documentErrors(form) {
@@ -119,21 +127,22 @@ function adminDocumentsPage() {
       if (!form.title.trim()) errors.title = 'Gi dokumentet en tittel.';
       const file = form.new_file || form.file;
       if (!file) errors.file = 'Velg en fil å laste opp.';
-      else if (!/\.(pdf|docx?)$/i.test(file)) errors.file = 'Filen må være PDF eller Word (.docx).';
+      else if (!/\.(pdf|docx?)$/i.test(file)) errors.file = 'Filen må være PDF eller Word (.docx eller .doc).';
+      else if (form.new_upload && form.new_upload.size > 30 * 1024 * 1024) errors.file = 'Filen er for stor. Maks 30 MB.';
       return errors;
     },
-    /* TODO (upload.php, plan step 6): send the file itself. Until then only the database row is saved,
-       with the path the file will have in storage/documents/. */
+    /* Sends the file to storage/documents/ (api/upload.php also adds the documents row). */
     async uploadDocument() {
       const form = this.newDocument;
       form.submitted = true;
       if (Object.keys(this.documentErrors(form)).length) { this.focusFirstInvalidField(); return; }
-      try { await this.app.save('documents', null, { title: form.title.trim(), file: 'documents/' + form.new_file }); } catch (error) { this.fail(error); return; }
+      this.uploading = true;
+      try { await this.app.upload('document', form.new_upload, { title: form.title.trim() }); } catch (error) { this.fail(error); return; } finally { this.uploading = false; }
       this.notify(`«${form.title.trim()}» er lastet opp og ligger øverst i dokumentarkivet.`);
       this.newDocument = this.emptyDocument();
     },
     editDocument(document, event) {
-      this.editedDocument = { ...document, new_file: '', submitted: false };
+      this.editedDocument = { ...document, new_file: '', new_upload: null, submitted: false };
       this.openDrawer('Rediger dokument', document.title, event);
     },
     async saveDocument() {
@@ -141,9 +150,11 @@ function adminDocumentsPage() {
       form.submitted = true;
       if (Object.keys(this.documentErrors(form)).length) { this.focusFirstInvalidField(); return; }
       let document;
+      this.uploading = true;
       try {
-        document = await this.app.save('documents', form.id, { title: form.title.trim(), file: form.new_file ? 'documents/' + form.new_file : form.file });
-      } catch (error) { this.fail(error); return; }
+        document = await this.app.save('documents', form.id, { title: form.title.trim() });
+        if (form.new_upload) await this.app.upload('document', form.new_upload, { document_id: form.id });
+      } catch (error) { this.fail(error); return; } finally { this.uploading = false; }
       this.closeDrawer();
       this.notify(`«${document.title}» er lagret.`);
     },
@@ -227,7 +238,8 @@ function adminBackgroundsPage() {
     pickedFile: null,
     pickedFileName: '',
     uploadSubmitted: false,
-    previews: {},
+    uploading: false,
+    FIXED_PLACES: [{ key: 'appBackground', label: 'Appen' }, { key: 'attendanceBackground', label: 'Opptellingssiden' }],
     appBackground: '',
     attendanceBackground: '',
     init() {
@@ -241,17 +253,17 @@ function adminBackgroundsPage() {
       this.pickedFile = file;
       this.pickedFileName = file.name;
     },
-    /* TODO (upload.php, plan step 6): send the image itself to storage/images/backgrounds/.
-       Until then only the database row is saved. */
-    async uploadBackground() {
+    /* Sends the image to storage/images/backgrounds/ (api/upload.php also adds the login_backgrounds row). */
+    async uploadBackground(event) {
       this.uploadSubmitted = true;
-      if (!this.pickedFileName) { this.focusFirstInvalidField(); return; }
-      let background;
-      try { background = await this.app.save('login_backgrounds', null, { file: this.pickedFileName, is_active: true }); } catch (error) { this.fail(error); return; }
-      if (this.pickedFile && this.pickedFile.type.startsWith('image/')) this.previews[background.id] = URL.createObjectURL(this.pickedFile);
+      if (!this.pickedFile) { this.focusFirstInvalidField(); return; }
+      this.uploading = true;
+      try { await this.app.upload('background', this.pickedFile); } catch (error) { this.fail(error); return; } finally { this.uploading = false; }
       this.notify(`${this.pickedFileName} er lastet opp og er med i utvalget.`);
       this.pickedFile = null; this.pickedFileName = ''; this.uploadSubmitted = false;
+      event.target.reset();
     },
+    backgroundUrl(background) { return storageUrl('images/backgrounds/' + background.file) },
     async toggleActive(background) {
       try { await this.app.save('login_backgrounds', background.id, { is_active: !background.is_active }); } catch (error) { this.fail(error); return; }
       this.notify(background.is_active ? `${background.file} er med i utvalget.` : `${background.file} er tatt ut av utvalget.`);

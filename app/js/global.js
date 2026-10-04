@@ -206,6 +206,23 @@ document.addEventListener('alpine:init', () => {
       await api.post('save.php', { action: 'delete', table, id });
       this.db[table] = this.db[table].filter(row => row.id !== id);
     },
+    /* Uploads a file with api/upload.php, which stores it in storage/ and saves it in the database in one step.
+       upload('profile', file, { member_id })        -> the member with the new image_file (storage/images/profile/)
+       upload('background', file)                    -> the new login_backgrounds row (storage/images/backgrounds/)
+       upload('document', file, { title })           -> the new documents row (storage/documents/)
+       upload('document', file, { document_id })     -> the document with its file replaced */
+    async upload(kind, file, extra = {}) {
+      const body = new FormData();
+      body.append('kind', kind);
+      body.append('file', file);
+      Object.entries(extra).forEach(([key, value]) => body.append(key, value));
+      const result = await api.request('upload.php', { method: 'POST', body });
+      const table = { profile: 'members', background: 'login_backgrounds', document: 'documents' }[kind];
+      const row = result.member || result.row;
+      const existing = this.db[table].find(entry => entry.id === row.id);
+      existing ? Object.assign(existing, row) : this.db[table].push(row);
+      return existing || row;
+    },
 
     /* ---------- the logged-in member and access ---------- */
     get me() { return this.member(this.currentMemberId) || {} },

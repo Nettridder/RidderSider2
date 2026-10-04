@@ -26,7 +26,7 @@
       <h2 id="upload-title" class="section-title">Last opp dokument</h2>
       <div data-form-template="template-document:newDocument:new"></div>
       <div class="admin-form__actions">
-        <button class="button" type="submit">Last opp</button>
+        <button class="button" type="submit" :disabled="uploading" x-text="uploading ? 'Laster opp …' : 'Last opp'"></button>
       </div>
     </form>
 
@@ -67,7 +67,7 @@
       <form @submit.prevent="saveDocument()" novalidate>
         <div class="drawer__body"><div data-form-template="template-document:editedDocument:edit"></div></div>
         <div class="drawer__footer">
-          <button class="button" type="submit">Lagre endringer</button>
+          <button class="button" type="submit" :disabled="uploading" x-text="uploading ? 'Lagrer …' : 'Lagre endringer'"></button>
           <button class="button button--secondary" type="button" @click="closeDrawer()">Avbryt</button>
         </div>
       </form>
@@ -84,10 +84,11 @@
     <div class="field">
       <span x-text="FORM.id ? 'Bytt fil (valgfritt)' : 'Fil (PDF eller Word)'"></span>
       <div class="file-picker">
-        <label class="file-picker__button"><input class="visually-hidden" type="file" accept=".pdf,.docx,.doc" @change="FORM.new_file = $event.target.files[0] ? $event.target.files[0].name : FORM.new_file" :aria-invalid="FORM.submitted && !!documentErrors(FORM).file ? 'true' : null"><span x-text="FORM.new_file || FORM.id ? 'Bytt fil' : 'Velg fil'"></span></label>
+        <label class="file-picker__button"><input class="visually-hidden" type="file" accept=".pdf,.docx,.doc" @change="pickDocument($event, FORM)" :aria-invalid="FORM.submitted && !!documentErrors(FORM).file ? 'true' : null"><span x-text="FORM.new_file || FORM.id ? 'Bytt fil' : 'Velg fil'"></span></label>
         <span class="file-picker__name" x-text="FORM.new_file || FORM.file || 'Ingen fil valgt'"></span>
       </div>
       <span class="field-error" x-show="FORM.submitted && documentErrors(FORM).file" x-text="documentErrors(FORM).file"></span>
+      <span class="hint">PDF eller Word, maks 30 MB. Lagres i storage/documents/.</span>
     </div>
   </div>
 </template>

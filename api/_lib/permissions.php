@@ -84,9 +84,11 @@ const WRITE_RULES = [
   ],
 
   /* ---------- documents and look ---------- */
-  'documents' => ['rules' => ['admin' => ['ops' => ALL_OPS, 'columns' => ['title', 'file']]]],
+  // New rows and their files come from api/upload.php (kind=document / background). Here only the title,
+  // the on/off switch and delete.
+  'documents' => ['rules' => ['admin' => ['ops' => ['update', 'delete'], 'columns' => ['title']]]],
   'resolutions' => ['rules' => ['admin' => ['ops' => ALL_OPS, 'columns' => ['year', 'term', 'text', 'wiki_url']]]],
-  'login_backgrounds' => ['rules' => ['admin' => ['ops' => ALL_OPS, 'columns' => ['file', 'is_active']]]],
+  'login_backgrounds' => ['rules' => ['admin' => ['ops' => ['update', 'delete'], 'columns' => ['is_active']]]],
   'settings' => ['rules' => [
     'admin' => ['ops' => ['insert', 'update'], 'columns' => ['key', 'value']],
     'noteadmin' => ['ops' => ['insert', 'update'], 'columns' => ['key', 'value'], 'only' => ['key' => ['weekly_practice_goal_minutes']]],

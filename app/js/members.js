@@ -162,7 +162,7 @@ function adminMembersPage() {
       return {
         id: null, first_name: '', last_name: '', email: '', phone: '', voice_group: 'T1', rank: 'aspirant', status: 'active',
         joined_term: 'autumn', joined_year: this.app.today.getFullYear(), left_term: '', left_year: '', roles: [],
-        image_file: '', new_image_name: '', submitted: false,
+        image_file: '', new_image_name: '', new_image: null, submitted: false,
       };
     },
     memberErrors(form) {
@@ -181,6 +181,16 @@ function adminMembersPage() {
       return errors;
     },
     hasErrors(form) { return Object.keys(this.memberErrors(form)).length > 0 },
+    /* The picked profile image is kept on the form and uploaded when the member is saved (saveImage). */
+    pickImage(event, form) {
+      const file = event.target.files[0];
+      if (!file) return;
+      form.new_image = file;
+      form.new_image_name = file.name;
+    },
+    async saveImage(form, member) {
+      if (form.new_image) await this.app.upload('profile', form.new_image, { member_id: member.id });
+    },
     fieldsFromForm(form) {
       const fields = {};
       MEMBER_FIELDS.forEach(key => { fields[key] = Array.isArray(form[key]) ? [...form[key]] : form[key]; });
@@ -202,13 +212,14 @@ function adminMembersPage() {
       let member;
       try {
         member = await this.app.save('members', null, this.fieldsFromForm(form));
+        await this.saveImage(form, member);
         await api.post('password-request.php', { email: member.email });
       } catch (error) { this.fail(error); return; }
       this.newMember = this.emptyMember();
       this.notify(`${this.app.memberName(member)} er lagt til. Invitasjonen er sendt til ${member.email}.`);
     },
     editMember(member, event) {
-      this.editedMember = { ...member, roles: [...member.roles], phone: member.phone || '', left_term: member.left_term || '', left_year: member.left_year || '', new_image_name: '', submitted: false };
+      this.editedMember = { ...member, roles: [...member.roles], phone: member.phone || '', left_term: member.left_term || '', left_year: member.left_year || '', new_image_name: '', new_image: null, submitted: false };
       this.openDrawer('Rediger medlem', this.app.memberName(member), event);
     },
     async saveMember() {
@@ -216,7 +227,10 @@ function adminMembersPage() {
       form.submitted = true;
       if (this.hasErrors(form)) { this.focusFirstInvalidField(); return; }
       let member;
-      try { member = await this.app.save('members', form.id, this.fieldsFromForm(form)); } catch (error) { this.fail(error); return; }
+      try {
+        member = await this.app.save('members', form.id, this.fieldsFromForm(form));
+        await this.saveImage(form, member);
+      } catch (error) { this.fail(error); return; }
       this.closeDrawer();
       this.notify(`Endringene for ${this.app.memberName(member)} er lagret.`);
     },
