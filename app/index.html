@@ -214,11 +214,11 @@ function homePage() {
     get laterEvents() { return this.app.upcomingEvents.filter(event => event !== this.nextEvent).slice(0, 3) },
     get latestDocument() { return this.app.documentsNewestFirst[0] },
     changeMinutes(step) { this.minutes = Math.max(0, Math.min(600, this.validMinutes + step)) },
-    registerPractice() {
+    async registerPractice() {
       const minutes = this.validMinutes;
       if (!minutes) return;
       const goalWasReached = this.goalReached;
-      this.app.logPractice(minutes);
+      try { await this.app.logPractice(minutes); } catch (error) { this.$store.ui.fail(error); return; }
       this.confirmation = `${minutes} min registrert for i dag. ${this.app.currentStreak()} dager på rad.` + (!goalWasReached && this.goalReached ? ` Ukemålet på ${this.app.weeklyGoal} min er nådd.` : '');
       this.streakBumped = false;
       this.$nextTick(() => { this.streakBumped = true; });

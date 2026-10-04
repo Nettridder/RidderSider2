@@ -1,0 +1,2 @@
+# Helpers are only included by the endpoints in api/. Never serve them directly.
+Require all denied

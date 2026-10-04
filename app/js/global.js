@@ -11,18 +11,14 @@
 
 /* ==================== Data, member and rules ==================== */
 
-const DEMO_TODAY = new Date(2026, 8, 25);
-const SESSION_KEY = 'armeriddere-demo-member-id';
-const DEMO_USERS = [
-  { memberId: 1, description: 'Admin (Mester)' },
-  { memberId: 2, description: 'Aktivt medlem' },
-  { memberId: 3, description: 'ypp.com. (tidligere medlem)' },
-];
-
 const PAGE_PATH = document.body.dataset.page || 'hjem';
 const APP_ROOT = '../'.repeat(PAGE_PATH.split('/').length - 1);
-const STORAGE_URL = APP_ROOT + '../storage/';
+const API_URL = APP_ROOT + '../api/';
+const LOGO_URL = APP_ROOT + '../images/logoColor.png';
+/* Temporary: the calendar is still the mock file until api/calendar.php exists (see .info/Plan.md). */
 const DATABASE_URL = APP_ROOT + '../database/';
+/* Pages that work without login. Every other page sends you to logg-inn.html. */
+const PUBLIC_PAGES = ['logg-inn', 'nytt-passord'];
 
 const LABELS = {
   voices: { T1: '1. tenor', T2: '2. tenor', T3: '3. tenor', B1: '1. bass', B2: '2. bass' },
@@ -82,37 +78,64 @@ const isoWeekNumber = date => {
   thursday.setUTCDate(thursday.getUTCDate() + 4 - (thursday.getUTCDay() || 7));
   return Math.ceil(((thursday - new Date(Date.UTC(thursday.getUTCFullYear(), 0, 1))) / 864e5 + 1) / 7);
 };
-const nextId = rows => Math.max(0, ...rows.map(row => row.id)) + 1;
-const storageUrl = path => STORAGE_URL + path.split('/').map(encodeURIComponent).join('/');
+/* Media rule (same everywhere): a value starting with http is an external URL (YouTube, SmugMug) and is used
+   as-is. Anything else is a path inside storage/, which lives outside the web root and is served by api/media.php. */
+const storageUrl = path => /^https?:\/\//.test(path) ? path : API_URL + 'media.php?path=' + encodeURIComponent(path);
 
-function readSession() {
-  try { return Number(localStorage.getItem(SESSION_KEY)) || null; } catch (error) { return null; }
+/* ==================== Server API (PHP endpoints in /api) ==================== */
+
+/* api.get('me.php') / api.post('login.php', {...}) -> parsed JSON.
+   Throws an Error with the server's Norwegian message on failure. A 401 on a page that needs login
+   means the login has ended (expired or removed by an admin), so go to the login page. */
+const api = {
+  async request(endpoint, options = {}) {
+    const response = await fetch(API_URL + endpoint, { credentials: 'same-origin', ...options });
+    const data = await response.json().catch(() => ({}));
+    if (response.status === 401 && !PUBLIC_PAGES.includes(PAGE_PATH)) goToLogin();
+    if (!response.ok) throw Object.assign(new Error(data.error || 'Noe gikk galt.'), { status: response.status });
+    return data;
+  },
+  get(endpoint) { return this.request(endpoint) },
+  post(endpoint, body = {}) {
+    return this.request(endpoint, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+  },
+};
+
+function goToLogin() {
+  const here = location.pathname + location.search + location.hash;
+  location.replace(APP_ROOT + 'logg-inn.html?next=' + encodeURIComponent(here));
 }
-function writeSession(memberId) {
-  try { memberId ? localStorage.setItem(SESSION_KEY, String(memberId)) : localStorage.removeItem(SESSION_KEY); } catch (error) { /* private mode */ }
+
+/* Only follow ?next= links that stay on this site, so the login page can't be used to send people elsewhere. */
+function safeNextUrl(fallback = APP_ROOT + 'index.html') {
+  const next = new URLSearchParams(location.search).get('next');
+  if (!next) return fallback;
+  const url = new URL(next, location.href);
+  return url.origin === location.origin ? url.pathname + url.search + url.hash : fallback;
 }
-function logInAs(memberId, redirectTo) {
-  writeSession(memberId);
-  location.href = redirectTo || APP_ROOT + 'index.html';
-}
-function logOut() {
-  writeSession(null);
+
+async function logOut() {
+  await api.post('logout.php').catch(() => {});
   location.href = APP_ROOT + 'logg-inn.html';
 }
 
-if (PAGE_PATH !== 'logg-inn' && !readSession()) {
-  location.replace(APP_ROOT + 'logg-inn.html');
-}
+/* Keepalive: check the login when the member comes back to the tab (no timer, the app is used in short visits).
+   A valid check also extends the login on the server. */
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'visible' && !PUBLIC_PAGES.includes(PAGE_PATH)) api.get('me.php').catch(() => {});
+});
 
 document.addEventListener('alpine:init', () => {
   Alpine.store('ui', {
     toast: null,
     nestedMenu: [],
-    notify(message, note = 'Demo: endringen lagres ikke, og forsvinner når siden lastes på nytt.') {
+    notify(message, note = '') {
       this.toast = { message, note, id: Date.now() };
       clearTimeout(this.toastTimer);
       this.toastTimer = setTimeout(() => { this.toast = null; }, 4200);
     },
+    /* Shows why saving failed (the server's message). The form stays as it was, so nothing typed is lost. */
+    fail(error) { this.notify(error.message, 'Endringen ble ikke lagret.') },
   });
 
   Alpine.store('app', {
@@ -120,15 +143,19 @@ document.addEventListener('alpine:init', () => {
     loadError: null,
     db: {},
     calendar: [],
-    currentMemberId: readSession(),
-    today: DEMO_TODAY,
+    currentMemberId: null,
+    today: new Date(),
 
+    /* Loads everything the logged-in member may see from api/bootstrap.php (a 401 sends you to the login page).
+       The calendar is optional: if it fails, the rest of the app still works. */
     async load() {
       try {
-        const [database, calendar] = await Promise.all([
-          fetch(DATABASE_URL + 'database.json').then(response => { if (!response.ok) throw new Error(response.status); return response.json(); }),
-          fetch(DATABASE_URL + 'google-calendar.json').then(response => response.json()),
+        const [me, database, calendar] = await Promise.all([
+          api.get('me.php'),
+          api.get('bootstrap.php'),
+          fetch(DATABASE_URL + 'google-calendar.json').then(response => response.json()).catch(() => ({ items: [] })),
         ]);
+        this.currentMemberId = me.member.id;
         this.db = database;
         this.calendar = calendar.items.map(event => {
           const isAllDay = !event.start.dateTime;
@@ -139,6 +166,26 @@ document.addEventListener('alpine:init', () => {
       } catch (error) {
         this.loadError = error;
       }
+    },
+
+    /* ---------- saving (api/save.php) ----------
+       Every change goes to the server first; the store is only updated with what the server actually saved.
+       save(table, id, fields, children): id null = new row. children replace all child rows, e.g.
+         save('songs', 12, { name: 'X' }, { song_genres: [{ genre_id: 3 }] })
+       Both throw on failure (no access, invalid value, ...): catch and call $store.ui.fail(error). */
+    async save(table, id, fields, children) {
+      const result = await api.post('save.php', { action: id ? 'update' : 'insert', table, id, fields, children });
+      const row = result.row;
+      const existing = this.db[table].find(entry => entry.id === row.id);
+      existing ? Object.assign(existing, row) : this.db[table].push(row);
+      Object.entries(result.children).forEach(([childTable, { fk, rows }]) => {
+        this.db[childTable] = this.db[childTable].filter(child => child[fk] !== row.id).concat(rows);
+      });
+      return existing || row;
+    },
+    async remove(table, id) {
+      await api.post('save.php', { action: 'delete', table, id });
+      this.db[table] = this.db[table].filter(row => row.id !== id);
     },
 
     /* ---------- the logged-in member and access ---------- */
@@ -190,16 +237,18 @@ document.addEventListener('alpine:init', () => {
     },
     knowledgeOf(songId, memberId = this.currentMemberId) { return (this.memberSong(songId, memberId) || {}).knowledge || 0 },
     isFavorite(songId) { return !!(this.memberSong(songId) || {}).is_favorite },
-    setKnowledge(songId, knowledge) { this.updateMemberSong(songId, { knowledge }) },
-    toggleFavorite(songId) { this.updateMemberSong(songId, { is_favorite: !this.isFavorite(songId) }) },
-    updateMemberSong(songId, changes) {
-      let row = this.memberSong(songId);
-      if (!row) {
-        row = { id: nextId(this.db.member_songs), member_id: this.currentMemberId, song_id: songId, knowledge: 0, is_favorite: false };
-        this.db.member_songs.push(row);
+    setKnowledge(songId, knowledge) { return this.updateMemberSong(songId, { knowledge }) },
+    toggleFavorite(songId) { return this.updateMemberSong(songId, { is_favorite: !this.isFavorite(songId) }) },
+    /* member_songs is sparse: a row only exists while knowledge > 0 or it is a favourite. */
+    async updateMemberSong(songId, changes) {
+      const row = this.memberSong(songId);
+      const next = { knowledge: 0, is_favorite: false, ...row, ...changes };
+      try {
+        if (!next.knowledge && !next.is_favorite) { if (row) await this.remove('member_songs', row.id); }
+        else await this.save('member_songs', row && row.id, row ? changes : { song_id: songId, ...changes });
+      } catch (error) {
+        Alpine.store('ui').fail(error);
       }
-      Object.assign(row, changes);
-      if (!row.knowledge && !row.is_favorite) this.db.member_songs.splice(this.db.member_songs.indexOf(row), 1);
     },
     knownSongCount(memberId = this.currentMemberId) {
       return this.db.member_songs.filter(row => row.member_id === memberId && row.knowledge === 2).length;
@@ -233,9 +282,7 @@ document.addEventListener('alpine:init', () => {
       const today = format.dateKey(this.today);
       return this.practiceLogs(memberId).some(log => log.date === today);
     },
-    logPractice(minutes) {
-      this.db.practice_logs.push({ id: nextId(this.db.practice_logs), created_at: new Date().toISOString(), created_by: this.currentMemberId, member_id: this.currentMemberId, date: format.dateKey(this.today), minutes });
-    },
+    logPractice(minutes) { return this.save('practice_logs', null, { date: format.dateKey(this.today), minutes }) },
     get leaderboard() {
       const rows = this.activeMembers.map(member => ({ member, streak: this.currentStreak(member.id), total: this.totalMinutes(member.id) }));
       return {
@@ -271,7 +318,7 @@ document.addEventListener('alpine:init', () => {
     setting(key) { return (this.db.settings.find(row => row.key === key) || {}).value },
   });
 
-  Alpine.store('app').load();
+  if (!PUBLIC_PAGES.includes(PAGE_PATH)) Alpine.store('app').load();
 });
 
 /* ==================== Menu and layout (the menu list is also the folder structure) ==================== */
@@ -450,7 +497,7 @@ const SITE_HEADER = `
   <header class="site-header">
     <div class="container site-header__inner">
       <a class="brand" :href="pageHref('hjem')">
-        <img class="brand__logo" src="${STORAGE_URL}images/logo.png" alt="">
+        <img class="brand__logo" src="${LOGO_URL}" alt="">
         <span class="brand__name">Mannskoret <span class="brand__name-line">Arme Riddere</span></span>
       </a>
       <div class="profile" @click.outside="profileMenuOpen = false">
@@ -553,8 +600,8 @@ const PAGE_STATES = `
 <p class="loading-state" x-show="!$store.app.ready && !$store.app.loadError">Laster …</p>
 <div class="access-notice" x-show="$store.app.loadError" x-cloak>
   <h1>Kunne ikke hente dataene</h1>
-  <p>Siden leser databasen fra <code>database/database.json</code>, og nettleseren tillater bare det når siden åpnes via en webserver.</p>
-  <p>Kjør <code>python3 -m http.server</code> i prosjektmappen, og åpne <code>http://localhost:8000/app/</code>.</p>
+  <p x-text="$store.app.loadError && $store.app.loadError.message"></p>
+  <p>Last siden på nytt. Hjelper ikke det, si fra til Nettridder.</p>
 </div>
 <template x-if="$store.app.ready && !canSeeThisPage()">
   <div class="access-notice">
@@ -576,31 +623,16 @@ const TOAST = `
   </template>
 </div>`;
 
-const DEMO_SWITCHER = `
-<div class="demo-switcher" x-data="{ open: false }" @click.outside="open = false" @keydown.escape.window="open = false">
-  <button class="demo-switcher__toggle" type="button" :aria-expanded="open" aria-controls="demo-panel" @click="open = !open">Demo</button>
-  <div class="demo-switcher__panel" id="demo-panel" x-show="open" x-cloak>
-    <p class="demo-switcher__title">Se siden som</p>
-    <template x-for="user in DEMO_USERS" :key="user.memberId">
-      <button class="demo-user" type="button" :aria-pressed="$store.app.currentMemberId === user.memberId" @click="logInAs(user.memberId, location.href)">
-        <span class="portrait portrait--small"><img :src="$store.app.memberImage($store.app.member(user.memberId))" alt=""></span>
-        <span><span class="demo-user__name" x-text="$store.app.memberName($store.app.member(user.memberId))"></span><span class="demo-user__role" x-text="user.description"></span></span>
-      </button>
-    </template>
-    <p class="hint">Ingenting du endrer blir lagret i demoen.</p>
-  </div>
-</div>`;
-
 function buildLayout() {
-  document.head.insertAdjacentHTML('beforeend', `<link rel="icon" href="${STORAGE_URL}images/logo.png">`);
-  if (PAGE_PATH === 'logg-inn') return;
+  document.head.insertAdjacentHTML('beforeend', `<link rel="icon" href="${LOGO_URL}">`);
+  if (PUBLIC_PAGES.includes(PAGE_PATH)) return;
   const main = document.querySelector('main');
   const pageContent = main.innerHTML;
   main.className = 'page';
   main.setAttribute('x-data', '');
   main.innerHTML = `<div class="container">${PAGE_STATES}<template x-if="$store.app.ready && canSeeThisPage()"><div>${pageContent}</div></template></div>`;
   document.body.insertAdjacentHTML('afterbegin', ICON_SPRITE + SITE_HEADER);
-  document.body.insertAdjacentHTML('beforeend', TOAST + DEMO_SWITCHER);
+  document.body.insertAdjacentHTML('beforeend', TOAST);
 }
 
 /* ==================== Admin tools: reusable forms, edit drawer, confirm step ==================== */
@@ -648,6 +680,7 @@ function adminTools() {
       return !query || texts.join(' ').toLowerCase().includes(query);
     },
     notify(message) { this.$store.ui.notify(message) },
+    fail(error) { this.$store.ui.fail(error) },
     toggleInList(list, value) { const index = list.indexOf(value); index < 0 ? list.push(value) : list.splice(index, 1); },
     focusFirstInvalidField() { this.$nextTick(() => { const field = document.querySelector('[aria-invalid="true"]'); field && field.focus(); }); },
     openDrawer(title, subtitle, event) {
@@ -690,10 +723,6 @@ function insertPieces(root = document) {
   root.querySelectorAll('[data-piece]').forEach(element => {
     element.outerHTML = PAGE_PIECES[element.dataset.piece] || '';
   });
-}
-
-function timestampNow() {
-  return `${format.dateKey(Alpine.store('app').today)} ${new Date().toTimeString().slice(0, 8)}`;
 }
 
 /* Before Alpine reads the page: fill in pieces and admin forms, then add header, menus and notices. */

@@ -168,9 +168,9 @@ function songPage() {
       return this.selectedVoiceTrack ? [this.selectedVoiceTrack] : this.voiceTracks;
     },
     get leadAudio() { return this.playingTracks.length ? audioByTrackId.get(this.playingTracks[0].id) : null },
-    get sheetUrl() { const sheet = this.song && this.app.songSheetFile(this.song.id); return sheet ? storageUrl('songs/' + sheet.file) : '' },
+    get sheetUrl() { const sheet = this.song && this.app.songSheetFile(this.song.id); return sheet ? storageUrl(sheet.file) : '' },
     get youtubeId() { const match = /(?:youtube\.com\/watch\?v=|youtu\.be\/)([\w-]{6,})/.exec((this.song && this.song.choreography_url) || ''); return match ? match[1] : '' },
-    get videoFileUrl() { const url = this.song && this.song.choreography_url; return url && !/^https?:/.test(url) ? storageUrl('songs/' + url) : '' },
+    get videoFileUrl() { const url = this.song && this.song.choreography_url; return url && !/^https?:/.test(url) ? storageUrl(url) : '' },
     get tabs() {
       return [
         { key: 'sheet', label: 'Noter' },
@@ -187,7 +187,7 @@ function songPage() {
       if (!this.song) return;
       document.title = `${this.song.name} – Mannskoret Arme Riddere`;
       this.tracks = this.app.songAudioFiles(this.song.id).map(file => ({
-        id: file.id, name: file.voice ? LABELS.voices[file.voice] : file.name, voice: file.voice, url: storageUrl('songs/' + file.file),
+        id: file.id, name: file.voice ? LABELS.voices[file.voice] : file.name, voice: file.voice, url: storageUrl(file.file),
       }));
       this.mode = this.mixTrack ? 'mix' : 'voices';
       if (this.mode === 'voices' && this.myVoiceTrack) this.selectedVoiceTrack = this.myVoiceTrack;
@@ -365,23 +365,23 @@ function adminSongsPage() {
       };
     },
     isValidSong(form) { form.showErrors = true; if (!form.name.trim()) { this.focusFirstInvalidField(); return false; } return true; },
-    writeSongDetails(songId, form) {
-      this.db.song_genres = this.db.song_genres.filter(link => link.song_id !== songId);
-      form.genreIds.forEach(genreId => this.db.song_genres.push({ id: nextId(this.db.song_genres), created_at: timestampNow(), created_by: this.app.currentMemberId, song_id: songId, genre_id: genreId }));
-      this.db.song_voice_files = this.db.song_voice_files.filter(file => file.song_id !== songId);
-      form.files.forEach((row, index) => this.db.song_voice_files.push({
-        id: nextId(this.db.song_voice_files), created_at: timestampNow(), created_by: this.app.currentMemberId, song_id: songId,
-        name: row.name.trim() || (row.voice ? LABELS.voices[row.voice] : LABELS.fileTypes[row.type]),
-        file: row.file || null, voice: row.voice || null, type: row.type,
-        start_note: row.type === 'pitch' ? (row.startNote.trim() || null) : null, sort_order: index + 1,
-      }));
+    /* Saves the song together with its genres and files (they replace the old ones). */
+    saveSongToServer(form) {
+      return this.app.save('songs', form.id, {
+        name: form.name.trim(), lyrics: form.lyrics || null, choreography_url: form.choreographyUrl.trim() || null, is_secret: form.isSecret,
+      }, {
+        song_genres: form.genreIds.map(genreId => ({ genre_id: genreId })),
+        song_voice_files: form.files.map((row, index) => ({
+          name: row.name.trim() || (row.voice ? LABELS.voices[row.voice] : LABELS.fileTypes[row.type]),
+          file: row.file || null, voice: row.voice || null, type: row.type,
+          start_note: row.type === 'pitch' ? (row.startNote.trim() || null) : null, sort_order: index + 1,
+        })),
+      });
     },
-    addSong() {
+    async addSong() {
       const form = this.newSong;
       if (!this.isValidSong(form)) return;
-      const songId = nextId(this.db.songs);
-      this.db.songs.push({ id: songId, created_at: timestampNow(), created_by: this.app.currentMemberId, name: form.name.trim(), lyrics: form.lyrics || null, choreography_url: form.choreographyUrl.trim() || null, is_secret: form.isSecret });
-      this.writeSongDetails(songId, form);
+      try { await this.saveSongToServer(form); } catch (error) { this.fail(error); return; }
       this.notify(`«${form.name.trim()}» er lagt til` + (form.isSecret ? ' som hemmelig.' : '.'));
       this.newSong = this.emptySongForm();
     },
@@ -389,19 +389,19 @@ function adminSongsPage() {
       this.editedSong = this.songFormFromRow(song);
       this.openDrawer('Rediger sang', song.name, event);
     },
-    saveSong() {
+    async saveSong() {
       const form = this.editedSong;
       if (!this.isValidSong(form)) return;
-      const song = this.app.song(form.id);
-      Object.assign(song, { name: form.name.trim(), lyrics: form.lyrics || null, choreography_url: form.choreographyUrl.trim() || null, is_secret: form.isSecret });
-      this.writeSongDetails(song.id, form);
+      let song;
+      try { song = await this.saveSongToServer(form); } catch (error) { this.fail(error); return; }
       this.closeDrawer();
       this.notify(`Endringene i «${song.name}» er lagret.`);
     },
-    deleteSong() {
+    async deleteSong() {
       const songId = this.editedSong.id, name = this.app.song(songId).name;
+      try { await this.app.remove('songs', songId); } catch (error) { this.fail(error); return; }
+      // The database removed the linked rows too (ON DELETE CASCADE); do the same in the store.
       ['song_genres', 'song_voice_files', 'repertoire_songs', 'member_songs'].forEach(table => { this.db[table] = this.db[table].filter(row => row.song_id !== songId); });
-      this.db.songs = this.db.songs.filter(song => song.id !== songId);
       this.closeDrawer(false);
       this.notify(`«${name}» er slettet.`);
     },
@@ -410,25 +410,27 @@ function adminSongsPage() {
       if (this.db.genres.some(genre => genre.id !== exceptId && genre.name.toLowerCase() === name.trim().toLowerCase())) return 'Den sjangeren finnes allerede.';
       return '';
     },
-    addGenre() {
+    async addGenre() {
       this.genreError = this.genreNameProblem(this.newGenreName);
       if (this.genreError) { this.focusFirstInvalidField(); return; }
       const name = this.newGenreName.trim();
-      this.db.genres.push({ id: nextId(this.db.genres), created_at: timestampNow(), created_by: this.app.currentMemberId, name, sort_order: Math.max(0, ...this.db.genres.map(genre => genre.sort_order)) + 1 });
+      try {
+        await this.app.save('genres', null, { name, sort_order: Math.max(0, ...this.db.genres.map(genre => genre.sort_order)) + 1 });
+      } catch (error) { this.fail(error); return; }
       this.newGenreName = '';
       this.notify(`Sjangeren «${name}» er lagt til.`);
     },
     startRenamingGenre(genre) { this.renamingGenreId = genre.id; this.renamingGenreName = genre.name; this.renameError = ''; this.confirmingDeleteId = null; },
-    saveGenreName(genre) {
+    async saveGenreName(genre) {
       this.renameError = this.genreNameProblem(this.renamingGenreName, genre.id);
       if (this.renameError) return;
-      genre.name = this.renamingGenreName.trim();
+      try { await this.app.save('genres', genre.id, { name: this.renamingGenreName.trim() }); } catch (error) { this.fail(error); return; }
       this.renamingGenreId = null;
       this.notify(`Sjangeren heter nå «${genre.name}».`);
     },
-    deleteGenre(genre) {
+    async deleteGenre(genre) {
+      try { await this.app.remove('genres', genre.id); } catch (error) { this.fail(error); return; }
       this.db.song_genres = this.db.song_genres.filter(link => link.genre_id !== genre.id);
-      this.db.genres = this.db.genres.filter(row => row.id !== genre.id);
       this.confirmingDeleteId = null;
       this.notify(`Sjangeren «${genre.name}» er slettet.`);
     },
@@ -447,11 +449,11 @@ function adminRepertoiresPage() {
     },
     songName(songId) { return (this.app.song(songId) || {}).name },
     songCountText(repertoireId) { const count = this.app.repertoireSongIds(repertoireId).length; return count + (count === 1 ? ' sang' : ' sanger'); },
-    addRepertoire() {
+    async addRepertoire() {
       const form = this.newRepertoire;
       form.showErrors = true;
       if (!form.name.trim()) { this.focusFirstInvalidField(); return; }
-      this.db.repertoires.push({ id: nextId(this.db.repertoires), created_at: timestampNow(), created_by: this.app.currentMemberId, name: form.name.trim(), is_visible: form.isVisible });
+      try { await this.app.save('repertoires', null, { name: form.name.trim(), is_visible: form.isVisible }); } catch (error) { this.fail(error); return; }
       this.notify(`«${form.name.trim()}» er opprettet. Trykk Rediger for å legge til sanger.`);
       this.newRepertoire = { name: '', isVisible: false, showErrors: false };
     },
@@ -471,20 +473,22 @@ function adminRepertoiresPage() {
       this.editedRepertoire.songIds.push(Number(this.songToAdd));
       this.songToAdd = '';
     },
-    saveRepertoire() {
+    async saveRepertoire() {
       const form = this.editedRepertoire;
       form.showErrors = true;
       if (!form.name.trim()) { this.focusFirstInvalidField(); return; }
-      const repertoire = this.db.repertoires.find(row => row.id === form.id);
-      Object.assign(repertoire, { name: form.name.trim(), is_visible: form.isVisible });
-      this.db.repertoire_songs = this.db.repertoire_songs.filter(link => link.repertoire_id !== form.id);
-      form.songIds.forEach((songId, index) => this.db.repertoire_songs.push({ id: nextId(this.db.repertoire_songs), created_at: timestampNow(), created_by: this.app.currentMemberId, repertoire_id: form.id, song_id: songId, sort_order: index + 1 }));
+      let repertoire;
+      try {
+        repertoire = await this.app.save('repertoires', form.id, { name: form.name.trim(), is_visible: form.isVisible }, {
+          repertoire_songs: form.songIds.map((songId, index) => ({ song_id: songId, sort_order: index + 1 })),
+        });
+      } catch (error) { this.fail(error); return; }
       this.closeDrawer();
       this.notify(`«${repertoire.name}» er lagret.`);
     },
-    deleteRepertoire(repertoire) {
+    async deleteRepertoire(repertoire) {
+      try { await this.app.remove('repertoires', repertoire.id); } catch (error) { this.fail(error); return; }
       this.db.repertoire_songs = this.db.repertoire_songs.filter(link => link.repertoire_id !== repertoire.id);
-      this.db.repertoires = this.db.repertoires.filter(row => row.id !== repertoire.id);
       this.confirmingDeleteId = null;
       this.notify(`«${repertoire.name}» er slettet.`);
     },
@@ -538,10 +542,11 @@ function adminPracticePlanPage() {
       if (!form.date || !form.title.trim()) { this.focusFirstInvalidField(); return false; }
       return true;
     },
-    addPlan() {
+    planFields(form) { return { date: form.date, title: form.title.trim(), description: form.description.trim() || null } },
+    async addPlan() {
       const form = this.newPlan;
       if (!this.isValidPlan(form)) return;
-      this.db.practice_plans.push({ id: nextId(this.db.practice_plans), created_at: timestampNow(), created_by: this.app.currentMemberId, date: form.date, title: form.title.trim(), description: form.description.trim() || null });
+      try { await this.app.save('practice_plans', null, this.planFields(form)); } catch (error) { this.fail(error); return; }
       this.showing = form.date >= this.todayKey ? 'upcoming' : 'past';
       this.notify(`«${form.title.trim()}» er lagt til i øvingsplanen.`);
       this.newPlan = emptyPlanForm();
@@ -550,16 +555,16 @@ function adminPracticePlanPage() {
       this.editedPlan = { id: plan.id, date: plan.date, title: plan.title, description: plan.description || '', showErrors: false };
       this.openDrawer('Rediger øving', format.longDate(format.parseDate(plan.date)), event);
     },
-    savePlan() {
+    async savePlan() {
       const form = this.editedPlan;
       if (!this.isValidPlan(form)) return;
-      const plan = this.db.practice_plans.find(row => row.id === form.id);
-      Object.assign(plan, { date: form.date, title: form.title.trim(), description: form.description.trim() || null });
+      let plan;
+      try { plan = await this.app.save('practice_plans', form.id, this.planFields(form)); } catch (error) { this.fail(error); return; }
       this.closeDrawer();
       this.notify(`«${plan.title}» er lagret.`);
     },
-    deletePlan(plan) {
-      this.db.practice_plans = this.db.practice_plans.filter(row => row.id !== plan.id);
+    async deletePlan(plan) {
+      try { await this.app.remove('practice_plans', plan.id); } catch (error) { this.fail(error); return; }
       this.confirmingDeleteId = null;
       this.notify(`«${plan.title}» er slettet fra øvingsplanen.`);
     },
@@ -610,12 +615,13 @@ function adminCompetitionsPage() {
       if (!form.name.trim() || !form.startDate || !form.endDate || form.endDate < form.startDate) { this.focusFirstInvalidField(); return false; }
       return true;
     },
-    addCompetition() {
+    competitionFields(form) { return { name: form.name.trim(), start_date: form.startDate, end_date: form.endDate } },
+    async addCompetition() {
       const form = this.newCompetition;
       if (!this.isValidCompetition(form)) return;
-      const id = nextId(this.db.practice_competitions);
-      this.db.practice_competitions.push({ id, created_at: timestampNow(), created_by: this.app.currentMemberId, name: form.name.trim(), start_date: form.startDate, end_date: form.endDate });
-      this.selectedCompetitionId = id;
+      let competition;
+      try { competition = await this.app.save('practice_competitions', null, this.competitionFields(form)); } catch (error) { this.fail(error); return; }
+      this.selectedCompetitionId = competition.id;
       this.notify(`«${form.name.trim()}» er opprettet.`);
       this.newCompetition = emptyCompetitionForm();
     },
@@ -623,31 +629,32 @@ function adminCompetitionsPage() {
       this.editedCompetition = { id: competition.id, name: competition.name, startDate: competition.start_date, endDate: competition.end_date, showErrors: false };
       this.openDrawer('Rediger konkurranse', competition.name, event);
     },
-    saveCompetition() {
+    async saveCompetition() {
       const form = this.editedCompetition;
       if (!this.isValidCompetition(form)) return;
-      const competition = this.db.practice_competitions.find(row => row.id === form.id);
-      Object.assign(competition, { name: form.name.trim(), start_date: form.startDate, end_date: form.endDate });
+      let competition;
+      try { competition = await this.app.save('practice_competitions', form.id, this.competitionFields(form)); } catch (error) { this.fail(error); return; }
       this.closeDrawer();
       this.notify(`«${competition.name}» er lagret.`);
     },
-    deleteCompetition(competition) {
-      this.db.practice_competitions = this.db.practice_competitions.filter(row => row.id !== competition.id);
+    async deleteCompetition(competition) {
+      try { await this.app.remove('practice_competitions', competition.id); } catch (error) { this.fail(error); return; }
       if (this.selectedCompetitionId === competition.id) this.selectedCompetitionId = (this.sortedCompetitions[0] || {}).id;
       this.confirmingDeleteId = null;
       this.notify(`«${competition.name}» er slettet.`);
     },
-    saveWeeklyGoal() {
+    async saveWeeklyGoal() {
       const minutes = Math.round(Number(this.weeklyGoalMinutes));
       if (!(minutes >= 5 && minutes <= 1000)) { this.weeklyGoalError = 'Skriv inn et tall mellom 5 og 1000.'; this.focusFirstInvalidField(); return; }
       this.weeklyGoalError = '';
       const setting = this.db.settings.find(row => row.key === 'weekly_practice_goal_minutes');
-      if (setting) Object.assign(setting, { value: minutes, updated_by: this.app.currentMemberId });
-      else this.db.settings.push({ id: nextId(this.db.settings), created_at: timestampNow(), created_by: this.app.currentMemberId, updated_by: null, key: 'weekly_practice_goal_minutes', value: minutes });
+      try {
+        await this.app.save('settings', setting && setting.id, setting ? { value: minutes } : { key: 'weekly_practice_goal_minutes', value: minutes });
+      } catch (error) { this.fail(error); return; }
       this.notify(`Ukemålet er satt til ${minutes} minutter.`);
     },
-    deleteLog(log) {
-      this.db.practice_logs = this.db.practice_logs.filter(row => row.id !== log.id);
+    async deleteLog(log) {
+      try { await this.app.remove('practice_logs', log.id); } catch (error) { this.fail(error); return; }
       this.confirmingDeleteId = null;
       this.notify(`Registreringen på ${log.minutes} min er slettet.`);
     },

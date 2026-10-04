@@ -21,6 +21,20 @@ jobs:
           mkdir -p ~/.ssh
           echo "${{ secrets.SFTP_KNOWN_HOSTS }}" >> ~/.ssh/known_hosts
 
+      # Not needed on the web server: docs/specs (.info) and SQL migrations (db) are run by hand.
+      - name: Remove source-only folders from the upload
+        run: rm -rf .info db
+
+      # dev only: browser password popup so the public and Google can't see the unfinished site.
+      # Set the secret DEV_HTPASSWD_PATH to the absolute server path of ~/private/dev.htpasswd.
+      - name: Protect dev with a password
+        env:
+          HTPASSWD_PATH: ${{ secrets.DEV_HTPASSWD_PATH }}
+        run: |
+          if [ -n "$HTPASSWD_PATH" ]; then
+            printf '\nAuthType Basic\nAuthName "Arme Riddere dev"\nAuthUserFile %s\nRequire valid-user\n' "$HTPASSWD_PATH" >> .htaccess
+          fi
+
       - name: Mirror repo to server (extras are deleted)
         env:
           LFTP_PASSWORD: ${{ secrets.SFTP_PASS }}

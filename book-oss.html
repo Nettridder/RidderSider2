@@ -1,0 +1,163 @@
+<!doctype html>
+<html lang="nb">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Book Oss - Mannskoret Arme Riddere</title>
+<meta name="description" content="Mannskoret Arme Riddere - Det offisielle mannskoret ved Universitetet i Bergen">
+<meta name="keywords" content="Mannskoret Arme Riddere, mannskor, Bergen, UiB, studenter">
+<link rel="icon" type="image/png" href="/images/MARlogo.png">
+<link rel="apple-touch-icon" href="/images/MARlogo.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@300;400;700&family=Poppins:wght@300;400;500;700&display=swap">
+<link rel="stylesheet" href="/css/global.css">
+<style>
+/* Styling for this page only. Shared styling is in css/global.css. */
+
+/* ---------- book oss ---------- */
+#book-oss { padding-top: 150px; padding-bottom: 0; }
+.image-display { background: #f7f7f7; padding: 30px 0; }
+.simple-carousel { position: relative; width: 90%; max-width: 900px; margin: 30px auto; background: var(--black); border-radius: 6px; overflow: hidden; }
+.slides { position: relative; height: 400px; }
+.slide { position: absolute; inset: 0; opacity: 0; transition: opacity .5s ease; }
+.slide img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.slide.active { opacity: 1; }
+.carousel-prev, .carousel-next { position: absolute; top: 50%; transform: translateY(-50%); background: rgba(0, 0, 0, .4); border: none; color: var(--white); padding: 12px 14px; border-radius: 50%; cursor: pointer; }
+.carousel-prev { left: 12px; }
+.carousel-next { right: 12px; }
+.carousel-dots { position: absolute; left: 50%; transform: translateX(-50%); bottom: 12px; display: flex; gap: 8px; }
+.dot { width: 12px; height: 12px; border-radius: 50%; border: 0; background: rgba(255, 255, 255, .5); cursor: pointer; padding: 0; }
+.dot.active { background: var(--white); }
+@media (max-width: 600px) { .slides { height: 520px; } }
+.book-info-box { padding: 30px; border-radius: 12px; text-align: center; }
+.book-info-text { max-width: 1140px; margin: 0 auto; }
+.boxed { background: var(--off-white); border-radius: 12px; padding: 20px; box-shadow: 0 6px 18px rgba(0, 0, 0, .08); border: 1px solid rgba(0, 0, 0, .06); margin: 3rem auto 50px; max-width: 1110px; cursor: pointer; }
+.praktisk-content { overflow: hidden; max-height: 0; opacity: 0; transition: max-height .5s ease, opacity .3s ease; }
+.praktisk-content.show { max-height: 1500px; opacity: 1; }
+.praktisk-content .inner { max-width: 760px; margin: 0 auto; }
+.praktisk-content h4 { font-weight: 700; font-size: 1.1rem; }
+.praktisk-toggle-arrow { transition: transform .3s; transform: rotate(180deg); }
+.praktisk-content.show + .center .praktisk-toggle-arrow { transform: rotate(0); }
+.booking-form { background: var(--off-white); padding: 80px 0 40px; }
+</style>
+<script defer src="/js/global.js"></script>
+<script defer src="/js/confetti.js"></script>   <!-- confetti on ?confetti=true -->
+<script defer src="/js/easter-egg.js"></script> <!-- knight game: type "ridder" or the Konami code -->
+<script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3/dist/cdn.min.js"></script>
+</head>
+<body data-page="book-oss">
+<canvas id="confetti" style="position: fixed; inset: 0; pointer-events: none; z-index: 9999;"></canvas>
+
+<main x-data>
+  <!-- ============ BOOK OSS ============ -->
+  <section id="book-oss">
+    <div class="container fade-in">
+      <div class="section-header">
+        <h3 class="section-title">BOOK OSS</h3>
+        <p class="section-description">Trenger du å bli bedåret og begeistret?</p>
+      </div>
+    </div>
+
+    <!-- Every image in images/carousel/ (listed by api/carousel.php) -->
+    <div class="image-display" x-data="carousel()" x-show="images.length" x-cloak>
+      <div class="simple-carousel" @mouseenter="stop()" @mouseleave="start()">
+        <div class="slides">
+          <template x-for="(image, index) in images" :key="image">
+            <div class="slide" :class="index === current && 'active'"><img :src="image" :alt="'Bilde ' + (index + 1) + ' av Arme Riddere'"></div>
+          </template>
+        </div>
+        <button class="carousel-prev" aria-label="Forrige" @click="show(current - 1)">&#10094;</button>
+        <button class="carousel-next" aria-label="Neste" @click="show(current + 1)">&#10095;</button>
+        <div class="carousel-dots">
+          <template x-for="(image, index) in images" :key="image">
+            <button class="dot" :class="index === current && 'active'" :aria-label="'Bilde ' + (index + 1)" @click="show(index)"></button>
+          </template>
+        </div>
+      </div>
+    </div>
+
+    <div class="fade-in" style="padding: 0 15px; margin-top: 20px">
+      <div class="book-info-box">
+        <h3>Hvorfor booke Mannskoret Arme Riddere?</h3>
+        <p class="book-info-text">Mannskoret Arme Riddere har i over <span x-text="Math.round((new Date().getFullYear() - SITE.founded) / 5) * 5"></span> år tilbudt et bredt musikalsk repertoar som strekker seg fra klassisk mannskorsang i Bellmans ånd via sjarmerende bedåringslåter til skikkelige show- og humorlåter som vil sette stemningen for enhver anledning. MAR kan heve eksempelvis møtet, julebordet, sommerfesten eller bryllupet til et nytt nivå. Vi tilpasser oss deres ønsker og garanterer topp underholdning til enhver anledning.</p>
+      </div>
+    </div>
+
+    <!-- Praktisk info: click anywhere on the box to open or close it -->
+    <div class="container fade-in" x-data="{ open: false }">
+      <div class="boxed" @click="open = !open">
+        <div class="section-header">
+          <h3 class="section-title">Praktisk informasjon for arrangement</h3>
+          <p class="section-description">Noen praktiske detaljer vi ofte blir spurt om.</p>
+        </div>
+        <div class="praktisk-content" :class="open && 'show'">
+          <div class="inner">
+            <h4>Innsyng og introer</h4>
+            <p>En ting vi ofte må klargjøre er at vi som standard <strong>synger oss inn</strong> og har korte <strong>introer mellom sangene</strong>. Dette gir oss tid til å få riktig klang og gir et naturlig flow i konserten. Hvis dere ønsker en mer kompakt eller direkte gjennomføring uten innsyng og introer (for eksempel ved korte arrangement eller mange taler), kan dette sløyfes — gi oss beskjed ved bestilling så tilpasser vi oss.</p>
+            <h4>Oppvarming</h4>
+            <p>Vi trenger gjerne et stille sted til oppvarming i ca. 30-60 minutter før opptreden. Dersom det ikke er mulig, tilpasser vi oss og bruker tilgjengelig ankomsttid.</p>
+            <h4>Oppmikking</h4>
+            <p>Spørsmålet om oppmikking avhenger av lokalet, publikum og antall sangere. I mindre, akustiske lokaler klarer vi oss ofte uten mikrofoner, men for større lokaler eller ved dårlig akustikk anbefaler vi noen mikrofoner. Send gjerne informasjon om lokalet (størrelse, scene, og dere trenger oppmikking), så gir vi konkrete anbefalinger.</p>
+            <h4>Tidsplan og øvrige ønsker</h4>
+            <p>Har dere spesielle ønsker om rekkefølge, inkludering av taler eller kortere opptreden uten innsyng/intro, si fra i forkant slik at vi kan planlegge. Vi gjør vårt beste for å imøtekomme praktiske begrensninger på arrangementsdagen.</p>
+            <p><strong>Kontakt</strong>: Bruk booking-skjemaet under og send en kort beskrivelse av lokalet og ønsker via skjemaet, så følger vi opp med detaljer og anbefalinger.</p>
+          </div>
+        </div>
+        <div class="center"><div class="btn-hollow praktisk-toggle-arrow">^</div></div>
+      </div>
+    </div>
+
+    <div class="booking-form">
+      <div class="container fade-in">
+        <div class="section-header"><h3 class="section-title">Book oss</h3></div>
+        <div class="contact-wrap" style="margin-top: 2rem">
+          <div class="contact-form" x-data="contactForm('booking')">
+            <div class="alert" :class="sent && 'show'">Takk for din melding! Vi tar kontakt så snart som mulig.</div>
+            <div class="alert alert--error" :class="error && 'show'" x-text="error"></div>
+            <form class="contactForm" @submit.prevent="send()">
+              <input type="text" tabindex="-1" autocomplete="off" hidden x-model="fields.website"><!-- honeypot for spam bots -->
+              <div class="form-group"><input class="form-control" type="text" placeholder="navn" required minlength="2" x-model="fields.name"></div>
+              <div class="form-group"><input class="form-control" type="email" placeholder="e-post" required x-model="fields.email"></div>
+              <div class="form-group"><input class="form-control" type="text" placeholder="Emne" required minlength="4" x-model="fields.subject"></div>
+              <div class="form-group"><textarea class="form-control" rows="5" placeholder="Booking info og eventuelle spørsmål" required minlength="10" x-model="fields.message"></textarea></div>
+              <div class="center"><button type="submit" class="btn-solid" :disabled="sending">Send booking</button></div>
+            </form>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<script>
+/* ---------- Book oss: image carousel, changes every 5 seconds, pauses while the mouse is over it ---------- */
+function carousel() {
+  return {
+    images: [],
+    current: 0,
+    timer: null,
+    async init() {
+      try {
+        const response = await fetch(API_URL + 'carousel.php');
+        if (!response.ok) throw new Error('api/carousel.php svarte ' + response.status);
+        this.images = await response.json();
+        this.start();
+      } catch (error) {
+        console.warn('Karusell:', error);
+      }
+    },
+    show(index) {
+      this.current = (index + this.images.length) % this.images.length;
+      this.start();
+    },
+    start() {
+      clearInterval(this.timer);
+      if (this.images.length > 1) this.timer = setInterval(() => { this.current = (this.current + 1) % this.images.length; }, 5000);
+    },
+    stop() { clearInterval(this.timer) },
+  };
+}
+</script>
+</body>
+</html>

@@ -64,7 +64,7 @@ document.body.insertAdjacentHTML('beforeend', `
       </div>
       <div class="document-reader__footer">
         <p class="hint" x-text="fileType"></p>
-        <a class="button button--secondary" :href="document ? '/app/dokumenter/' + document.file : '#'" download><svg aria-hidden="true"><use href="#icon-download"/></svg>Last ned</a>
+        <a class="button button--secondary" :href="document ? storageUrl(document.file) : '#'" download><svg aria-hidden="true"><use href="#icon-download"/></svg>Last ned</a>
       </div>
     </div>
   </div>
@@ -122,11 +122,13 @@ function adminDocumentsPage() {
       else if (!/\.(pdf|docx?)$/i.test(file)) errors.file = 'Filen må være PDF eller Word (.docx).';
       return errors;
     },
-    uploadDocument() {
+    /* TODO (upload.php, plan step 6): send the file itself. Until then only the database row is saved,
+       with the path the file will have in storage/documents/. */
+    async uploadDocument() {
       const form = this.newDocument;
       form.submitted = true;
       if (Object.keys(this.documentErrors(form)).length) { this.focusFirstInvalidField(); return; }
-      this.db.documents.push({ id: nextId(this.db.documents), created_at: timestampNow(), created_by: this.app.currentMemberId, title: form.title.trim(), file: form.new_file });
+      try { await this.app.save('documents', null, { title: form.title.trim(), file: 'documents/' + form.new_file }); } catch (error) { this.fail(error); return; }
       this.notify(`«${form.title.trim()}» er lastet opp og ligger øverst i dokumentarkivet.`);
       this.newDocument = this.emptyDocument();
     },
@@ -134,17 +136,19 @@ function adminDocumentsPage() {
       this.editedDocument = { ...document, new_file: '', submitted: false };
       this.openDrawer('Rediger dokument', document.title, event);
     },
-    saveDocument() {
+    async saveDocument() {
       const form = this.editedDocument;
       form.submitted = true;
       if (Object.keys(this.documentErrors(form)).length) { this.focusFirstInvalidField(); return; }
-      const document = this.db.documents.find(row => row.id === form.id);
-      Object.assign(document, { title: form.title.trim(), file: form.new_file || document.file });
+      let document;
+      try {
+        document = await this.app.save('documents', form.id, { title: form.title.trim(), file: form.new_file ? 'documents/' + form.new_file : form.file });
+      } catch (error) { this.fail(error); return; }
       this.closeDrawer();
       this.notify(`«${document.title}» er lagret.`);
     },
-    deleteDocument(document) {
-      this.db.documents.splice(this.db.documents.indexOf(document), 1);
+    async deleteDocument(document) {
+      try { await this.app.remove('documents', document.id); } catch (error) { this.fail(error); return; }
       this.confirmingDeleteId = null;
       this.notify(`«${document.title}» er slettet.`);
     },
@@ -188,11 +192,11 @@ function adminResolutionsPage() {
       return errors;
     },
     fieldsFromForm(form) { return { year: Number(form.year), term: form.term, text: form.text.trim(), wiki_url: form.wiki_url.trim() } },
-    addResolution() {
+    async addResolution() {
       const form = this.newResolution;
       form.submitted = true;
       if (Object.keys(this.resolutionErrors(form)).length) { this.focusFirstInvalidField(); return; }
-      this.db.resolutions.push({ id: nextId(this.db.resolutions), created_at: timestampNow(), created_by: this.app.currentMemberId, ...this.fieldsFromForm(form) });
+      try { await this.app.save('resolutions', null, this.fieldsFromForm(form)); } catch (error) { this.fail(error); return; }
       this.notify(`Resolusjonen er lagt til under ${format.semesterLong(form.year, form.term)}.`);
       this.newResolution = this.emptyResolution();
     },
@@ -200,16 +204,16 @@ function adminResolutionsPage() {
       this.editedResolution = { ...resolution, submitted: false };
       this.openDrawer('Rediger resolusjon', format.semesterLong(resolution.year, resolution.term), event);
     },
-    saveResolution() {
+    async saveResolution() {
       const form = this.editedResolution;
       form.submitted = true;
       if (Object.keys(this.resolutionErrors(form)).length) { this.focusFirstInvalidField(); return; }
-      Object.assign(this.db.resolutions.find(row => row.id === form.id), this.fieldsFromForm(form));
+      try { await this.app.save('resolutions', form.id, this.fieldsFromForm(form)); } catch (error) { this.fail(error); return; }
       this.closeDrawer();
       this.notify('Resolusjonen er lagret.');
     },
-    deleteResolution(resolution) {
-      this.db.resolutions.splice(this.db.resolutions.indexOf(resolution), 1);
+    async deleteResolution(resolution) {
+      try { await this.app.remove('resolutions', resolution.id); } catch (error) { this.fail(error); return; }
       this.confirmingDeleteId = null;
       this.notify('Resolusjonen er slettet.');
     },
@@ -237,35 +241,37 @@ function adminBackgroundsPage() {
       this.pickedFile = file;
       this.pickedFileName = file.name;
     },
-    uploadBackground() {
+    /* TODO (upload.php, plan step 6): send the image itself to storage/images/backgrounds/.
+       Until then only the database row is saved. */
+    async uploadBackground() {
       this.uploadSubmitted = true;
       if (!this.pickedFileName) { this.focusFirstInvalidField(); return; }
-      const id = nextId(this.db.login_backgrounds);
-      this.db.login_backgrounds.push({ id, created_at: timestampNow(), created_by: this.app.currentMemberId, file: this.pickedFileName, is_active: true });
-      if (this.pickedFile && this.pickedFile.type.startsWith('image/')) this.previews[id] = URL.createObjectURL(this.pickedFile);
+      let background;
+      try { background = await this.app.save('login_backgrounds', null, { file: this.pickedFileName, is_active: true }); } catch (error) { this.fail(error); return; }
+      if (this.pickedFile && this.pickedFile.type.startsWith('image/')) this.previews[background.id] = URL.createObjectURL(this.pickedFile);
       this.notify(`${this.pickedFileName} er lastet opp og er med i utvalget.`);
       this.pickedFile = null; this.pickedFileName = ''; this.uploadSubmitted = false;
     },
-    toggleActive(background) {
-      background.is_active = !background.is_active;
+    async toggleActive(background) {
+      try { await this.app.save('login_backgrounds', background.id, { is_active: !background.is_active }); } catch (error) { this.fail(error); return; }
       this.notify(background.is_active ? `${background.file} er med i utvalget.` : `${background.file} er tatt ut av utvalget.`);
     },
-    deleteBackground(background) {
-      this.db.login_backgrounds.splice(this.db.login_backgrounds.indexOf(background), 1);
+    async deleteBackground(background) {
+      try { await this.app.remove('login_backgrounds', background.id); } catch (error) { this.fail(error); return; }
       if (this.appBackground === background.file) this.appBackground = '';
       if (this.attendanceBackground === background.file) this.attendanceBackground = '';
       this.confirmingDeleteId = null;
       this.notify(`${background.file} er slettet.`);
     },
     saveSetting(key, value) {
-      let row = this.db.settings.find(setting => setting.key === key);
-      if (!row) this.db.settings.push(row = { id: nextId(this.db.settings), created_at: timestampNow(), created_by: this.app.currentMemberId, key, value: null });
-      row.value = value || null;
-      row.updated_by = this.app.currentMemberId;
+      const row = this.db.settings.find(setting => setting.key === key);
+      return this.app.save('settings', row && row.id, row ? { value: value || null } : { key, value: value || null });
     },
-    saveFixedBackgrounds() {
-      this.saveSetting('app_background', this.appBackground);
-      this.saveSetting('attendance_background', this.attendanceBackground);
+    async saveFixedBackgrounds() {
+      try {
+        await this.saveSetting('app_background', this.appBackground);
+        await this.saveSetting('attendance_background', this.attendanceBackground);
+      } catch (error) { this.fail(error); return; }
       this.notify('De faste bakgrunnene er lagret.');
     },
   });

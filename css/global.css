@@ -1,0 +1,105 @@
+/* Global styling for every public page (index.html, book-oss.html, medlemmer.html; privacy-policy.html is standalone):
+   colours, base elements, a small grid, header and menu (desktop + mobile), buttons, section headings,
+   contact/booking form, footer and scroll effects. No Bootstrap.
+   Styling for one page only goes in a <style> section in that page. */
+
+:root {
+  --black: #000;
+  --white: #fff;
+  --off-white: #f5f5f7;
+  --orange: #ec6c00;
+  --blue: #4169E1;
+}
+
+*, *::before, *::after { box-sizing: border-box; }
+html { font-size: 16px; scroll-behavior: smooth; }
+@media (max-width: 768px) { html { font-size: 14px; } }
+@media (max-width: 480px) { html { font-size: 12px; } }
+body { margin: 0; background: var(--white); color: var(--black); font-family: "Poppins", "Open Sans", sans-serif; line-height: 1.5; }
+a { color: var(--blue); text-decoration: none; }
+a:hover { color: var(--orange); }
+p { margin: 0 0 30px; font-size: 1rem; }
+h1, h2, h3, h4 { font-weight: 400; margin: 0 0 20px; }
+img { max-width: 100%; }
+[x-cloak] { display: none !important; }
+
+/* ---------- grid ---------- */
+.container { width: 100%; max-width: 1140px; margin: 0 auto; padding: 0 15px; }
+.row { display: flex; flex-wrap: wrap; margin: 0 -15px; }
+.row > * { padding: 0 15px; }
+.center { text-align: center; }
+.col-3 { flex: 0 0 25%; max-width: 25%; }
+.col-6 { flex: 0 0 50%; max-width: 50%; }
+@media (max-width: 991px) {
+  .col-3 { flex: 0 0 50%; max-width: 50%; }
+  .col-6 { flex: 0 0 100%; max-width: 100%; }
+}
+
+/* ---------- fade in when scrolled into view (js/global.js adds .visible) ---------- */
+.fade-in { opacity: 0; transform: translateY(20px); transition: opacity .6s ease-out, transform .6s ease-out; }
+.fade-in.visible { opacity: 1; transform: none; }
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  .fade-in { opacity: 1; transform: none; transition: none; }
+}
+
+/* ---------- header and menu ---------- */
+#header { background: var(--black); padding: 30px 0; height: 92px; position: fixed; left: 0; top: 0; right: 0; transition: all .5s; z-index: 997; }
+#header.header-fixed { background: rgba(1, 0, 0, .9); backdrop-filter: blur(5px); padding: 20px 0; height: 72px; }
+#header .container { display: flex; justify-content: space-between; align-items: flex-start; }
+/* The logo: orange line drawing, made by using logo.jpg as a mask on an orange box. */
+.logo-mask { display: inline-block; height: 55px; aspect-ratio: 429 / 640; background: var(--orange); transform: translateY(-10px); -webkit-mask: url(/images/logo.jpg) center / contain no-repeat; mask: url(/images/logo.jpg) center / contain no-repeat; }
+.nav-menu { display: flex; margin: 0; padding: 0; list-style: none; }
+.nav-menu li { position: relative; margin-left: 10px; }
+.nav-menu a { padding: 0 8px 10px; display: inline-block; color: var(--off-white); text-transform: uppercase; font-size: 13px; }
+.nav-menu a:before { content: ""; position: absolute; width: 100%; height: 2px; bottom: 0; left: 0; background: var(--orange); visibility: hidden; transform: scaleX(0); transition: all .3s ease-in-out; }
+.nav-menu a:hover:before, .nav-menu a.active:before { visibility: visible; transform: scaleX(1); }
+#mobile-nav-toggle { display: none; position: fixed; right: 0; top: 0; z-index: 999; margin: 20px 20px 0 0; border: 0; background: none; cursor: pointer; color: var(--white); font-size: 24px; }
+#mobile-nav { position: fixed; top: 0; bottom: 0; left: -260px; width: 260px; padding-top: 18px; background: var(--black); z-index: 998; transition: .4s; overflow-y: auto; }
+#mobile-nav a { display: block; color: var(--white); padding: 10px 22px 10px 15px; }
+body.mobile-nav-active { overflow: hidden; }
+body.mobile-nav-active #mobile-nav { left: 0; }
+@media (max-width: 768px) {
+  .nav-menu { display: none; }
+  #mobile-nav-toggle { display: inline; }
+  .logo-mask { height: 40px; }
+}
+
+/* ---------- buttons ---------- */
+.btn-solid, .btn-hollow { text-transform: uppercase; font: 500 16px "Poppins", sans-serif; letter-spacing: 1px; display: inline-block; padding: 8px 30px; border-radius: 50px; margin: 10px; cursor: pointer; }
+.btn-solid { background: var(--orange); border: 2px solid var(--orange); color: var(--white); }
+.btn-solid:hover { background: var(--blue); border-color: var(--blue); color: var(--white); }
+.btn-solid:disabled { opacity: .6; cursor: wait; }
+.btn-hollow { background: transparent; border: 2px solid var(--orange); color: var(--orange); user-select: none; }
+.btn-hollow:hover { background: var(--orange); color: var(--white); }
+
+/* ---------- section headings ---------- */
+.section-title { font-size: 32px; text-transform: uppercase; text-align: center; font-weight: 700; margin-bottom: 5px; }
+.section-description { text-align: center; padding-bottom: 40px; color: rgba(0, 0, 0, .7); }
+@media (max-width: 768px) { .section-title { font-size: 24px; } }
+
+/* ---------- contact and booking form ---------- */
+.contact-wrap { display: flex; flex-wrap: wrap; justify-content: center; gap: 30px; margin-top: 3rem; }
+.contact-info { flex: 0 1 260px; }
+.contact-form { flex: 0 1 460px; }
+.info div { overflow: hidden; }
+.info svg { float: left; width: 32px; height: 32px; fill: var(--orange); }
+.info p { padding: 0 0 10px 50px; margin-bottom: 20px; line-height: 22px; font-size: 14px; }
+.info a { color: var(--black); }
+.social-links { padding-bottom: 20px; }
+.social-links a { display: inline-flex; align-items: center; justify-content: center; background: var(--black); color: var(--white); border-radius: 50%; width: 36px; height: 36px; margin-right: 4px; transition: .3s; }
+.social-links a:hover { color: var(--orange); }
+.social-links svg { width: 18px; height: 18px; fill: currentColor; }
+.form-group { margin-bottom: 16px; }
+.form-control { display: block; width: 100%; padding: .5rem .75rem; font: 400 14px "Poppins", sans-serif; border: 1px solid #ced4da; border-radius: 0; background: var(--white); }
+.form-control:focus { outline: none; border-color: var(--orange); }
+.alert { display: none; text-align: center; padding: 15px; font-weight: 600; margin-bottom: 15px; color: var(--blue); border: 1px solid var(--blue); }
+.alert.show { display: block; }
+.alert--error { color: #c62828; border-color: #c62828; }
+
+/* ---------- footer ---------- */
+#footer { background: var(--black); padding: 30px 0; color: var(--orange); font-size: 14px; text-align: center; }
+#footer a { color: var(--orange); }
+#footer .cookie { margin-top: 6px; }
+.back-to-top { position: fixed; display: none; background: rgba(0, 0, 0, .2); color: var(--orange); padding: 6px 12px 9px; font-size: 16px; border-radius: 2px; right: 15px; bottom: 15px; }
+.back-to-top:hover { background: var(--orange); color: var(--white); }

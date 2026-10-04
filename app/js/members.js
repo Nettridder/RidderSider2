@@ -120,12 +120,13 @@ function settingsPage() {
     emailLevel: 'all',
     get app() { return this.$store.app },
     init() { this.emailLevel = this.app.me.email_level },
-    save() {
-      this.app.me.email_level = this.emailLevel;
+    async save() {
+      try { await this.app.save('members', this.app.me.id, { email_level: this.emailLevel }); } catch (error) { this.$store.ui.fail(error); return; }
       this.$store.ui.notify(this.emailLevel === 'all' ? 'Lagret. Du får e-postvarsel om opptellinger og påminnelser.' : 'Lagret. Du får bare viktige meldinger på e-post.');
     },
-    resetPassword() {
-      this.$store.ui.notify(`Vi har sendt en lenke til ${this.app.me.email}.`, 'Demo: ingen e-post blir sendt.');
+    async resetPassword() {
+      try { await api.post('password-request.php', { email: this.app.me.email }); } catch (error) { this.$store.ui.fail(error); return; }
+      this.$store.ui.notify(`Vi har sendt en lenke til ${this.app.me.email}.`, 'Lenken virker i 1 time.');
     },
   };
 }
@@ -189,15 +190,17 @@ function adminMembersPage() {
       fields.left_year = form.status === 'former' ? Number(form.left_year) : null;
       return fields;
     },
-    addMember() {
+    /* A new member gets no usable password. The invitation is the same email as "Glemt passord":
+       the member opens the link and chooses a password. */
+    async addMember() {
       const form = this.newMember;
       form.submitted = true;
       if (this.hasErrors(form)) { this.focusFirstInvalidField(); return; }
-      const member = {
-        id: nextId(this.db.members), created_at: timestampNow(), created_by: this.app.currentMemberId, last_login: null,
-        ...this.fieldsFromForm(form), email_level: 'all', image_file: 'portrett.png',
-      };
-      this.db.members.push(member);
+      let member;
+      try {
+        member = await this.app.save('members', null, this.fieldsFromForm(form));
+        await api.post('password-request.php', { email: member.email });
+      } catch (error) { this.fail(error); return; }
       this.newMember = this.emptyMember();
       this.notify(`${this.app.memberName(member)} er lagt til. Invitasjonen er sendt til ${member.email}.`);
     },
@@ -205,17 +208,17 @@ function adminMembersPage() {
       this.editedMember = { ...member, roles: [...member.roles], phone: member.phone || '', left_term: member.left_term || '', left_year: member.left_year || '', new_image_name: '', submitted: false };
       this.openDrawer('Rediger medlem', this.app.memberName(member), event);
     },
-    saveMember() {
+    async saveMember() {
       const form = this.editedMember;
       form.submitted = true;
       if (this.hasErrors(form)) { this.focusFirstInvalidField(); return; }
-      const member = this.app.member(form.id);
-      const fields = this.fieldsFromForm(form);
-      Object.assign(member, fields);
+      let member;
+      try { member = await this.app.save('members', form.id, this.fieldsFromForm(form)); } catch (error) { this.fail(error); return; }
       this.closeDrawer();
       this.notify(`Endringene for ${this.app.memberName(member)} er lagret.`);
     },
-    sendNewInvitation() {
+    async sendNewInvitation() {
+      try { await api.post('password-request.php', { email: this.editedMember.email }); } catch (error) { this.fail(error); return; }
       this.notify(`Ny invitasjon er sendt til ${this.editedMember.email}.`);
     },
     deleteBlockedReason(form) {
@@ -225,9 +228,9 @@ function adminMembersPage() {
       if (masters.length === 1 && masters[0].id === form.id) return 'Den siste med rollen Mester kan ikke fjernes.';
       return '';
     },
-    deleteMember() {
+    async deleteMember() {
       const member = this.app.member(this.editedMember.id);
-      this.db.members.splice(this.db.members.indexOf(member), 1);
+      try { await this.app.remove('members', member.id); } catch (error) { this.fail(error); return; }
       this.closeDrawer(false);
       this.notify(`${this.app.memberName(member)} er fjernet fra medlemslista.`);
       this.$nextTick(() => document.querySelector('main h1').focus());
@@ -298,11 +301,11 @@ function adminBoardPage() {
       });
       return columns;
     },
-    addBoard() {
+    async addBoard() {
       const form = this.newBoard;
       form.submitted = true;
       if (Object.keys(this.boardErrors(form)).length) { this.focusFirstInvalidField(); return; }
-      this.db.boards.push({ id: nextId(this.db.boards), created_at: timestampNow(), created_by: this.app.currentMemberId, ...this.columnsFromForm(form) });
+      try { await this.app.save('boards', null, this.columnsFromForm(form)); } catch (error) { this.fail(error); return; }
       this.notify(`Styret for ${format.semesterLong(form.year, form.term)} er lagret.`);
       this.newBoard = this.boardFormForNextSemester();
     },
@@ -310,16 +313,16 @@ function adminBoardPage() {
       this.editedBoard = this.boardFormFrom(board);
       this.openDrawer('Rediger styret', format.semesterLong(board.year, board.term), event);
     },
-    saveBoard() {
+    async saveBoard() {
       const form = this.editedBoard;
       form.submitted = true;
       if (Object.keys(this.boardErrors(form)).length) { this.focusFirstInvalidField(); return; }
-      Object.assign(this.db.boards.find(board => board.id === form.id), this.columnsFromForm(form));
+      try { await this.app.save('boards', form.id, this.columnsFromForm(form)); } catch (error) { this.fail(error); return; }
       this.closeDrawer();
       this.notify(`Styret for ${format.semesterLong(form.year, form.term)} er oppdatert.`);
     },
-    deleteBoard(board) {
-      this.db.boards.splice(this.db.boards.indexOf(board), 1);
+    async deleteBoard(board) {
+      try { await this.app.remove('boards', board.id); } catch (error) { this.fail(error); return; }
       this.confirmingDeleteId = null;
       this.notify(`Styret for ${format.semesterLong(board.year, board.term)} er slettet.`);
     },
@@ -355,17 +358,16 @@ function adminAttendancePage() {
       this.$refs.attendanceForm.scrollIntoView({ behavior: 'smooth', block: 'start' });
       this.$nextTick(() => document.getElementById('rehearsal-date').focus({ preventScroll: true }));
     },
-    submitAttendance() {
+    async submitAttendance() {
       const presentIds = [...this.presentIds].sort((a, b) => a - b);
       const dateLabel = format.fullDate(format.parseDate(this.rehearsalDate));
       const row = this.existingRow;
-      if (row) {
-        Object.assign(row, { present_member_ids: presentIds, updated_by: this.app.currentMemberId, updated_at: timestampNow() });
-        this.notify(`Opptellingen for ${dateLabel} er oppdatert: ${presentIds.length} til stede.`);
-      } else {
-        this.db.attendance.push({ id: nextId(this.db.attendance), created_at: timestampNow(), created_by: this.app.currentMemberId, updated_by: null, rehearsal_date: this.rehearsalDate, present_member_ids: presentIds });
-        this.notify(`Opptellingen for ${dateLabel} er sendt inn: ${presentIds.length} til stede.`);
-      }
+      try {
+        await this.app.save('attendance', row && row.id, row ? { present_member_ids: presentIds } : { rehearsal_date: this.rehearsalDate, present_member_ids: presentIds });
+      } catch (error) { this.fail(error); return; }
+      this.notify(row
+        ? `Opptellingen for ${dateLabel} er oppdatert: ${presentIds.length} til stede.`
+        : `Opptellingen for ${dateLabel} er sendt inn: ${presentIds.length} til stede.`);
     },
   });
 }
@@ -403,24 +405,30 @@ function adminAchievementsPage() {
       this.grantMemberId = '';
       this.openDrawer('Rediger achievement', achievement.title, event);
     },
-    saveAchievement() {
+    async saveAchievement() {
       const form = this.editedAchievement;
       form.submitted = true;
       if (!form.title.trim() || !form.description.trim()) { this.focusFirstInvalidField(); return; }
-      const achievement = this.db.achievements.find(row => row.id === form.id);
-      Object.assign(achievement, { title: form.title.trim(), description: form.description.trim(), is_secret: form.is_secret, image: form.new_image || achievement.image });
+      let achievement;
+      try {
+        achievement = await this.app.save('achievements', form.id, {
+          title: form.title.trim(), description: form.description.trim(), is_secret: form.is_secret, image: form.new_image || form.image,
+        });
+      } catch (error) { this.fail(error); return; }
       this.closeDrawer();
       this.notify(`«${achievement.title}» er lagret.`);
     },
-    grant() {
-      const member = this.app.member(this.grantMemberId);
+    async grant() {
+      const member = this.app.member(Number(this.grantMemberId));
       if (!member) return;
-      this.db.member_achievements.push({ id: nextId(this.db.member_achievements), created_at: timestampNow(), created_by: this.app.currentMemberId, member_id: member.id, achievement_id: this.editedAchievement.id });
+      try {
+        await this.app.save('member_achievements', null, { member_id: member.id, achievement_id: this.editedAchievement.id });
+      } catch (error) { this.fail(error); return; }
       this.grantMemberId = '';
       this.notify(`${this.app.memberName(member)} har fått «${this.editedAchievement.title}».`);
     },
-    revoke(holder) {
-      this.db.member_achievements.splice(this.db.member_achievements.indexOf(holder.row), 1);
+    async revoke(holder) {
+      try { await this.app.remove('member_achievements', holder.row.id); } catch (error) { this.fail(error); return; }
       this.notify(`«${this.editedAchievement.title}» er fjernet fra ${this.app.memberName(holder.member)}.`);
     },
   });

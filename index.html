@@ -1,0 +1,246 @@
+<!doctype html>
+<html lang="nb">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Mannskoret Arme Riddere</title>
+<meta name="description" content="Mannskoret Arme Riddere - Det offisielle mannskoret ved Universitetet i Bergen">
+<meta name="keywords" content="Mannskoret Arme Riddere, mannskor, Bergen, UiB, studenter">
+<link rel="icon" type="image/png" href="/images/MARlogo.png">
+<link rel="apple-touch-icon" href="/images/MARlogo.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@300;400;700&family=Poppins:wght@300;400;500;700&display=swap">
+<link rel="stylesheet" href="/css/global.css">
+<style>
+/* Styling for this page only. Shared styling is in css/global.css. */
+
+/* ---------- hero ---------- */
+#hero { width: 100%; height: 100vh; background: url(/images/hero26.jpg) center / cover; position: relative; }
+@media (min-width: 1024px) { #hero { background-attachment: fixed; } }
+#hero:before { content: ""; background: rgba(0, 0, 0, .6); position: absolute; inset: 0; }
+.hero-container { position: absolute; inset: 0; display: flex; justify-content: center; align-items: center; flex-direction: column; text-align: center; padding: 0 15px; }
+#hero h1 { margin: 30px 0 10px; font-size: 48px; font-weight: 700; line-height: 56px; text-transform: uppercase; color: var(--white); }
+#hero h2 { color: var(--off-white); margin-bottom: 50px; font-size: 24px; }
+@media (max-width: 768px) {
+  #hero h1 { font-size: 28px; line-height: 36px; }
+  #hero h2 { font-size: 18px; margin-bottom: 30px; }
+}
+
+/* ---------- countdown and facts ---------- */
+.infobr { background: var(--off-white); padding: 100px 0 60px; }
+.counters span { font-size: 48px; display: block; color: var(--orange); }
+.counters p { margin: 0 0 20px; font-size: 14px; }
+
+/* ---------- about ---------- */
+#about { padding: 80px 0; }
+#about .title { font-weight: 700; font-size: 32px; }
+#about p { line-height: 26px; }
+#about p:last-child { margin-bottom: 0; }
+@media (max-width: 991px) {
+  #about .order-2 { order: 2; }
+  #about .order-1 { order: 1; }
+}
+/* Gold shine over the logo: a soft gold spot cut to the line drawing (logo.jpg) that moves as you scroll. */
+.gold { display: inline-block; position: relative; width: 100%; }
+.gold img { display: block; width: 100%; height: auto; object-fit: contain; }
+.gold::after { content: ""; position: absolute; inset: 0; pointer-events: none; background: radial-gradient(closest-side at 40% 30%, gold, rgba(255, 255, 255, 0) 100%) no-repeat; background-size: 60% 60%; background-position: 40% var(--glare-y, 30%); -webkit-mask: url(/images/logo.jpg) center / contain no-repeat; mask: url(/images/logo.jpg) center / contain no-repeat; mix-blend-mode: screen; filter: blur(3px); }
+
+/* ---------- bli en ridder ---------- */
+#call-to-action { background: linear-gradient(rgba(0, 0, 0, .6), rgba(0, 0, 0, .6)), url(/images/carousel/ArmeRiddereLQ-3.jpg) fixed center / cover; padding: 80px 0; }
+.cta-title { color: var(--white); font-size: 28px; font-weight: 700; }
+.cta-text { color: var(--white); }
+#call-to-action .row { align-items: center; }
+#call-to-action .col-9 { flex: 0 0 75%; max-width: 75%; }
+#call-to-action .col-3b { flex: 0 0 25%; max-width: 25%; display: flex; justify-content: center; }
+@media (max-width: 991px) {
+  #call-to-action .col-9, #call-to-action .col-3b { flex: 0 0 100%; max-width: 100%; }
+}
+
+/* ---------- contact ---------- */
+#contact { background: var(--off-white); padding: 80px 0 40px; }
+</style>
+<script defer src="/js/global.js"></script>
+<script defer src="/js/countries.js"></script>  <!-- flags when you click "Land Erobret" -->
+<script defer src="/js/confetti.js"></script>   <!-- confetti on ?confetti=true -->
+<script defer src="/js/easter-egg.js"></script> <!-- knight game: type "ridder" or the Konami code -->
+<script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3/dist/cdn.min.js"></script>
+</head>
+<body data-page="hjem">
+<canvas id="confetti" style="position: fixed; inset: 0; pointer-events: none; z-index: 9999;"></canvas>
+
+<!-- ============ HJEM ============ -->
+<section id="hero">
+  <div class="hero-container">
+    <h1>Mannskoret Arme <span onclick="location.href = '?confetti=true'">Riddere</span></h1>
+    <h2>At bedåre og begeistre</h2>
+    <a href="/book-oss.html"><button class="btn-solid">Book oss!</button></a>
+  </div>
+</section>
+
+
+<main x-data>
+  <!-- Countdown to the next jubilee (20 February every year). Change the date in countdownSection() below. -->
+  <section class="infobr" id="countdown" x-data="countdownSection()">
+    <div class="container fade-in">
+      <div class="section-header">
+        <h3 class="section-title">Neste jubileum</h3>
+        <p class="section-description" x-text="dateText"></p>
+      </div>
+      <div class="row counters center">
+        <div class="col-3"><span x-text="days"></span><p>dager</p></div>
+        <div class="col-3"><span x-text="hours"></span><p>timer</p></div>
+        <div class="col-3"><span x-text="minutes"></span><p>minutter</p></div>
+        <div class="col-3"><span x-text="seconds"></span><p>sekunder</p></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ OM OSS ============ -->
+  <section id="about">
+    <div class="container">
+      <div class="row" style="align-items: center">
+        <div class="col-6 order-2">
+          <h2 class="title">Om oss</h2>
+          <p>Mannskoret Arme Riddere er det offisielle mannskoret ved Universitetet i Bergen. Vi består av <span x-text="SITE.members"></span> sangglade menn som etter beste evne forsøker å etterleve vår formålsparagraf: "At bedåre og begeistre med våre smektende mannsrøster og fortære vårt øl i festlig kameraderi".</p>
+          <p>Repertoaret vårt spenner seg fra klassisk nasjonalromantikk via egenskrevne humorsanger til velkjente coverlåter.</p>
+          <p>Vi ønsker å være en synlig del av bybildet og studentkulturen i Bergen og har tidligere opptrådt på Norske Talenter og under sykkel-VM. I tillegg til årlige vår- og julekonserter, samt konserten på universitetstrappen på 17. mai, gjennomfører vi hvert semester flere mindre faste konserter og arrangementer, blant annet på det Akademiske Kvarter.</p>
+          <p>For oss er det sosiale like viktig som det musikalske, og vi søker alltid nye hyggelige fjes. For å bli medlem av Mannskoret Arme Riddere må man være student ved en av utdanningsinstitusjonene i Bergen, men man må ikke gå på UiB. Har du spørsmål, ta kontakt med Rittmester på tlf <span x-text="SITE.contact.phone"></span> eller <span x-text="SITE.contact.email"></span></p>
+        </div>
+        <div class="col-6 order-1 fade-in center">
+          <div class="gold" x-data="goldShine()" @scroll.window="update()" @resize.window="update()"><img src="/images/logoColor.png" alt="Mannskoret Arme Riddere logo"></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ FAKTA ============ -->
+  <div x-data="{ flagsOpen: false }">
+    <section class="infobr" id="facts">
+      <div class="container fade-in">
+        <div class="section-header">
+          <h3 class="section-title">Oppsummert i tall</h3>
+          <p class="section-description"></p>
+        </div>
+        <div class="row counters center">
+          <div class="col-3"><span x-data="countUp(SITE.members)" x-text="value"></span><p>Sangglade Studenter</p></div>
+          <div class="col-3"><span x-data="countUp(SITE.countriesConquered)" x-text="value" @click="flagsOpen = !flagsOpen" style="cursor: pointer;" title="Vis landene"></span><p>Land Erobret</p></div>
+          <div class="col-3"><span x-data="countUp(SITE.founded)" x-text="value"></span><p>Oppstart</p></div>
+          <div class="col-3"><span x-data="countUp(SITE.knightsAllTime)" x-text="value"></span><p>Antall Riddere</p></div>
+        </div>
+      </div>
+    </section>
+    <!-- The flags come from js/countries.js -->
+    <section id="flagContainer" x-show="flagsOpen" x-cloak
+             x-effect="flagsOpen ? initializeFlagIcons('flagContainer', { circleSize: '70px', gap: '16px', shadowSpread: '8px', shadowOpacity: 0.15 }) : ($el.innerHTML = '')"></section>
+  </div>
+
+  <!-- ============ BLI EN RIDDER ============ -->
+  <section id="call-to-action">
+    <div class="container fade-in">
+      <div class="row">
+        <div class="col-9">
+          <h3 class="cta-title">Bli en <span id="easter-egg-trigger">ridder</span></h3>
+          <p class="cta-text">Arme Riddere har vanligvis opptak i begynnelsen av hvert semester. Mannskoret Arme Riddere er mer enn bare et kor: vi er en kameratgjeng! Vi fester, synger og har det gøy sammen. Alle kan komme på opptak og vi forutsetter ingen musikalsk erfaring.
+            Mannskoret Arme Riddere har etterhvert stabilisert seg på et musikalsk nivå som ligger markant høyere enn “dusjnivået”, men det er ikke et absolutt krav at du har kor- eller sangerfaring fra før. En bra stemme og entusiasme kan være nok til at du er en av de som får tilbud om medlemskap etter opptaksrunden.</p>
+        </div>
+        <div class="col-3b"><a class="btn-hollow" href="https://www.facebook.com/mannskoretarmeriddere/events/?ref=page_internal">Opptak</a></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ KONTAKT ============ -->
+  <section id="contact">
+    <div class="container fade-in">
+      <div class="section-header">
+        <h3 class="section-title">Kontakt oss</h3>
+        <p class="section-description">Lurer du på noe? Ta kontakt!</p>
+      </div>
+      <div class="contact-wrap">
+        <div class="contact-info">
+          <div class="info">
+            <div><span x-html="ICONS.place"></span><p x-text="SITE.contact.address"></p></div>
+            <div><span x-html="ICONS.mail"></span><p><a :href="'mailto:' + SITE.contact.email" x-text="SITE.contact.email"></a></p></div>
+            <div><span x-html="ICONS.phone"></span><p><a :href="phoneHref(SITE.contact.phone)" x-text="SITE.contact.phone"></a></p></div>
+          </div>
+          <div class="social-links">
+            <template x-for="link in SITE.social" :key="link.key">
+              <a :href="link.url" target="_blank" rel="noopener" :aria-label="link.label" x-html="ICONS[link.key]"></a>
+            </template>
+          </div>
+        </div>
+        <div class="contact-form" x-data="contactForm('contact')">
+          <div class="alert" :class="sent && 'show'">Takk for din melding! Vi tar kontakt så snart som mulig.</div>
+          <div class="alert alert--error" :class="error && 'show'" x-text="error"></div>
+          <form class="contactForm" @submit.prevent="send()">
+            <input type="text" tabindex="-1" autocomplete="off" hidden x-model="fields.website"><!-- honeypot for spam bots -->
+            <div class="form-group"><input class="form-control" type="text" placeholder="Ditt navn" required minlength="2" x-model="fields.name"></div>
+            <div class="form-group"><input class="form-control" type="email" placeholder="Din e-post" required x-model="fields.email"></div>
+            <div class="form-group"><input class="form-control" type="text" placeholder="Emne" required minlength="4" x-model="fields.subject"></div>
+            <div class="form-group"><textarea class="form-control" rows="5" placeholder="Din melding" required minlength="10" x-model="fields.message"></textarea></div>
+            <div class="center"><button type="submit" class="btn-solid" :disabled="sending">Send melding</button></div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<script>
+/* ---------- Neste jubileum: counts down to the next 20 February at 19:30 ---------- */
+function countdownSection() {
+  const nextJubilee = () => {
+    const now = new Date();
+    const date = new Date(now.getFullYear(), 1, 20, 19, 30);    // month 1 = February
+    if (date < now) date.setFullYear(date.getFullYear() + 1);
+    return date;
+  };
+  return {
+    target: nextJubilee(),
+    now: Date.now(),
+    get distance() { return Math.max(0, this.target - this.now) },
+    get dateText() { return this.target.toLocaleDateString('nb-NO', { day: 'numeric', month: 'long', year: 'numeric' }) },
+    get days() { return Math.floor(this.distance / 864e5) },
+    get hours() { return Math.floor(this.distance % 864e5 / 36e5) },
+    get minutes() { return Math.floor(this.distance % 36e5 / 6e4) },
+    get seconds() { return Math.floor(this.distance % 6e4 / 1e3) },
+    init() { setInterval(() => { this.now = Date.now(); }, 1000); },
+  };
+}
+
+/* ---------- Oppsummert i tall: counts from 0 up to the number when it scrolls into view ---------- */
+function countUp(target) {
+  return {
+    value: REDUCED_MOTION ? target : 0,
+    init() {
+      if (REDUCED_MOTION) return;
+      const observer = new IntersectionObserver(entries => {
+        if (!entries[0].isIntersecting) return;
+        observer.disconnect();
+        const start = performance.now();
+        const step = now => {
+          const progress = Math.min(1, (now - start) / 1500);
+          this.value = Math.round(target * progress);
+          if (progress < 1) requestAnimationFrame(step);
+        };
+        requestAnimationFrame(step);
+      }, { threshold: 0.5 });
+      observer.observe(this.$el);
+    },
+  };
+}
+
+/* ---------- Gold logo: the shine (.gold::after) follows the logo's position on screen ---------- */
+function goldShine() {
+  return {
+    update() {
+      const box = this.$el.getBoundingClientRect();
+      const percent = Math.max(0, Math.min(100, (1 - (box.top + box.height / 2) / innerHeight) * 100));
+      this.$el.style.setProperty('--glare-y', percent + '%');
+    },
+    init() { this.update() },
+  };
+}
+</script>
+</body>
+</html>

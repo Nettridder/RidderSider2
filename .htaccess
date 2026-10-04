@@ -1,0 +1,26 @@
+# Web server rules for the whole site (Apache on Domeneshop). In git, so the mirror restores it.
+
+Options -Indexes
+DirectoryIndex index.html
+
+# Never serve dotfiles, docs, SQL or other source-only files, even if they end up on the server.
+<FilesMatch "(^\.|\.(md|sql|py|example\.php)$)">
+  Require all denied
+</FilesMatch>
+
+<IfModule mod_headers.c>
+  Header always set X-Content-Type-Options "nosniff"
+  Header always set Referrer-Policy "strict-origin-when-cross-origin"
+  Header always set X-Frame-Options "SAMEORIGIN"
+</IfModule>
+
+RewriteEngine On
+
+# RidderWiki and MAR Games live on their own subdomains. Old links keep working, path included:
+# /ridderwiki/Videoarkiv -> https://ridderwiki.armeriddere.no/Videoarkiv
+RewriteRule ^ridderwiki(/.*)?$ https://ridderwiki.armeriddere.no$1 [R=301,L]
+RewriteRule ^margames(/.*)?$ https://margames.armeriddere.no$1 [R=301,L]
+
+# The old PHP pages are now HTML.
+RewriteRule ^index\.php$ / [R=301,L]
+RewriteRule ^(medlemmer|book-oss)\.php$ /$1.html [R=301,L]

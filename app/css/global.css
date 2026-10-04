@@ -35,6 +35,7 @@
   --radius: 10px;
   --ease: cubic-bezier(0.2, 0.7, 0.2, 1);
 
+  --space-md: 100px;
   --page-gutter: clamp(1rem, 4vw, 2.5rem);
   --page-max-width: 72rem;
   --content-width: 54rem;
@@ -216,7 +217,7 @@ select.input option { background: var(--color-surface); }
 
 /* ==================== Layout: header, menus, notices ==================== */
 
-.container { max-width: var(--page-max-width); margin: 0 auto; padding: 0 var(--page-gutter); }
+.container { max-width: var(--page-max-width); margin: 0 auto; padding-left: var(--space-md); padding-right: var(--space-md); }
 .page { padding-top: clamp(2.25rem, 7vh, 4.5rem); padding-bottom: calc(var(--bottom-menu-height) + var(--nested-menu-height) + var(--sub-menu-height) + var(--safe-area-bottom)); }
 
 /* ---------- header ---------- */

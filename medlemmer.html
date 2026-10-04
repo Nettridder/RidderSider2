@@ -1,0 +1,106 @@
+<!doctype html>
+<html lang="nb">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Medlemmer - Mannskoret Arme Riddere</title>
+<meta name="description" content="Mannskoret Arme Riddere - Det offisielle mannskoret ved Universitetet i Bergen">
+<meta name="keywords" content="Mannskoret Arme Riddere, mannskor, Bergen, UiB, studenter">
+<link rel="icon" type="image/png" href="/images/MARlogo.png">
+<link rel="apple-touch-icon" href="/images/MARlogo.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@300;400;700&family=Poppins:wght@300;400;500;700&display=swap">
+<link rel="stylesheet" href="/css/global.css">
+<style>
+/* Styling for this page only. Shared styling is in css/global.css. */
+
+/* ---------- members ---------- */
+#team { padding: 130px 0 60px; position: relative; }
+.margames { position: absolute; top: 100px; right: 20px; width: 45px; z-index: 1; }
+.margames img { display: block; width: 100%; }
+.member-row { display: flex; flex-wrap: wrap; justify-content: center; align-items: flex-start; margin-bottom: 30px; }
+.member { text-align: center; margin-bottom: 20px; width: 25%; padding: 0 15px; }
+@media (max-width: 991px) { .member { width: 50%; } }
+@media (max-width: 480px) { .member { width: 100%; } }
+.member .pic { margin-bottom: 15px; overflow: hidden; height: 260px; background: var(--off-white); display: flex; align-items: center; justify-content: center; }
+.member .pic img { max-width: 100%; max-height: 100%; object-fit: contain; }
+.member h4 { font-weight: 700; margin-bottom: 2px; font-size: 18px; }
+.member span { font-style: italic; display: block; font-size: 13px; }
+/* Coloured frame around the photo for the highest ranks. */
+.storridder-border, .kommandorridder-border, .rafk-border { padding: 7px; }
+.storridder-border { background: linear-gradient(40deg, #f6dba6, #ffebc4, #f0be79, #8f653b, #673d22, #ba7f3b, #eebc70); }
+.kommandorridder-border { background: linear-gradient(40deg, #E7E7E7, #A1A19F, #706F6B, #4D4C49, #63625D, #95948F); }
+.rafk-border { background: linear-gradient(40deg, #F0CAB2, #A47C6C, #7F5B4A, #AC836D, #AB836E); }
+</style>
+<script defer src="/js/global.js"></script>
+<script defer src="/js/confetti.js"></script>   <!-- confetti on ?confetti=true -->
+<script defer src="/js/easter-egg.js"></script> <!-- knight game: type "ridder" or the Konami code -->
+<script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3/dist/cdn.min.js"></script>
+</head>
+<body data-page="medlemmer">
+<canvas id="confetti" style="position: fixed; inset: 0; pointer-events: none; z-index: 9999;"></canvas>
+
+<main x-data>
+  <!-- ============ MEDLEMMER ============ -->
+  <section id="team" x-data="membersSection()">
+    <div class="margames"><a href="/margames" aria-label="MARgames"><img src="/images/MARgamesIcon.png" alt="MARgames"></a></div>
+
+    <p class="center" x-show="failed" x-cloak>Kunne ikke hente medlemmene akkurat nå. Prøv igjen senere.</p>
+
+    <!-- One block per voice group, from api/public.php (active members with show_public) -->
+    <template x-for="section in sections" :key="section.key">
+      <div class="container fade-in">
+        <div class="section-header"><h3 class="section-title" x-text="section.title"></h3><p class="section-description"></p></div>
+        <div class="member-row">
+          <template x-for="member in section.members" :key="member.id">
+            <div class="member">
+              <div class="pic"><img :class="RANK_BORDERS[member.rank]" :src="mediaUrl('images/profile/' + member.image_file)" :alt="name(member)" loading="lazy" @error="$el.src = '/images/MARlogo.png'"></div>
+              <h4 x-text="name(member)"></h4>
+              <span x-text="RANK_LABELS[member.rank]"></span>
+            </div>
+          </template>
+        </div>
+      </div>
+    </template>
+  </section>
+</main>
+
+<script>
+/* ---------- Medlemmer: active members shown publicly, grouped by voice; the current dirigent first ---------- */
+const VOICE_SECTIONS = [
+  { key: 'conductor', title: 'Dirigent' },
+  { key: 'T1', title: '1.Tenor' },
+  { key: 'T2', title: '2.Tenor' },
+  { key: 'B1', title: '1.Bass' },
+  { key: 'B2', title: '2.Bass' },
+];
+const RANK_LABELS = {
+  aspirant: 'Aspirant', knekt: 'Knekt', ridder: 'Ridder', ridder_1st_class: 'Ridder av 1. klasse',
+  kommandorridder: 'Kommandørridder', storridder: 'Storridder',
+};
+const RANK_BORDERS = { storridder: 'storridder-border', kommandorridder: 'kommandorridder-border', ridder_1st_class: 'rafk-border' };
+
+function membersSection() {
+  return {
+    sections: [],
+    failed: false,
+    name: member => member.first_name + ' ' + member.last_name,
+    async init() {
+      try {
+        const response = await fetch(API_URL + 'public.php');
+        if (!response.ok) throw new Error(response.status);
+        const data = await response.json();
+        const group = member => member.id === data.conductor_id ? 'conductor' : member.voice_group;
+        this.sections = VOICE_SECTIONS
+          .map(section => ({ ...section, members: data.members.filter(member => group(member) === section.key) }))
+          .filter(section => section.members.length);
+        this.$nextTick(() => watchFadeIns(this.$el));
+      } catch (error) {
+        this.failed = true;
+      }
+    },
+  };
+}
+</script>
+</body>
+</html>
