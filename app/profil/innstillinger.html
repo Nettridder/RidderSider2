@@ -2,6 +2,7 @@
 <html lang="nb">
 <head>
 <meta charset="utf-8">
+<script>/* theme before anything is drawn, so light mode doesn't flash dark (see THEME in js/global.js) */ try { if (localStorage.getItem('theme') === 'light') document.documentElement.dataset.theme = 'light'; } catch (error) {}</script>
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Innstillinger – Mannskoret Arme Riddere</title>
 <link rel="stylesheet" href="../css/global.css">
@@ -34,6 +35,17 @@
         <button class="button" type="submit" :disabled="emailLevel === app.me.email_level">Lagre</button>
       </div>
     </form>
+
+    <section class="card settings-card settings-theme" aria-labelledby="theme-title">
+      <fieldset class="field settings-question">
+        <legend id="theme-title" class="settings-question__text">Utseende</legend>
+        <div class="segmented" role="radiogroup" aria-label="Utseende">
+          <button type="button" role="radio" :aria-checked="theme === 'dark'" :aria-pressed="theme === 'dark'" @click="setTheme('dark')">Mørk</button>
+          <button type="button" role="radio" :aria-checked="theme === 'light'" :aria-pressed="theme === 'light'" @click="setTheme('light')">Lys</button>
+        </div>
+        <p class="hint">Lys ligner den gamle nettsiden: hvit bakgrunn med oransje topp og detaljer. Valget gjelder denne enheten og endres med en gang.</p>
+      </fieldset>
+    </section>
 
     <section class="settings-admin" aria-labelledby="admin-set-title">
       <h2 id="admin-set-title" class="section-title">Satt av admin</h2>

@@ -2,6 +2,7 @@
 <html lang="nb">
 <head>
 <meta charset="utf-8">
+<script>/* theme before anything is drawn, so light mode doesn't flash dark (see THEME in js/global.js) */ try { if (localStorage.getItem('theme') === 'light') document.documentElement.dataset.theme = 'light'; } catch (error) {}</script>
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Logg inn – Mannskoret Arme Riddere</title>
 <link rel="stylesheet" href="css/global.css">
@@ -16,6 +17,9 @@
 .login__form .field { margin: 0; }
 .login__form .input { background: var(surface--color-); border-color: rgba(255, 255, 255, 0.4); color: var(--color-text); opacity: 0.9;}
 .login__form .input::placeholder { color: rgba(255, 255, 255, 0.8); }
+/* Light theme: the fields above are white-on-white, so give them a visible border and background */
+[data-theme="light"] .login__form .input { background: var(--color-surface); border-color: var(--color-border); opacity: 1; }
+[data-theme="light"] .login__form .input::placeholder { color: var(--color-text-faint); }
 .login__forgot { justify-self: start; }
 </style>
 <script defer src="js/global.js"></script>

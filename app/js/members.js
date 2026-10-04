@@ -118,7 +118,10 @@ function achievementsPage() {
 function settingsPage() {
   return {
     emailLevel: 'all',
+    theme: THEME.get(),
     get app() { return this.$store.app },
+    /* Appearance changes at once and is remembered on this device; nothing to save. */
+    setTheme(theme) { this.theme = theme; THEME.set(theme); },
     init() { this.emailLevel = this.app.me.email_level },
     async save() {
       try { await this.app.save('members', this.app.me.id, { email_level: this.emailLevel }); } catch (error) { this.$store.ui.fail(error); return; }

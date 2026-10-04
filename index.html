@@ -40,10 +40,43 @@
   #about .order-2 { order: 2; }
   #about .order-1 { order: 1; }
 }
-/* Gold shine over the logo: a soft gold spot cut to the line drawing (logo.jpg) that moves as you scroll. */
-.gold { display: inline-block; position: relative;}
-.gold img { display: block; width: 100%; height: auto; object-fit: contain; -webkit-user-drag: none;}
-.gold::after { content: ""; position: absolute; inset: 0; pointer-events: none; background-image: radial-gradient(closest-side at 40% 30%, gold, rgba(255, 255, 255, 0) 100%); background-repeat: no-repeat; background-size: var(--background-size, 60% 60%); /* Use a single CSS variable for vertical glare position (set by JS) */ background-position: 40% var(--glare-y, 30%); -webkit-mask-image: url('../img/logo.jpg'); -webkit-mask-repeat: no-repeat; -webkit-mask-position: center; -webkit-mask-size: contain; mask-image: url('../img/logo.jpg'); mask-repeat: no-repeat; mask-position: center; mask-size: contain; mix-blend-mode: screen; opacity: 1; filter: blur(3px); will-change: background-position, opacity; transition: opacity 200ms linear; }
+/* Gold shine over the logo — the same as the old site (RidderSider: css/style.css "gold shine on logo" + js/glare.js).
+   A large soft gold spot (the size of the browser window, --background-size) cut to the logo's shape (logo.jpg),
+   moving down over the logo as you scroll (--glare-y). Both values are set by goldShine() below. */
+.gold {
+  display: inline-block;
+  position: relative;
+}
+.gold img {
+  display: block;
+  width: 100%;
+  height: auto;
+  object-fit: contain;
+  -webkit-user-drag: none;
+}
+.gold::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background-image: radial-gradient(closest-side at 40% 30%, gold, rgba(255, 255, 255, 0) 100%);
+  background-repeat: no-repeat;
+  background-size: var(--background-size, 60% 60%);
+  background-position: 40% var(--glare-y, 30%);
+  -webkit-mask-image: url('/images/logo.jpg');
+  -webkit-mask-repeat: no-repeat;
+  -webkit-mask-position: center;
+  -webkit-mask-size: contain;
+  mask-image: url('/images/logo.jpg');
+  mask-repeat: no-repeat;
+  mask-position: center;
+  mask-size: contain;
+  mix-blend-mode: screen;
+  opacity: 1;
+  filter: blur(3px);
+  will-change: background-position, opacity;
+  transition: opacity 200ms linear;
+}
 
 /* ---------- bli en ridder ---------- */
 #call-to-action { background: linear-gradient(rgba(0, 0, 0, .6), rgba(0, 0, 0, .6)), url(/images/carousel/ArmeRiddereLQ-3.jpg) fixed center / cover; padding: 80px 0; }
@@ -107,7 +140,10 @@
           <p>For oss er det sosiale like viktig som det musikalske, og vi søker alltid nye hyggelige fjes. For å bli medlem av Mannskoret Arme Riddere må man være student ved en av utdanningsinstitusjonene i Bergen, men man må ikke gå på UiB. Har du spørsmål, ta kontakt med Rittmester på tlf <span x-text="SITE.contact.phone"></span> eller <span x-text="SITE.contact.email"></span></p>
         </div>
         <div class="col-6 order-1 fade-in center">
-          <div class="gold" x-data="goldShine()" @scroll.window="update()" @resize.window="update()"><img src="/images/logoColor.png" alt="Mannskoret Arme Riddere logo"></div>
+          <!-- The logo with the moving gold shine (same image and markup as the old site's "Om oss") -->
+          <div class="gold" x-data="goldShine()" @scroll.window.passive="schedule()" @resize.window="schedule()" @orientationchange.window="schedule()">
+            <img src="/images/MARlogo.png" class="img-fluid rounded" alt="Mannskoret Arme Riddere Logo" style="width: 100%; height: auto;">
+          </div>
         </div>
       </div>
     </div>
@@ -230,15 +266,27 @@ function countUp(target) {
   };
 }
 
-/* ---------- Gold logo: the shine (.gold::after) follows the logo's position on screen ---------- */
+/* ---------- Gold logo: the moving shine, same maths as the old site's js/glare.js + index.php ---------- */
 function goldShine() {
+  let ticking = false;
   return {
+    /* --background-size: the gold spot is as big as the browser window (old refreshGold()).
+       --glare-y: (top of the logo + 3 % of its height) as a share of the window height × 200 % (old glare.js). */
     update() {
+      const root = document.documentElement;
+      root.style.setProperty('--background-size', `${root.clientWidth}px ${root.clientHeight}px`);
       const box = this.$el.getBoundingClientRect();
-      const percent = Math.max(0, Math.min(100, (1 - (box.top + box.height / 2) / innerHeight) * 100));
-      this.$el.style.setProperty('--glare-y', percent + '%');
+      const originY = box.top + box.height * 0.03;
+      this.$el.style.setProperty('--glare-y', `${(originY / window.innerHeight) * 200}%`);
+      ticking = false;
     },
-    init() { this.update() },
+    /* At most one update per frame while scrolling (like the old requestAnimationFrame code). */
+    schedule() {
+      if (ticking) return;
+      ticking = true;
+      requestAnimationFrame(() => this.update());
+    },
+    init() { this.$nextTick(() => this.update()); window.addEventListener('load', () => this.update()); },
   };
 }
 </script>

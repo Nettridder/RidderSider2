@@ -11,6 +11,21 @@
 
 /* ==================== Data, member and rules ==================== */
 
+/* ==================== Theme (Mørk / Lys) ==================== */
+
+/* Chosen in Profil -> Innstillinger -> Utseende and remembered on this device (localStorage).
+   Every page's <head> has a one-line script that sets data-theme="light" before drawing, so it doesn't flash;
+   the colours are in css/global.css under "Light theme". */
+const THEME = {
+  key: 'theme',
+  get() { try { return localStorage.getItem(this.key) === 'light' ? 'light' : 'dark'; } catch (error) { return 'dark'; } },
+  set(theme) {
+    document.documentElement.dataset.theme = theme;
+    try { localStorage.setItem(this.key, theme); } catch (error) { /* private browsing: works until the page is closed */ }
+  },
+};
+document.documentElement.dataset.theme = THEME.get();
+
 const PAGE_PATH = document.body.dataset.page || 'hjem';
 const APP_ROOT = '../'.repeat(PAGE_PATH.split('/').length - 1);
 const API_URL = APP_ROOT + '../api/';

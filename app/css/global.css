@@ -455,3 +455,56 @@ select.input option { background: var(--color-surface); }
 .search-select__result:hover, .search-select__result:focus-visible { background: var(--color-surface); }
 .search-select__result.is-chosen { color: var(--color-accent); }
 .search-select__none { padding: 0.5rem 0.75rem; color: var(--color-text-faint); }
+
+/* ==================== Light theme ====================
+   Chosen in Profil -> Innstillinger -> Utseende (stored per device, see THEME in js/global.js).
+   Looks like the old site (.info/StylingRefference.md): white background, near-black text, the rust-orange
+   #EC6C00 as the one brand colour for the header and details, brick red #b8430a where text needs more contrast. */
+:root[data-theme="light"] {
+  color-scheme: light;
+  --color-login-background: rgba(255, 255, 255, 0.93);
+  --color-background: #ffffff;
+  --color-surface: #f5f5f7;
+  --color-surface-raised: #ebebef;
+  --color-border: #d9d9de;
+  --color-border-soft: #e8e8ec;
+  --color-text: #1c1a18;
+  --color-text-dim: #4f4a44;
+  --color-text-faint: #857e75;
+  --color-accent: #ec6c00;
+  --color-accent-bright: #b8430a;
+  --color-accent-soft: rgba(236, 108, 0, 0.1);
+  --color-on-accent: #ffffff;
+
+  --color-known: #3f8a2f;
+  --color-partly-known: #b0860b;
+  --color-unknown: #c8402f;
+  --color-known-soft: rgba(63, 138, 47, 0.12);
+  --color-unknown-soft: rgba(200, 64, 47, 0.1);
+}
+:root:not([data-theme="light"]) { color-scheme: dark; }
+
+/* Orange header with white text and a white logo, like the old site's coloured header */
+[data-theme="light"] .site-header { background: var(--color-accent); color: #ffffff; }
+[data-theme="light"] .brand__logo { filter: brightness(0) invert(1); }
+[data-theme="light"] .profile-button__details { color: rgba(255, 255, 255, 0.85); }
+[data-theme="light"] .profile-button:hover { background: rgba(255, 255, 255, 0.16); }
+[data-theme="light"] .profile-button:focus-visible { outline-color: #ffffff; }
+
+/* Menus at the bottom: white with an orange marker on the active item */
+[data-theme="light"] .main-menu { background: #ffffff; }
+[data-theme="light"] .sub-menu { background: var(--color-surface); box-shadow: 0 -6px 18px rgba(0, 0, 0, 0.06); }
+
+/* Framed profile photo: a soft, barely-there shadow on white */
+[data-theme="light"] .portrait { box-shadow: 0 2px 8px rgba(0, 0, 0, 0.14), 0 0 0 1px rgba(0, 0, 0, 0.06); }
+[data-theme="light"] .portrait--small { box-shadow: 0 1px 5px rgba(0, 0, 0, 0.14), 0 0 0 1px rgba(0, 0, 0, 0.06); }
+
+/* Text on coloured buttons and ticks needs to be white on the stronger light-theme colours */
+[data-theme="light"] .button--danger-filled { color: #ffffff; }
+[data-theme="light"] .button--danger-filled:hover { background: #a93526; }
+[data-theme="light"] .button--danger { border-color: rgba(200, 64, 47, 0.45); }
+[data-theme="light"] .attendance-member__check svg { color: #ffffff; }
+[data-theme="light"] .attendance-member[aria-pressed="true"] { border-color: rgba(63, 138, 47, 0.45); }
+[data-theme="light"] .overlay-backdrop { background: rgba(28, 26, 24, 0.45); }
+/* Selected choice in Ja/Nei-style buttons: a white raised chip with an orange underline, clear on a light background */
+[data-theme="light"] .segmented button[aria-pressed="true"] { background: #ffffff; color: var(--color-text); font-weight: 500; box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12), inset 0 -2px 0 var(--color-accent); }

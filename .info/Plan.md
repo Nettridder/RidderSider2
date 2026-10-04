@@ -459,3 +459,16 @@ Still open / needs Kristian:
   - Admin gets both.
   - The last Admin cannot lose the role.
   - The old name `master` is now refused ("Ukjent rolle.").
+
+### 2026-10-05: light mode in the app
+- Profil → Innstillinger → **Utseende**: Mørk / Lys. The choice is saved in the browser (`localStorage` key `theme`), not in the database.
+- Light mode looks like the old site: white background, orange header and orange details. The colours are the `:root[data-theme="light"]` tokens at the end of `app/css/global.css`.
+- Each app page has a small inline script at the top of `<head>`. It sets the theme before anything is drawn, so light mode does not flash dark. The `THEME` helper in `app/js/global.js` reads and changes the theme.
+- The login page has its own fix for light mode: its inputs used a white border that could not be seen on white.
+
+### 2026-10-05: gold shine on the logo (public front page)
+- `www/index.html` now uses the old site's shine exactly: the same image (`/images/MARlogo.png`), the same `.gold::after` CSS (mask `/images/logo.jpg`), and the same maths as the old `js/glare.js` + `refreshGold()`:
+  - `--glare-y` = (top of the logo + 3 % of its height) ÷ window height × 200 %
+  - `--background-size` = the window size in px
+- It updates at most once per frame on scroll, resize and orientation change (`goldShine()` in the page script).
+- Checked against the old site side by side at three scroll positions: the values and the screenshots are the same.
