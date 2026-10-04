@@ -208,9 +208,16 @@ function songPage() {
 
     async renderPdf(url) {
       pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
-      const pdf = await pdfjsLib.getDocument(url).promise;
+      await this.$nextTick();   // #sheet-pages is inside an x-if that Alpine draws just after start
       const container = document.getElementById('sheet-pages');
       if (!container) return;
+      let pdf;
+      try {
+        pdf = await pdfjsLib.getDocument(url).promise;
+      } catch (error) {
+        container.innerHTML = '<p class="empty-state">Fant ikke notefilen. Si fra til Note-admin.</p>';
+        return;
+      }
       container.innerHTML = '';
       for (let i = 1; i <= pdf.numPages; i++) {
         const page = await pdf.getPage(i);
@@ -332,6 +339,11 @@ function pitchPipePage() {
 
 /* ==================== Note-admin: Sanger (noter/admin/sanger) ==================== */
 
+/* Where song files live inside storage/ (the folders on the server). The database stores the full path,
+   e.g. "songs/melody/Bromance_Mix.mp3"; the form only shows the file name. */
+const SONG_FOLDERS = { audio: 'songs/melody/', pitch: 'songs/melody/', sheet: 'songs/pdf/' };
+const songFilePath = (file, type) => !file || file.includes('/') ? file : SONG_FOLDERS[type] + file;
+
 const emptySongForm = () => ({ id: null, name: '', genreIds: [], isSecret: false, lyrics: '', choreographyUrl: '', files: [], showErrors: false });
 
 function adminSongsPage() {
@@ -381,7 +393,7 @@ function adminSongsPage() {
         song_genres: form.genreIds.map(genreId => ({ genre_id: genreId })),
         song_voice_files: form.files.map((row, index) => ({
           name: row.name.trim() || (row.voice ? LABELS.voices[row.voice] : LABELS.fileTypes[row.type]),
-          file: row.file || null, voice: row.voice || null, type: row.type,
+          file: songFilePath(row.file, row.type) || null, voice: row.voice || null, type: row.type,
           start_note: row.type === 'pitch' ? (row.startNote.trim() || null) : null, sort_order: index + 1,
         })),
       });

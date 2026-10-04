@@ -403,3 +403,10 @@ Still open / needs Kristian:
 - **First password:** use "Glemt passord" on the login page (needs mail), or run `php www/db/tools/set_password.php` and paste the printed `UPDATE` line in phpMyAdmin.
 - **Fixed:** the app home page crashed when there were no documents yet. The "Nytt dokument" box is now `x-if`.
 - **Tested** on an empty MariaDB 10.11: both guards; 21 tables created; login; admin can save; nothing secret in `bootstrap.php`; all 24 app pages without errors, both empty and with data.
+
+### 2026-10-04: song file paths
+- Song files on the server are in `storage/songs/melody/` (sound and pitch) and `storage/songs/pdf/` (sheet music). These are the folder names already in use; the earlier plan said `songs/audio` / `songs/sheets`.
+- Note-admin only shows the file name. When the song is saved, `SONG_FOLDERS` in `app/js/songs.js` adds the folder, so the database always holds the full path (e.g. `songs/melody/Bromance_Mix.mp3`).
+- `db/migrations/003_fix_song_file_paths.sql` adds the folder to rows saved before this fix. Run it once; running it twice is safe.
+- A missing PDF shows "Fant ikke notefilen" instead of an error.
+- The app no longer requests the sample `database/google-calendar.json`, so the calendar is empty until `api/calendar.php` exists.

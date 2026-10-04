@@ -15,8 +15,6 @@ const PAGE_PATH = document.body.dataset.page || 'hjem';
 const APP_ROOT = '../'.repeat(PAGE_PATH.split('/').length - 1);
 const API_URL = APP_ROOT + '../api/';
 const LOGO_URL = APP_ROOT + '../images/logoColor.png';
-/* Temporary: the calendar is still the mock file until api/calendar.php exists (see .info/Plan.md). */
-const DATABASE_URL = APP_ROOT + '../database/';
 /* Pages that work without login. Every other page sends you to logg-inn.html. */
 const PUBLIC_PAGES = ['logg-inn', 'nytt-passord'];
 
@@ -153,7 +151,7 @@ document.addEventListener('alpine:init', () => {
         const [me, database, calendar] = await Promise.all([
           api.get('me.php'),
           api.get('bootstrap.php'),
-          fetch(DATABASE_URL + 'google-calendar.json').then(response => response.json()).catch(() => ({ items: [] })),
+          Promise.resolve({ items: [] }),   // TODO: api/calendar.php (plan step 8) — empty calendar until then
         ]);
         this.currentMemberId = me.member.id;
         this.db = database;
