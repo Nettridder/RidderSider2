@@ -12,6 +12,8 @@ jobs:
     environment: RidderSider2
     steps:
       - uses: actions/checkout@v4
+        with:
+          persist-credentials: false   # don't write the GitHub token into .git/config
 
       - name: Install lftp
         run: sudo apt-get update && sudo apt-get install -y lftp
@@ -21,9 +23,12 @@ jobs:
           mkdir -p ~/.ssh
           echo "${{ secrets.SFTP_KNOWN_HOSTS }}" >> ~/.ssh/known_hosts
 
-      # Not needed on the web server: docs/specs (.info) and SQL migrations (db) are run by hand.
-      - name: Remove source-only folders from the upload
-        run: rm -rf .info db
+      # Copy only the website into /tmp/site and upload that folder, never the checkout itself.
+      # Left out: git's own files (.git = the whole history, must never be public), the workflow (.github),
+      # docs/specs (.info) and SQL migrations (db, run by hand).
+      # Anything left out is also deleted from the server by "mirror --delete" below.
+      - name: Collect the files to upload
+        run: rsync -a --exclude .git --exclude .gitignore --exclude .github --exclude .info --exclude db ./ /tmp/site/
 
       # dev only: browser password popup so the public and Google can't see the unfinished site.
       # Set the secret DEV_HTPASSWD_PATH to the absolute server path of ~/private/dev.htpasswd.
@@ -32,19 +37,16 @@ jobs:
           HTPASSWD_PATH: ${{ secrets.DEV_HTPASSWD_PATH }}
         run: |
           if [ -n "$HTPASSWD_PATH" ]; then
-            printf '\nAuthType Basic\nAuthName "Arme Riddere dev"\nAuthUserFile %s\nRequire valid-user\n' "$HTPASSWD_PATH" >> .htaccess
+            printf '\nAuthType Basic\nAuthName "Arme Riddere dev"\nAuthUserFile %s\nRequire valid-user\n' "$HTPASSWD_PATH" >> /tmp/site/.htaccess
           fi
 
-      - name: Mirror repo to server (extras are deleted)
+      - name: Mirror the site to the server (extras are deleted)
         env:
           LFTP_PASSWORD: ${{ secrets.SFTP_PASS }}
         run: |
           lftp --env-password -u "${{ secrets.SFTP_USER }}" sftp://ssh.domeneshop.no -e "
             set cmd:fail-exit yes;
-            mirror -R --delete --verbose \
-              --exclude-glob .git* \
-              --exclude .github/ \
-              ./ dev/ ;
+            mirror -R --delete --verbose /tmp/site/ dev/ ;
             bye"
 
       - name: Verify server matches repo
@@ -56,4 +58,4 @@ jobs:
             set cmd:fail-exit yes;
             mirror --verbose dev/ /tmp/live ;
             bye"
-          diff -r -q --exclude=.git --exclude=.github . /tmp/live
+          diff -r -q /tmp/site /tmp/live

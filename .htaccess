@@ -16,6 +16,10 @@ DirectoryIndex index.html
 
 RewriteEngine On
 
+# Never serve anything inside a folder or file whose name starts with "." (like .git/config),
+# except .well-known/ which certificates need. The FilesMatch rule above only checks the file name itself.
+RewriteRule (^|/)\.(?!well-known(/|$)) - [F]
+
 # RidderWiki and MAR Games live on their own subdomains. Old links keep working, path included:
 # /ridderwiki/Videoarkiv -> https://ridderwiki.armeriddere.no/Videoarkiv
 RewriteRule ^ridderwiki(/.*)?$ https://ridderwiki.armeriddere.no$1 [R=301,L]
