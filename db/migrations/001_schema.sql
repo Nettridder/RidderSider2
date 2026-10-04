@@ -11,6 +11,12 @@
 --   * Semester = year smallint + term enum('spring','autumn').
 
 SET NAMES utf8mb4;
+
+-- SAFETY: stop at once if this is run in the old live site's database. Then phpMyAdmin shows the error
+-- "Subquery returns more than 1 row" on the line below. Pick the dev database (left in phpMyAdmin) and run again.
+SET @STOP_this_is_the_live_database_choose_the_dev_database = IF(DATABASE() = 'armeriddere', (SELECT 1 UNION SELECT 2), 1);
+SET @STOP_old_site_tables_found_choose_the_dev_database = IF(EXISTS(SELECT 1 FROM information_schema.TABLES WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME IN ('Songar', 'Sjangrar', 'mainwp_posts')), (SELECT 1 UNION SELECT 2), 1);
+
 SET FOREIGN_KEY_CHECKS = 0;
 
 -- ==================== Members ====================

@@ -176,7 +176,9 @@
           <a class="text-link" href="ridderdata/kalender.html">Åpne kalenderen</a>
         </section>
 
-        <section class="card card--outlined latest-document home-grid__document" aria-labelledby="document-title-label" x-show="latestDocument">
+        <!-- x-if (not x-show): only built when there is a document, so latestDocument.title never runs on an empty list -->
+        <template x-if="latestDocument">
+        <section class="card card--outlined latest-document home-grid__document" aria-labelledby="document-title-label">
           <div class="latest-document__top">
             <h2 id="document-title-label" class="label">Nytt dokument</h2>
             <span class="badge" x-show="!documentOpened">Ny</span>
@@ -190,6 +192,7 @@
           </div>
           <a class="text-link" href="ridderdata/dokumenter.html">Alle dokumenter</a>
         </section>
+        </template>
       </div>
     </div>
   </div>

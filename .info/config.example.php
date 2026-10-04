@@ -1,20 +1,21 @@
 <?php
 /* TEMPLATE for ~/private/config.php on the server (one level ABOVE the dev/ folder, never inside it).
 
-   Copy this file, fill in the real values and upload it with FileZilla to ~/private/config.php.
+   A filled-in copy lives locally in RidderSider2/private/config.php (outside git).
+   Fill in the real values and upload it with FileZilla to ~/private/config.php.
    Never commit the real file to git. The API reads it from api/_lib/core.php. */
 
 return [
   // Domeneshop control panel -> Databases. Use a database user that only has access to this database.
   'db' => [
-    'host' => 'localhost',
+    'host' => 'CHANGE_ME.mysql.domeneshop.no',   // always <database name>.mysql.domeneshop.no
     'name' => 'CHANGE_ME_dev_database',
     'user' => 'CHANGE_ME_dev_user',
     'password' => 'CHANGE_ME',
   ],
 
-  // Absolute path to the media folder (outside the web root). Ask Domeneshop/FileZilla for the home path.
-  'storage_dir' => '/home/CHANGE_ME/storage',
+  // The media folder. private/ and storage/ sit next to each other in the home folder.
+  'storage_dir' => dirname(__DIR__) . '/storage',
 
   // Used in links in emails (password reset).
   'site_url' => 'https://dev.armeriddere.no',

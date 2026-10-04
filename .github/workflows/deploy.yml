@@ -25,10 +25,10 @@ jobs:
 
       # Copy only the website into /tmp/site and upload that folder, never the checkout itself.
       # Left out: git's own files (.git = the whole history, must never be public), the workflow (.github),
-      # docs/specs (.info) and SQL migrations (db, run by hand).
+      # docs/specs (.info), SQL migrations (db, run by hand) and the repo's README.md.
       # Anything left out is also deleted from the server by "mirror --delete" below.
       - name: Collect the files to upload
-        run: rsync -a --exclude .git --exclude .gitignore --exclude .github --exclude .info --exclude db ./ /tmp/site/
+        run: rsync -a --exclude .git --exclude .gitignore --exclude .github --exclude .info --exclude db --exclude /README.md ./ /tmp/site/
 
       # dev only: browser password popup so the public and Google can't see the unfinished site.
       # Set the secret DEV_HTPASSWD_PATH to the absolute server path of ~/private/dev.htpasswd.
