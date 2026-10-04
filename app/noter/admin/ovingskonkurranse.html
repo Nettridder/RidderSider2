@@ -1,0 +1,150 @@
+<!doctype html>
+<html lang="nb">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Note-admin: Øvingskonkurranse – Mannskoret Arme Riddere</title>
+<link rel="stylesheet" href="../../css/global.css">
+<link rel="stylesheet" href="../../css/songs.css">
+<script defer src="../../js/global.js"></script>
+<script defer src="../../js/songs.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3/dist/cdn.min.js"></script>
+</head>
+<body data-page="noter/admin/ovingskonkurranse">
+
+<main>
+  <div class="content content--wide" x-data="adminCompetitionsPage()">
+    <div class="page-header">
+      <div>
+        <h1 class="page-header__title" tabindex="-1">Øvingskonkurranse</h1>
+        <p class="page-header__intro">Konkurransene regnes ut fra egenøvingen medlemmene registrerer på Hjem.</p>
+      </div>
+    </div>
+
+    <section class="standings card" aria-labelledby="standings-title" x-show="selectedCompetition">
+      <div class="standings__header">
+        <div>
+          <h2 id="standings-title" class="section-title standings__title">Stilling</h2>
+          <p class="hint" x-text="selectedCompetition ? periodText(selectedCompetition) : ''"></p>
+        </div>
+        <label class="field standings__picker" for="standings-competition"><span class="visually-hidden">Konkurranse</span>
+          <select id="standings-competition" class="input" x-model.number="selectedCompetitionId">
+            <template x-for="competition in sortedCompetitions" :key="competition.id">
+              <option :value="competition.id" x-text="competition.name" :selected="competition.id === selectedCompetitionId"></option>
+            </template>
+          </select>
+        </label>
+      </div>
+      <ol class="standings__list">
+        <template x-for="(entry, index) in standings" :key="entry.member.id">
+          <li class="standings__row" :class="index < 3 && entry.minutes > 0 && 'standings__row--top'">
+            <span class="standings__place" x-text="index + 1"></span>
+            <span class="standings__name" x-text="app.memberName(entry.member)"></span>
+            <span class="standings__bar" aria-hidden="true"><i :style="`width:${topMinutes ? entry.minutes / topMinutes * 100 : 0}%`"></i></span>
+            <span class="standings__minutes" x-text="format.number(entry.minutes) + ' min'"></span>
+          </li>
+        </template>
+      </ol>
+    </section>
+
+    <form class="admin-form" @submit.prevent="addCompetition()" novalidate aria-labelledby="add-competition-title">
+      <h2 id="add-competition-title" class="section-title">Ny konkurranse</h2>
+      <div data-form-template="template-competition:newCompetition:new-competition"></div>
+      <div class="admin-form__actions"><button class="button" type="submit">Start konkurranse</button></div>
+    </form>
+
+    <div class="admin-list-header"><div><h2 class="section-title">Alle konkurranser</h2></div></div>
+    <ul class="admin-list competition-list">
+      <template x-for="competition in sortedCompetitions" :key="competition.id">
+        <li class="admin-list__row">
+          <span class="admin-list__name">
+            <span x-text="competition.name"></span>
+            <small x-text="periodText(competition)"></small>
+          </span>
+          <span><span class="badge" :class="statusBadgeClass(competition)" x-text="statusLabel(competition)"></span></span>
+          <span class="admin-list__actions" x-show="confirmingDeleteId !== 'competition-' + competition.id">
+            <button class="button button--secondary button--small" type="button" @click="selectedCompetitionId = competition.id; document.getElementById('standings-title').scrollIntoView({ behavior: 'smooth' })" :aria-label="'Vis stillingen i ' + competition.name">Vis stilling</button>
+            <button class="button button--secondary button--small" type="button" @click="editCompetition(competition, $event)" :aria-label="'Rediger ' + competition.name">Rediger</button>
+            <button class="button button--danger button--small" type="button" @click="confirmingDeleteId = 'competition-' + competition.id" :aria-label="'Slett ' + competition.name">Slett</button>
+          </span>
+          <span class="admin-list__confirm" x-show="confirmingDeleteId === 'competition-' + competition.id">
+            <span x-text="'Slette «' + competition.name + '»? Registrert øving beholdes.'"></span>
+            <button class="button button--danger-filled button--small" type="button" @click="deleteCompetition(competition)">Ja, slett</button>
+            <button class="button button--secondary button--small" type="button" @click="confirmingDeleteId = null">Avbryt</button>
+          </span>
+        </li>
+      </template>
+    </ul>
+
+    <div class="competition-lower">
+      <form class="card weekly-goal-setting" @submit.prevent="saveWeeklyGoal()" novalidate aria-labelledby="weekly-goal-title">
+        <h2 id="weekly-goal-title" class="section-title">Ukemål</h2>
+        <p class="hint">Hvor mange minutter egenøving hver ridder bør ha i uka. Vises på Hjem.</p>
+        <div class="weekly-goal-setting__row">
+          <label class="visually-hidden" for="weekly-goal-minutes">Minutter per uke</label>
+          <input id="weekly-goal-minutes" class="input weekly-goal-setting__input" type="number" inputmode="numeric" min="5" max="1000" step="5" x-model.number="weeklyGoalMinutes" :aria-invalid="weeklyGoalError ? 'true' : null">
+          <span class="hint">min per uke</span>
+          <button class="button button--secondary" type="submit">Lagre</button>
+        </div>
+        <p class="field-error" x-show="weeklyGoalError" x-text="weeklyGoalError"></p>
+      </form>
+
+      <section class="recent-practice" aria-labelledby="recent-practice-title">
+        <h2 id="recent-practice-title" class="section-title">Siste registreringer</h2>
+        <p class="hint recent-practice__hint">Fjern registreringer som er feil, for eksempel dobbeltregistreringer.</p>
+        <ul class="admin-list recent-practice-list">
+          <template x-for="log in recentLogs" :key="log.id">
+            <li class="admin-list__row">
+              <span class="admin-list__name">
+                <span x-text="app.memberName(app.member(log.member_id))"></span>
+                <small x-text="format.shortDate(format.parseDate(log.date))"></small>
+              </span>
+              <span class="admin-list__cell" x-text="log.minutes + ' min'"></span>
+              <span class="admin-list__actions" x-show="confirmingDeleteId !== 'log-' + log.id">
+                <button class="button button--danger button--small" type="button" @click="confirmingDeleteId = 'log-' + log.id" :aria-label="'Slett registreringen til ' + app.memberName(app.member(log.member_id))">Slett</button>
+              </span>
+              <span class="admin-list__confirm" x-show="confirmingDeleteId === 'log-' + log.id">
+                <span>Slette?</span>
+                <button class="button button--danger-filled button--small" type="button" @click="deleteLog(log)">Ja</button>
+                <button class="button button--secondary button--small" type="button" @click="confirmingDeleteId = null">Avbryt</button>
+              </span>
+            </li>
+          </template>
+        </ul>
+      </section>
+    </div>
+
+    <div data-edit-drawer>
+      <form @submit.prevent="saveCompetition()" novalidate>
+        <div class="drawer__body"><div data-form-template="template-competition:editedCompetition:edited-competition"></div></div>
+        <div class="drawer__footer">
+          <div class="drawer__footer-group">
+            <button class="button" type="submit">Lagre endringer</button>
+            <button class="button button--secondary" type="button" @click="closeDrawer()">Avbryt</button>
+          </div>
+        </div>
+      </form>
+    </div>
+  </div>
+</main>
+
+<template id="template-competition">
+  <div class="form-grid">
+    <label class="field form-grid__full" for="ID-name">Navn
+      <input id="ID-name" class="input" type="text" x-model="FORM.name" placeholder="For eksempel Vårkampen 2027" :aria-invalid="FORM.showErrors && !FORM.name.trim() ? 'true' : null">
+      <span class="field-error" x-show="FORM.showErrors && !FORM.name.trim()">Gi konkurransen et navn.</span>
+    </label>
+    <label class="field" for="ID-start">Startdato
+      <input id="ID-start" class="input" type="date" x-model="FORM.startDate" :aria-invalid="FORM.showErrors && !FORM.startDate ? 'true' : null">
+      <span class="field-error" x-show="FORM.showErrors && !FORM.startDate">Velg startdato.</span>
+    </label>
+    <label class="field" for="ID-end">Sluttdato
+      <input id="ID-end" class="input" type="date" x-model="FORM.endDate" :aria-invalid="FORM.showErrors && (!FORM.endDate || FORM.endDate < FORM.startDate) ? 'true' : null">
+      <span class="field-error" x-show="FORM.showErrors && !FORM.endDate">Velg sluttdato.</span>
+      <span class="field-error" x-show="FORM.showErrors && FORM.endDate && FORM.startDate && FORM.endDate < FORM.startDate">Sluttdatoen må være samme dag som eller etter startdatoen.</span>
+    </label>
+  </div>
+</template>
+
+</body>
+</html>

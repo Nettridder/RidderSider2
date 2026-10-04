@@ -1,0 +1,84 @@
+<!doctype html>
+<html lang="nb">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Kalender – Mannskoret Arme Riddere</title>
+<link rel="stylesheet" href="../felles/global.css">
+<link rel="stylesheet" href="kalender.css">
+<script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3/dist/cdn.min.js"></script>
+</head>
+<body data-page="ridderdata/kalender">
+
+<main class="page" x-data="kalender()">
+  <div class="inner body">
+    <div class="body-h">
+      <div><h1 tabindex="-1">Kalender</h1><p class="src"><svg aria-hidden="true"><use href="#i-cal"/></svg>Fra Google Kalender</p></div>
+      <div class="seg" role="group" aria-label="Visning">
+        <button type="button" :aria-pressed="view==='list'" @click="view='list'">Liste</button>
+        <button type="button" :aria-pressed="view==='month'" @click="view='month'">Måned</button>
+      </div>
+    </div>
+
+    <!-- list: upcoming events grouped by week -->
+    <div x-show="view==='list'">
+      <template x-for="g in weeks" :key="g.wk">
+        <div>
+          <div class="wk"><h2 x-text="g.rel || ('Uke ' + g.wk)"></h2><span x-text="(g.rel ? 'Uke ' + g.wk + ', ' : '') + g.range"></span></div>
+          <ul class="rows">
+            <template x-for="e in g.items" :key="e.id">
+              <li style="grid-template-columns:1fr"><div class="cal-row">
+                <span class="d" x-text="RD.shortDate(e.date)"></span>
+                <span class="nm"><span x-text="e.w"></span><span class="tag" x-show="e.pub && $store.app.status==='aktiv'">Åpen</span><small x-show="e.where" x-text="e.where"></small></span>
+                <span class="t" x-text="e.t"></span>
+              </div></li>
+            </template>
+          </ul>
+        </div>
+      </template>
+    </div>
+
+    <!-- month grid -->
+    <div x-show="view==='month'">
+      <div class="mhead">
+        <h2 aria-live="polite" x-text="title"></h2>
+        <div class="mnav">
+          <button type="button" @click="shift(-1)" :disabled="!canPrev" aria-label="Forrige måned"><svg aria-hidden="true"><use href="#i-l"/></svg></button>
+          <button type="button" @click="shift(1)" :disabled="!canNext" aria-label="Neste måned"><svg aria-hidden="true"><use href="#i-r"/></svg></button>
+        </div>
+      </div>
+      <div class="mgrid" role="grid" :aria-label="title">
+        <template x-for="d in ['Man','Tir','Ons','Tor','Fre','Lør','Søn']" :key="d"><div class="dow" role="columnheader" x-text="d"></div></template>
+        <template x-for="c in grid" :key="c.iso">
+          <button type="button" class="cell" role="gridcell" :disabled="!c.inMonth"
+                  :class="{out:!c.inMonth, past:c.past, today:c.today, sel:c.iso===sel}"
+                  @click="sel=c.iso" :aria-pressed="c.iso===sel" :aria-label="cellLabel(c)">
+            <span class="dn" x-text="c.date.getDate()"></span>
+            <template x-for="e in c.events.slice(0,2)" :key="e.id"><span class="ev" :class="kind(e)" x-text="(e.t ? e.t + ' ' : '') + e.w"></span></template>
+            <span class="ev" x-show="c.events.length>2" x-text="'+' + (c.events.length-2) + ' til'"></span>
+            <span class="dots" x-show="c.events.length"><template x-for="e in c.events" :key="e.id"><i :class="kind(e)"></i></template></span>
+          </button>
+        </template>
+      </div>
+      <div class="dayview" aria-live="polite">
+        <h3 x-text="RD.longDate(selDate)"></h3>
+        <ul class="rows" x-show="dayEvents.length">
+          <template x-for="e in dayEvents" :key="e.id">
+            <li style="grid-template-columns:1fr"><div class="cal-row">
+              <span class="d" x-text="e.t || 'Hele dagen'"></span>
+              <span class="nm"><span x-text="e.w"></span><span class="tag" x-show="e.pub && $store.app.status==='aktiv'">Åpen</span><small x-show="e.where" x-text="e.where"></small></span>
+              <span class="t"></span>
+            </div></li>
+          </template>
+        </ul>
+        <p class="empty" style="padding-top:.25rem" x-show="!dayEvents.length">Ingenting i kalenderen denne dagen.</p>
+      </div>
+    </div>
+  </div>
+</main>
+
+<script src="../felles/data.js"></script>
+<script src="../felles/meny.js"></script>
+<script src="kalender.js"></script>
+</body>
+</html>

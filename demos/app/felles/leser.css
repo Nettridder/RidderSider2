@@ -1,0 +1,30 @@
+/* leser.css — document reader overlay (Hjem, Ridderdata → Dokumenter) */
+.reader{position:fixed;inset:0;z-index:60;display:flex;align-items:flex-start;justify-content:center;padding:clamp(.75rem,4vh,2.5rem) var(--gutter)}
+.sheet{
+  position:relative;width:100%;max-width:42rem;max-height:calc(100vh - 2 * clamp(.75rem,4vh,2.5rem));
+  display:flex;flex-direction:column;background:var(--bg-2);border:1px solid var(--line);border-radius:var(--r-m);
+  box-shadow:0 30px 80px rgba(0,0,0,.6);animation:rise .28s var(--ease);
+}
+@keyframes rise{from{opacity:0;transform:translateY(10px)}}
+.sheet-body{overflow-y:auto;overscroll-behavior:contain;padding:1rem;background:var(--bg)}
+.sheet-body:focus-visible{outline-offset:-3px}
+.paper{
+  --paper:#efe8dc;--paper-ink:#26231f;--paper-dim:#6b645a;
+  background:var(--paper);color:var(--paper-ink);border-radius:4px;padding:clamp(1.5rem,5vw,3rem) clamp(1.25rem,5vw,3.25rem);
+  font-family:var(--serif);font-size:1.08rem;line-height:1.6;box-shadow:0 2px 0 rgba(0,0,0,.25);
+}
+.paper h3{margin:0;font-weight:450;font-size:1.9rem;line-height:1.1;letter-spacing:-.015em}
+.paper .meta{margin:.6rem 0 1.6rem;color:var(--paper-dim);font-size:.98rem;font-style:italic}
+.paper h4{margin:1.6rem 0 .3rem;font-family:var(--sans);font-size:.95rem;font-weight:600}
+.paper h4 span{color:var(--paper-dim);font-weight:500;margin-right:.5rem;font-variant-numeric:tabular-nums}
+.paper p{margin:0 0 .6rem;max-width:34em}
+.paper .vedtak{border-left:2px solid var(--ember);padding-left:.8rem}
+.paper .sign{margin-top:2rem;color:var(--paper-dim);font-size:.98rem}
+.sheet-f{display:flex;align-items:center;justify-content:space-between;gap:1rem;padding:.85rem 1.25rem;border-top:1px solid var(--line)}
+.sheet-f .hint{font-size:.83rem}
+@media (max-width:720px){
+  .reader{padding:0}
+  .sheet{max-width:none;max-height:100vh;height:100%;border-radius:0;border:0}
+  .sheet-body{padding:.6rem}
+  .sheet-f{flex-wrap:wrap;padding-bottom:calc(.85rem + var(--safe))}
+}

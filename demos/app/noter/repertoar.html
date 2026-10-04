@@ -1,0 +1,85 @@
+<!doctype html>
+<html lang="nb">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Repertoar – Mannskoret Arme Riddere</title>
+<link rel="stylesheet" href="../felles/global.css">
+<link rel="stylesheet" href="repertoar.css">
+<script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3/dist/cdn.min.js"></script>
+</head>
+<body data-page="noter/repertoar">
+
+<main class="page" x-data="repertoar()">
+  <div class="inner body">
+
+    <!-- no repertoires -->
+    <div class="rep-empty" x-show="!A.visibleReps.length">
+      <h1 tabindex="-1">Ingen repertoar ennå</h1>
+      <p>Når noteansvarlig legger ut et repertoar, finner du sangene og rekkefølgen her. Til da kan du øve på sangene i Sanger.</p>
+      <a class="btn btn-quiet" href="sanger.html">Gå til Sanger</a>
+      <a class="textlink" x-show="A.isNoteAdmin" href="admin/repertoar.html">Opprett et repertoar</a>
+    </div>
+
+    <template x-if="cur">
+      <div>
+        <div class="body-h"><div><h1 tabindex="-1" x-text="cur.name"></h1><p x-text="cur.note || (cur.songs.length + ' sanger')"></p></div></div>
+
+        <!-- pick a repertoire (hidden when there is only one) -->
+        <div class="repsel" x-show="A.visibleReps.length > 1">
+          <div class="seg" role="group" aria-label="Velg repertoar">
+            <template x-for="r in A.visibleReps" :key="r.id">
+              <button type="button" :aria-pressed="cur.id===r.id" @click="sel=r.id; kf='alle'"><span x-text="r.name"></span><span class="tag q" x-show="!r.visible">Utkast</span></button>
+            </template>
+          </div>
+        </div>
+
+        <!-- colour filter, doubles as the legend -->
+        <div class="kfilter">
+          <div class="seg" role="group" aria-label="Vis sanger etter hvor godt du kan dem">
+            <button type="button" :aria-pressed="kf==='alle'" @click="kf='alle'">Alle <span class="n" x-text="cur.songs.length"></span></button>
+            <template x-for="o in RD.KNOW" :key="o.v">
+              <button type="button" :aria-pressed="kf===o.v" @click="kf=o.v"><span class="kd" :class="o.v" aria-hidden="true"></span><span x-text="o.t"></span> <span class="n" x-text="counts[o.v]"></span></button>
+            </template>
+          </div>
+          <p class="hint">Endre hvor godt du kan en sang i <a href="sanger.html">sangvisningen</a>.</p>
+        </div>
+
+        <ol class="order" aria-label="Sanger i konsertrekkefølge">
+          <template x-for="row in rows" :key="row.s.id">
+            <li>
+              <span class="no" x-text="row.pos"></span>
+              <span class="rn"><span class="kd" :class="row.s.k" aria-hidden="true"></span><span x-text="row.s.t"></span></span>
+              <small :class="'t-'+row.s.k" x-text="RD.knowLabel(row.s.k)"></small>
+            </li>
+          </template>
+        </ol>
+        <p class="empty" x-show="!rows.length && cur.songs.length">Ingen sanger med denne fargen. <a class="textlink" href="#" @click.prevent="kf='alle'">Vis alle</a></p>
+        <p class="empty" x-show="!cur.songs.length">Repertoaret er tomt ennå.</p>
+      </div>
+    </template>
+  </div>
+</main>
+
+<script src="../felles/data.js"></script>
+<script src="../felles/meny.js"></script>
+<script>
+function repertoar(){
+  return {
+    sel:null, kf:'alle',
+    get A(){ return this.$store.app },
+    get cur(){ const v = this.A.visibleReps; return v.find(r => r.id===this.sel) || v[0] || null },
+    get counts(){
+      const c = {kjent:0, litt:0, ikke:0};
+      (this.cur ? this.cur.songs : []).forEach(id => { const s = this.A.songById(id); if(s) c[s.k]++; });
+      return c;
+    },
+    get rows(){
+      if(!this.cur) return [];
+      return this.cur.songs.map((id,i) => ({pos:i+1, s:this.A.songById(id)})).filter(r => r.s && (this.kf==='alle' || r.s.k===this.kf));
+    },
+  };
+}
+</script>
+</body>
+</html>

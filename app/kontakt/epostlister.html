@@ -1,0 +1,105 @@
+<!doctype html>
+<html lang="nb">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Epostlister – Mannskoret Arme Riddere</title>
+<link rel="stylesheet" href="../css/global.css">
+<style>
+.mailing-section + .mailing-section { margin-top: 2.5rem; }
+.mailing-row { grid-template-columns: minmax(0, 1fr) auto auto; }
+.mailing-row__address { color: var(--color-text-dim); font-size: 0.92rem; white-space: nowrap; }
+.mailing-row__address:hover { color: var(--color-text); text-decoration: underline; text-decoration-color: var(--color-accent); text-underline-offset: 4px; }
+@media (max-width: 720px) {
+  .mailing-row { grid-template-columns: minmax(0, 1fr) auto; }
+  .mailing-row__address { grid-column: 1; grid-row: 2; white-space: normal; overflow-wrap: anywhere; }
+  .mailing-row .button { grid-column: 2; grid-row: 1 / span 2; }
+}
+</style>
+<script defer src="../js/global.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3/dist/cdn.min.js"></script>
+</head>
+<body data-page="kontakt/epostlister">
+
+<main>
+  <div class="content" x-data="mailingListsPage()">
+    <div class="page-header">
+      <div>
+        <h1 class="page-header__title" tabindex="-1">Epostlister</h1>
+        <p class="page-header__intro">Hvem du skriver til for hva. Rolleadressene går alltid til den som har vervet nå.</p>
+      </div>
+    </div>
+
+    <section class="mailing-section" aria-labelledby="role-addresses-title">
+      <h2 id="role-addresses-title" class="section-title">Roller</h2>
+      <ul class="list">
+        <template x-for="entry in roleAddresses" :key="entry.address">
+          <li class="list__row mailing-row">
+            <span class="list__title"><span x-text="entry.name"></span><span class="list__meta" x-text="holderOf(entry)"></span></span>
+            <a class="mailing-row__address" :href="'mailto:' + entry.address" x-text="entry.address"></a>
+            <button class="button button--secondary button--small" type="button" @click="copyAddress(entry.address)" :aria-label="'Kopier ' + entry.address">Kopier</button>
+          </li>
+        </template>
+      </ul>
+    </section>
+
+    <section class="mailing-section" aria-labelledby="lists-title">
+      <h2 id="lists-title" class="section-title">Distribusjonslister</h2>
+      <ul class="list">
+        <template x-for="entry in distributionLists" :key="entry.address">
+          <li class="list__row mailing-row">
+            <span class="list__title"><span x-text="entry.name"></span><span class="list__meta" x-text="entry.description"></span></span>
+            <a class="mailing-row__address" :href="'mailto:' + entry.address" x-text="entry.address"></a>
+            <button class="button button--secondary button--small" type="button" @click="copyAddress(entry.address)" :aria-label="'Kopier ' + entry.address">Kopier</button>
+          </li>
+        </template>
+      </ul>
+    </section>
+  </div>
+</main>
+
+<script>
+function mailingListsPage() {
+  return {
+    roleAddresses: [
+      { name: 'Rittmester', address: 'rittmester@armeriddere.no', boardPosition: 'rittmester' },
+      { name: 'Dirigent', address: 'dirigent@armeriddere.no', boardPosition: 'dirigent' },
+      { name: 'Paragrafrytter', address: 'paragrafrytter@armeriddere.no', boardPosition: 'paragrafrytter' },
+      { name: 'Noteridder', address: 'noteridder@armeriddere.no', boardPosition: 'noteridder' },
+      { name: 'Finansridder', address: 'finansridder@armeriddere.no', boardPosition: 'finansridder' },
+      { name: 'Lagersjef', address: 'lagersjef@armeriddere.no', boardPosition: 'lagersjef' },
+      { name: 'Nettridder', address: 'nettridder@armeriddere.no', description: 'Nettsidene og appen' },
+      { name: 'Mediaridder', address: 'mediaridder@armeriddere.no', description: 'Bilder, video og sosiale medier' },
+      { name: 'Appmester', address: 'appmester@armeriddere.no', description: 'Spørsmål om appen' },
+      { name: 'Jubileum', address: 'jubileum@armeriddere.no', description: 'Jubileumskomiteen' },
+      { name: 'Barbar', address: 'barbar@armeriddere.no', description: 'Baren på fester og arrangementer' },
+      { name: 'Alle i styret unntatt dirigent', address: 'styret@armeriddere.no', description: 'Rittmester, Paragrafrytter, Finansridder, Noteridder og Lagersjef' },
+    ],
+    distributionLists: [
+      { name: 'Notelauget', address: 'notelauget@armeriddere.no', description: 'Noter, lydfiler og repertoar' },
+      { name: 'Alle aktive medlemmer', address: 'aktive@armeriddere.no', description: 'Beskjeder til alle som synger nå' },
+      { name: 'Alle aktive + mange tidligere', address: 'alle@armeriddere.no', description: 'Konserter, fester og store beskjeder' },
+      { name: 'Alle ypp.com.', address: 'ypp@armeriddere.no', description: 'Tidligere medlemmer' },
+      { name: 'Riddere', address: 'riddere@armeriddere.no', description: 'Kun invitasjoner og viktige oppdateringer' },
+      { name: 'Koreografilauget', address: 'koreografi@armeriddere.no', description: 'Koreografi og sceneopptreden' },
+      { name: 'Motelauget', address: 'mote@armeriddere.no', description: 'Kordress, slips og antrekk' },
+    ],
+    get app() { return this.$store.app },
+    holderOf(entry) {
+      if (!entry.boardPosition) return entry.description || '';
+      const member = this.app.member((this.app.currentBoard || {})[entry.boardPosition + '_id']);
+      return member ? this.app.memberName(member) : 'Ikke valgt';
+    },
+    async copyAddress(address) {
+      try {
+        await navigator.clipboard.writeText(address);
+        this.$store.ui.notify(`Kopiert: ${address}`, '');
+      } catch (error) {
+        this.$store.ui.notify('Kunne ikke kopiere. Marker adressen og kopier den selv.', '');
+      }
+    },
+  };
+}
+</script>
+</body>
+</html>

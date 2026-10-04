@@ -1,0 +1,73 @@
+<!doctype html>
+<html lang="nb">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Anonym Forum – Mannskoret Arme Riddere</title>
+<link rel="stylesheet" href="../css/global.css">
+<style>
+.forum-form { display: grid; gap: 1.1rem; max-width: 36rem; }
+.forum-form .input { background: var(--color-surface); }
+.forum-form__message { min-height: 10rem; }
+.forum-form__actions { display: flex; align-items: center; justify-content: space-between; gap: 1rem; flex-wrap: wrap; }
+.forum-sent { max-width: 34rem; }
+.forum-sent__text { margin: 0 0 1rem; font-family: var(--font-heading); font-size: 1.15rem; color: var(--color-text-dim); }
+</style>
+<script defer src="../js/global.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3/dist/cdn.min.js"></script>
+</head>
+<body data-page="kontakt/forum">
+
+<main>
+  <div class="content" x-data="forumPage()">
+    <div class="page-header">
+      <div>
+        <h1 class="page-header__title" tabindex="-1">Anonym Forum</h1>
+        <p class="page-header__intro">Varsling, ektesnakk og innspill. Meldingen går på e-post til Rittmester og lagres ikke.</p>
+      </div>
+    </div>
+
+    <form class="forum-form" @submit.prevent="send()" x-show="!sent" novalidate>
+      <label class="field" for="forum-subject">Emne
+        <input id="forum-subject" class="input" type="text" x-model="subject" placeholder="Hva gjelder det?">
+      </label>
+      <label class="field" for="forum-message">Melding
+        <textarea id="forum-message" class="input forum-form__message" x-model="message" :aria-invalid="triedToSend && !message.trim() ? 'true' : null"></textarea>
+      </label>
+      <p class="field-error" x-show="triedToSend && !message.trim()">Skriv en melding før du sender.</p>
+      <div class="forum-form__actions">
+        <label class="switch"><input type="checkbox" x-model="anonymous"><span class="switch__track" aria-hidden="true"></span>Send anonymt</label>
+        <button class="button" type="submit" x-text="anonymous ? 'Send anonymt' : 'Send som ' + $store.app.me.first_name"></button>
+      </div>
+      <p class="hint" x-text="anonymous ? 'Meldingen sendes uten navn og e-post. Rittmester kan ikke svare deg direkte.' : 'Rittmester ser at meldingen er fra deg og kan svare deg på e-post.'"></p>
+    </form>
+
+    <div class="forum-sent fade-in" x-show="sent">
+      <p class="forum-sent__text" x-text="anonymous ? 'Meldingen er sendt anonymt. Rittmester tar det opp på neste styremøte.' : 'Meldingen er sendt. Rittmester svarer deg på e-post.'"></p>
+      <button class="button button--secondary" type="button" @click="startOver()">Skriv en ny melding</button>
+    </div>
+  </div>
+</main>
+
+<script>
+function forumPage() {
+  return {
+    subject: '',
+    message: '',
+    anonymous: true,
+    triedToSend: false,
+    sent: false,
+    send() {
+      this.triedToSend = true;
+      if (!this.message.trim()) { this.$nextTick(() => document.getElementById('forum-message').focus()); return; }
+      this.sent = true;
+      this.$store.ui.notify(this.anonymous ? 'Sendt anonymt til Rittmester.' : 'Sendt til Rittmester.', 'Demo: ingen e-post blir sendt.');
+    },
+    startOver() {
+      this.subject = ''; this.message = ''; this.triedToSend = false; this.sent = false;
+    },
+  };
+}
+</script>
+</body>
+</html>

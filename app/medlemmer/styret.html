@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="nb">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Styret – Mannskoret Arme Riddere</title>
+<link rel="stylesheet" href="../css/global.css">
+<link rel="stylesheet" href="../css/members.css">
+<script defer src="../js/global.js"></script>
+<script defer src="../js/members.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3/dist/cdn.min.js"></script>
+</head>
+<body data-page="medlemmer/styret">
+
+<main>
+  <div class="content" x-data="boardPage()">
+    <div class="page-header">
+      <div>
+        <h1 class="page-header__title" tabindex="-1">Styret</h1>
+        <p class="page-header__intro" x-text="view === 'gallery' ? 'Styret for ' + semesterName(app.currentBoard).toLowerCase() + '.' : 'Alle styrer, nyeste først.'"></p>
+      </div>
+      <div class="segmented" role="group" aria-label="Visning">
+        <button type="button" :aria-pressed="view === 'gallery'" @click="view = 'gallery'">Galleri</button>
+        <button type="button" :aria-pressed="view === 'list'" @click="view = 'list'">Liste</button>
+      </div>
+    </div>
+
+    <ul class="board-gallery" x-show="view === 'gallery'">
+      <template x-for="seat in seats(app.currentBoard)" :key="seat.key">
+        <li>
+          <a class="board-gallery__card" :href="seat.member ? profileHref(seat.member) : null">
+            <span class="portrait board-gallery__portrait"><img :src="app.memberImage(seat.member)" alt="" loading="lazy"></span>
+            <span class="board-gallery__position" x-text="seat.title"></span>
+            <span class="board-gallery__name" x-text="seat.member ? app.memberName(seat.member) : 'Ikke valgt'"></span>
+          </a>
+        </li>
+      </template>
+    </ul>
+
+    <table class="board-table" x-show="view === 'list'">
+      <thead>
+        <tr>
+          <th>År/Semester</th>
+          <template x-for="position in boardPositions" :key="position.key">
+            <th x-text="position.title"></th>
+          </template>
+        </tr>
+      </thead>
+      <tbody>
+        <template x-for="board in app.boardsNewestFirst" :key="board.id">
+          <tr>
+            <td class="board-table__semester" x-text="semesterName(board)"></td>
+            <template x-for="position in boardPositions" :key="position.key">
+              <td>
+                <template x-if="boardPositionMember(board, position)">
+                  <a class="person" :href="profileHref(boardPositionMember(board, position))" x-text="app.memberName(boardPositionMember(board, position))"></a>
+                </template>
+                <template x-if="!boardPositionMember(board, position)">
+                  <span class="muted">Ikke valgt</span>
+                </template>
+              </td>
+            </template>
+          </tr>
+        </template>
+      </tbody>
+    </table>
+  </div>
+</main>
+
+</body>
+</html>

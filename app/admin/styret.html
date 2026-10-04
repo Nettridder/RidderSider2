@@ -1,0 +1,114 @@
+<!doctype html>
+<html lang="nb">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Admin: Styret – Mannskoret Arme Riddere</title>
+<link rel="stylesheet" href="../css/global.css">
+<link rel="stylesheet" href="../css/members.css">
+<script defer src="../js/global.js"></script>
+<script defer src="../js/members.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3/dist/cdn.min.js"></script>
+</head>
+<body data-page="admin/styret">
+
+<main>
+  <div class="content content--wide" x-data="adminBoardPage()">
+    <div class="page-header">
+      <div>
+        <h1 class="page-header__title" tabindex="-1">Administrer styret</h1>
+        <p class="page-header__intro">Legg inn et helt styre for ett semester av gangen. Styreverv endrer ikke tilgangsroller, de endres under Medlemmer.</p>
+      </div>
+    </div>
+
+    <form class="admin-form" @submit.prevent="addBoard()" novalidate aria-labelledby="add-board-title">
+      <h2 id="add-board-title" class="section-title">Nytt styre</h2>
+      <div data-form-template="template-board:newBoard:new"></div>
+      <div class="admin-form__actions">
+        <button class="button" type="submit">Lagre styret</button>
+        <button class="button button--secondary" type="button" @click="newBoard = boardFormForNextSemester()">Tøm skjemaet</button>
+      </div>
+    </form>
+
+    <div class="admin-list-header">
+      <div>
+        <h2 class="section-title">Alle styrer</h2>
+        <p class="hint" x-text="db.boards.length + ' semestre, nyeste først'"></p>
+      </div>
+    </div>
+
+    <div class="board-admin-history">
+      <template x-for="board in app.boardsNewestFirst" :key="board.id">
+        <section class="board-card card" :aria-label="'Styret ' + format.semesterLong(board.year, board.term)">
+          <div class="board-card__header">
+            <h3 class="board-card__title"><span x-text="format.semesterLong(board.year, board.term)"></span> <span class="badge badge--success" x-show="app.currentBoard && board.id === app.currentBoard.id">Sittende styre</span></h3>
+            <div class="admin-list__actions" x-show="confirmingDeleteId !== board.id">
+              <button class="button button--secondary button--small" type="button" @click="editBoard(board, $event)">Rediger</button>
+              <button class="button button--danger button--small" type="button" @click="confirmingDeleteId = board.id">Slett</button>
+            </div>
+            <div class="admin-list__confirm" x-show="confirmingDeleteId === board.id">
+              <span x-text="'Slette styret for ' + format.semesterLong(board.year, board.term) + '?'"></span>
+              <button class="button button--danger-filled button--small" type="button" @click="deleteBoard(board)">Ja, slett</button>
+              <button class="button button--secondary button--small" type="button" @click="confirmingDeleteId = null">Avbryt</button>
+            </div>
+          </div>
+          <dl class="board-card__positions">
+            <template x-for="position in LABELS.boardPositions" :key="position.key">
+              <div class="board-card__position">
+                <dt x-text="position.label + (board[position.key + '_number'] ? ' nr. ' + board[position.key + '_number'] : '')"></dt>
+                <dd x-text="app.memberName(app.member(board[position.key + '_id'])) || 'Ikke satt'" :class="!board[position.key + '_id'] && 'board-card__empty'"></dd>
+              </div>
+            </template>
+          </dl>
+        </section>
+      </template>
+    </div>
+    <p class="empty-state" x-show="!db.boards.length">Ingen styrer er lagt inn ennå.</p>
+
+    <div data-edit-drawer>
+      <form @submit.prevent="saveBoard()" novalidate>
+        <div class="drawer__body"><div data-form-template="template-board:editedBoard:edit"></div></div>
+        <div class="drawer__footer">
+          <button class="button" type="submit">Lagre endringer</button>
+          <button class="button button--secondary" type="button" @click="closeDrawer()">Avbryt</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</main>
+
+<template id="template-board">
+  <div class="form-grid board-form">
+    <label class="field" for="ID-year">År
+      <input id="ID-year" class="input" type="number" inputmode="numeric" min="1990" max="2035" x-model.number="FORM.year" @change="renumberAll(FORM)" :aria-invalid="FORM.submitted && !!boardErrors(FORM).semester">
+    </label>
+    <label class="field" for="ID-term">Semester
+      <select id="ID-term" class="input" x-model="FORM.term" @change="renumberAll(FORM)"><option value="spring">Vår</option><option value="autumn">Høst</option></select>
+    </label>
+    <p class="field-error form-grid__full" x-show="FORM.submitted && boardErrors(FORM).semester" x-text="boardErrors(FORM).semester"></p>
+    <fieldset class="field form-grid__full">
+      <legend>Styreverv</legend>
+      <div class="board-form__positions">
+        <template x-for="position in LABELS.boardPositions" :key="position.key">
+          <div class="board-form__position">
+            <label class="field" :for="'ID-' + position.key"><span x-text="position.label"></span>
+              <select :id="'ID-' + position.key" class="input" x-model.number="FORM.positions[position.key].member_id" @change="renumber(FORM, position.key)">
+                <option value="">Ikke satt</option>
+                <template x-for="member in memberOptions(FORM.positions[position.key].member_id)" :key="member.id">
+                  <option :value="member.id" x-text="app.memberName(member) + (member.status === 'former' ? ' (ypp.com.)' : '')" :selected="member.id === FORM.positions[position.key].member_id"></option>
+                </template>
+              </select>
+            </label>
+            <label class="field board-form__number" :for="'ID-' + position.key + '-number'">Nr.
+              <input :id="'ID-' + position.key + '-number'" class="input" type="number" inputmode="numeric" min="1" x-model.number="FORM.positions[position.key].number" :disabled="!FORM.positions[position.key].member_id">
+            </label>
+          </div>
+        </template>
+      </div>
+      <p class="hint">Nummeret fylles ut automatisk: samme person som forrige styre beholder nummeret, en ny person får forrige nummer + 1.</p>
+    </fieldset>
+  </div>
+</template>
+
+</body>
+</html>

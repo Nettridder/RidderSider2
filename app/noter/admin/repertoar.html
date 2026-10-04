@@ -1,0 +1,117 @@
+<!doctype html>
+<html lang="nb">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Note-admin: Repertoar – Mannskoret Arme Riddere</title>
+<link rel="stylesheet" href="../../css/global.css">
+<link rel="stylesheet" href="../../css/songs.css">
+<script defer src="../../js/global.js"></script>
+<script defer src="../../js/songs.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3/dist/cdn.min.js"></script>
+</head>
+<body data-page="noter/admin/repertoar">
+
+<main>
+  <div class="content content--wide" x-data="adminRepertoiresPage()">
+    <div class="page-header">
+      <div>
+        <h1 class="page-header__title" tabindex="-1">Administrer repertoar</h1>
+        <p class="page-header__intro">Et repertoar er en navngitt liste med sanger i fast rekkefølge, for eksempel en konsert.</p>
+      </div>
+    </div>
+
+    <form class="admin-form" @submit.prevent="addRepertoire()" novalidate aria-labelledby="add-repertoire-title">
+      <h2 id="add-repertoire-title" class="section-title">Nytt repertoar</h2>
+      <div class="form-grid">
+        <label class="field" for="new-repertoire-name">Navn
+          <input id="new-repertoire-name" class="input" type="text" x-model="newRepertoire.name" placeholder="For eksempel Vårkonsert 2027" :aria-invalid="newRepertoire.showErrors && !newRepertoire.name.trim() ? 'true' : null">
+          <span class="field-error" x-show="newRepertoire.showErrors && !newRepertoire.name.trim()">Gi repertoaret et navn.</span>
+        </label>
+        <div class="field repertoire-visibility-field">
+          <label class="switch"><input type="checkbox" x-model="newRepertoire.isVisible"><span class="switch__track" aria-hidden="true"></span>Synlig for medlemmer</label>
+        </div>
+        <p class="hint form-grid__full">Nye repertoarer er skjult til du slår på Synlig, så du kan bygge dem ferdig først.</p>
+      </div>
+      <div class="admin-form__actions"><button class="button" type="submit">Opprett repertoar</button></div>
+    </form>
+
+    <div class="admin-list-header">
+      <div>
+        <h2 class="section-title">Alle repertoarer</h2>
+        <p class="hint" x-text="db.repertoires.length ? db.repertoires.length + ' repertoarer, ' + db.repertoires.filter(r => r.is_visible).length + ' synlige' : 'Ingen repertoarer ennå'"></p>
+      </div>
+    </div>
+    <ul class="admin-list repertoire-admin-list">
+      <template x-for="repertoire in db.repertoires" :key="repertoire.id">
+        <li class="admin-list__row">
+          <span class="admin-list__name">
+            <span x-text="repertoire.name"></span>
+            <small class="admin-list__narrow-summary" x-text="songCountText(repertoire.id) + ' · ' + (repertoire.is_visible ? 'synlig' : 'utkast')"></small>
+          </span>
+          <span class="admin-list__cell admin-list__wide-only" x-text="songCountText(repertoire.id)"></span>
+          <span class="admin-list__wide-only"><span class="badge" :class="repertoire.is_visible ? 'badge--success' : 'badge--muted'" x-text="repertoire.is_visible ? 'Synlig' : 'Utkast'"></span></span>
+          <span class="admin-list__actions" x-show="confirmingDeleteId !== repertoire.id">
+            <button class="button button--secondary button--small" type="button" @click="editRepertoire(repertoire, $event)" :aria-label="'Rediger ' + repertoire.name">Rediger</button>
+            <button class="button button--danger button--small" type="button" @click="confirmingDeleteId = repertoire.id" :aria-label="'Slett ' + repertoire.name">Slett</button>
+          </span>
+          <span class="admin-list__confirm" x-show="confirmingDeleteId === repertoire.id">
+            <span x-text="'Slette «' + repertoire.name + '»? Sangene beholdes.'"></span>
+            <button class="button button--danger-filled button--small" type="button" @click="deleteRepertoire(repertoire)">Ja, slett</button>
+            <button class="button button--secondary button--small" type="button" @click="confirmingDeleteId = null">Avbryt</button>
+          </span>
+        </li>
+      </template>
+    </ul>
+
+    <div data-edit-drawer>
+      <form @submit.prevent="saveRepertoire()" novalidate>
+        <div class="drawer__body">
+          <div class="form-grid">
+            <label class="field form-grid__full" for="edited-repertoire-name">Navn
+              <input id="edited-repertoire-name" class="input" type="text" x-model="editedRepertoire.name" :aria-invalid="editedRepertoire.showErrors && !editedRepertoire.name.trim() ? 'true' : null">
+              <span class="field-error" x-show="editedRepertoire.showErrors && !editedRepertoire.name.trim()">Gi repertoaret et navn.</span>
+            </label>
+            <label class="switch form-grid__full"><input type="checkbox" x-model="editedRepertoire.isVisible"><span class="switch__track" aria-hidden="true"></span>Synlig for medlemmer</label>
+            <div class="field form-grid__full">
+              <span x-text="'Sanger i rekkefølge (' + editedRepertoire.songIds.length + ')'"></span>
+              <ol class="ordered-picker">
+                <template x-for="(songId, index) in editedRepertoire.songIds" :key="songId">
+                  <li class="ordered-picker__row">
+                    <span class="ordered-picker__number" x-text="index + 1"></span>
+                    <span><span x-text="songName(songId)"></span> <span class="badge badge--muted" x-show="(app.song(songId) || {}).is_secret">Hemmelig</span></span>
+                    <span class="ordered-picker__buttons">
+                      <button class="icon-button" type="button" @click="moveSong(index, -1)" :disabled="index === 0" :aria-label="'Flytt ' + songName(songId) + ' opp'"><svg aria-hidden="true"><use href="#icon-up"/></svg></button>
+                      <button class="icon-button" type="button" @click="moveSong(index, 1)" :disabled="index === editedRepertoire.songIds.length - 1" :aria-label="'Flytt ' + songName(songId) + ' ned'"><svg aria-hidden="true"><use href="#icon-down"/></svg></button>
+                      <button class="icon-button" type="button" @click="editedRepertoire.songIds.splice(index, 1)" :aria-label="'Fjern ' + songName(songId) + ' fra repertoaret'"><svg aria-hidden="true"><use href="#icon-close"/></svg></button>
+                    </span>
+                  </li>
+                </template>
+              </ol>
+              <p class="hint" x-show="!editedRepertoire.songIds.length">Ingen sanger ennå. Legg til den første under.</p>
+              <div class="add-song-row">
+                <label class="visually-hidden" for="song-to-add">Legg til sang</label>
+                <select id="song-to-add" class="input" x-model="songToAdd">
+                  <option value="">Velg sang å legge til</option>
+                  <template x-for="song in songsNotInRepertoire" :key="song.id">
+                    <option :value="song.id" x-text="song.name + (song.is_secret ? ' (hemmelig)' : '')"></option>
+                  </template>
+                </select>
+                <button class="button button--secondary button--small" type="button" @click="addSongToRepertoire()" :disabled="!songToAdd">Legg til</button>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="drawer__footer">
+          <div class="drawer__footer-group">
+            <button class="button" type="submit">Lagre endringer</button>
+            <button class="button button--secondary" type="button" @click="closeDrawer()">Avbryt</button>
+          </div>
+        </div>
+      </form>
+    </div>
+  </div>
+</main>
+
+</body>
+</html>

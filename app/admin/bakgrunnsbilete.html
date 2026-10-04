@@ -1,0 +1,96 @@
+<!doctype html>
+<html lang="nb">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Admin: Bakgrunnsbilete – Mannskoret Arme Riddere</title>
+<link rel="stylesheet" href="../css/global.css">
+<link rel="stylesheet" href="../css/documents.css">
+<script defer src="../js/global.js"></script>
+<script defer src="../js/documents.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3/dist/cdn.min.js"></script>
+</head>
+<body data-page="admin/bakgrunnsbilete">
+
+<main>
+  <div class="content content--wide" x-data="adminBackgroundsPage()">
+    <div class="page-header">
+      <div>
+        <h1 class="page-header__title" tabindex="-1">Bakgrunnsbilete</h1>
+        <p class="page-header__intro">Bilder bak innloggingen. Innloggingssiden viser ett tilfeldig av bildene som er slått på, appen og opptellingssiden har ett fast bilde hver.</p>
+      </div>
+    </div>
+
+    <form class="admin-form" @submit.prevent="uploadBackground()" novalidate aria-labelledby="upload-background-title">
+      <h2 id="upload-background-title" class="section-title">Last opp bilde</h2>
+      <div class="field">
+        <span>Bilde (JPG eller PNG)</span>
+        <div class="file-picker">
+          <label class="file-picker__button"><input class="visually-hidden" type="file" accept="image/*" @change="pickFile($event)" :aria-invalid="uploadSubmitted && !pickedFileName ? 'true' : null"><span x-text="pickedFileName ? 'Bytt bilde' : 'Velg bilde'"></span></label>
+          <span class="file-picker__name" x-text="pickedFileName || 'Ingen fil valgt'"></span>
+        </div>
+        <span class="field-error" x-show="uploadSubmitted && !pickedFileName">Velg et bilde å laste opp.</span>
+      </div>
+      <p class="hint background-upload__hint">Sesongbilder, for eksempel julebilder, kan lastes opp én gang og slås av og på når det passer.</p>
+      <div class="admin-form__actions"><button class="button" type="submit">Last opp</button></div>
+    </form>
+
+    <div class="admin-list-header">
+      <div>
+        <h2 class="section-title">Innloggingsbakgrunner</h2>
+        <p class="hint" x-text="db.login_backgrounds.length ? activeCount + ' av ' + db.login_backgrounds.length + ' er med i utvalget' : 'Ingen bilder ennå'"></p>
+      </div>
+    </div>
+
+    <div class="background-empty card card--outlined" x-show="!db.login_backgrounds.length">
+      <p class="background-empty__title">Ingen bakgrunnsbilder er lastet opp ennå.</p>
+      <p class="hint">Innloggingssiden bruker den mørke standardbakgrunnen til du laster opp det første bildet.</p>
+    </div>
+
+    <ul class="background-grid" x-show="db.login_backgrounds.length">
+      <template x-for="background in db.login_backgrounds" :key="background.id">
+        <li class="background-tile" :class="!background.is_active && 'background-tile--inactive'">
+          <div class="background-tile__image">
+            <img x-show="previews[background.id]" :src="previews[background.id]" alt="">
+            <span x-show="!previews[background.id]" x-text="background.file"></span>
+          </div>
+          <div class="background-tile__body">
+            <p class="background-tile__name" x-text="background.file"></p>
+            <label class="switch"><input type="checkbox" :checked="background.is_active" @change="toggleActive(background)"><span class="switch__track" aria-hidden="true"></span>Er bakgrunnsbilde<span class="visually-hidden" x-text="background.file"></span></label>
+            <div class="button-row" x-show="confirmingDeleteId !== background.id">
+              <button class="button button--danger button--small" type="button" @click="confirmingDeleteId = background.id" :aria-label="'Slett ' + background.file">Slett</button>
+            </div>
+            <div class="admin-list__confirm background-tile__confirm" x-show="confirmingDeleteId === background.id">
+              <span>Slette bildet?</span>
+              <button class="button button--danger-filled button--small" type="button" @click="deleteBackground(background)">Ja, slett</button>
+              <button class="button button--secondary button--small" type="button" @click="confirmingDeleteId = null">Avbryt</button>
+            </div>
+          </div>
+        </li>
+      </template>
+    </ul>
+
+    <form class="admin-form fixed-backgrounds" @submit.prevent="saveFixedBackgrounds()" aria-labelledby="fixed-backgrounds-title">
+      <h2 id="fixed-backgrounds-title" class="section-title">Faste bakgrunner</h2>
+      <div class="form-grid">
+        <label class="field" for="app-background">Appen
+          <select id="app-background" class="input" x-model="appBackground">
+            <option value="">Ingen (standard)</option>
+            <template x-for="background in db.login_backgrounds" :key="background.id"><option :value="background.file" x-text="background.file" :selected="background.file === appBackground"></option></template>
+          </select>
+        </label>
+        <label class="field" for="attendance-background">Opptellingssiden
+          <select id="attendance-background" class="input" x-model="attendanceBackground">
+            <option value="">Ingen (standard)</option>
+            <template x-for="background in db.login_backgrounds" :key="background.id"><option :value="background.file" x-text="background.file" :selected="background.file === attendanceBackground"></option></template>
+          </select>
+        </label>
+      </div>
+      <p class="hint background-upload__hint" x-show="!db.login_backgrounds.length">Last opp et bilde først for å kunne velge det her.</p>
+      <div class="admin-form__actions"><button class="button" type="submit">Lagre</button></div>
+    </form>
+  </div>
+</main>
+
+</body>
+</html>

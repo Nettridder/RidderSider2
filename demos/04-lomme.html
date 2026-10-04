@@ -1,0 +1,918 @@
+<!doctype html>
+<html lang="nb">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#fff4ea">
+<title>Lomme-ridder</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Nunito:ital,wght@0,500;0,600;0,700;0,800;0,900;1,700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --orange:#ec6c00;
+  --orange-press:#d45f00;
+  --brick:#b8430a;
+  --amber:#f7a928;
+  --flame-core:#ffd66b;
+  --teal:#0c5b5c;
+  --teal-deep:#08393a;
+  --teal-mid:#16807f;
+  --teal-soft:#d5ece8;
+  --cream:#fff4ea;
+  --peach:#ffe4cf;
+  --peach-deep:#ffd2ad;
+  --paper:#fffcf8;
+  --ink:#1f1a17;
+  --ink-soft:#62564d;
+  --ink-faint:#9a8b7f;
+  --line:rgba(98,60,30,.12);
+  --focus:#0c5b5c;
+
+  --r-sheet:30px;
+  --r-card:24px;
+  --r-tile:18px;
+  --r-photo:4px;
+
+  --lift:0 2px 0 rgba(150,70,10,.10), 0 10px 26px -14px rgba(120,55,10,.35);
+  --lift-press:0 1px 0 rgba(150,70,10,.10), 0 4px 10px -8px rgba(120,55,10,.35);
+  --spring:cubic-bezier(.22,1.12,.36,1);
+  --ease:cubic-bezier(.3,.7,.2,1);
+
+  --tab-h:74px;
+  --rail-w:92px;
+  --safe-b:env(safe-area-inset-bottom, 0px);
+}
+*,*::before,*::after{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%;scroll-behavior:smooth}
+body{
+  margin:0;background:var(--cream);color:var(--ink);
+  font-family:"Nunito",ui-rounded,system-ui,sans-serif;font-size:16px;line-height:1.5;
+  -webkit-font-smoothing:antialiased;overflow-x:hidden;
+}
+body.locked{overflow:hidden}
+a{color:inherit;text-decoration:none}
+button{font:inherit;color:inherit;background:none;border:0;padding:0;cursor:pointer}
+img{display:block}
+h1,h2,h3,p{margin:0}
+:focus-visible{outline:3px solid var(--focus);outline-offset:3px;border-radius:12px}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+.i{width:24px;height:24px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;flex:none}
+.i-sm{width:14px;height:14px}
+[x-cloak]{display:none!important}
+
+/* ---------- Top bar ---------- */
+.topbar{
+  position:sticky;top:0;z-index:20;
+  display:flex;align-items:center;justify-content:space-between;gap:12px;
+  padding:10px 16px;padding-top:max(10px, env(safe-area-inset-top));
+  background:color-mix(in srgb, var(--cream) 86%, transparent);
+  backdrop-filter:blur(14px) saturate(1.4);-webkit-backdrop-filter:blur(14px) saturate(1.4);
+}
+.brand{display:flex;align-items:center;gap:10px;font-weight:900;font-size:17px;letter-spacing:-.01em;border-radius:12px}
+.brand img{height:36px;width:auto}
+.brand small{display:block;font-weight:700;font-size:12px;color:var(--ink-soft);letter-spacing:0;margin-top:-3px}
+.photo{
+  display:block;height:48px;aspect-ratio:4/5;border-radius:var(--r-photo);overflow:hidden;
+  background:#e9e7e4;border:2px solid #fff;
+  box-shadow:0 1px 2px rgba(60,30,10,.10), 0 3px 10px -4px rgba(60,30,10,.14);
+  transition:transform .25s var(--spring);
+}
+.photo img{width:100%;height:100%;object-fit:cover}
+.photo-btn{border-radius:8px;position:relative}
+.photo-btn:hover .photo{transform:rotate(-3deg) scale(1.04)}
+.photo-btn:active .photo{transform:scale(.94)}
+.photo-btn .dot{position:absolute;right:-4px;bottom:-4px;width:18px;height:18px;border-radius:50%;background:var(--orange);border:3px solid var(--cream);display:grid;place-items:center}
+
+/* ---------- Main ---------- */
+main{padding:4px 16px calc(var(--tab-h) + var(--safe-b) + 40px);max-width:1120px;margin:0 auto}
+.greet{display:flex;gap:14px;align-items:center;margin:10px 0 14px}
+.greet img{height:84px;width:auto;flex:none;filter:drop-shadow(0 6px 10px rgba(184,67,10,.18));transform:rotate(-4deg)}
+.greet h1{font-size:clamp(28px,7.4vw,40px);font-weight:900;line-height:1.02;letter-spacing:-.025em}
+.greet p{color:var(--ink-soft);font-weight:700;margin-top:4px}
+.intro{color:var(--ink-soft);max-width:60ch;font-size:15px;margin-bottom:20px}
+.intro strong{color:var(--ink);font-weight:800}
+.when-desk{display:none}
+
+/* ---------- Quick action ---------- */
+.quick{
+  position:relative;background:var(--teal);color:#fff;border-radius:var(--r-card);
+  padding:20px;overflow:hidden;
+  box-shadow:0 3px 0 var(--teal-deep), 0 18px 34px -18px rgba(8,57,58,.7);
+  display:grid;grid-template-columns:1fr auto;gap:6px 16px;align-items:start;
+}
+.quick::after{ /* hearth glow behind the flame */
+  content:"";position:absolute;right:-60px;top:-60px;width:240px;height:240px;border-radius:50%;
+  background:radial-gradient(circle, rgba(247,169,40,.32), rgba(247,169,40,0) 65%);pointer-events:none;
+}
+.quick h2{font-size:22px;font-weight:900;letter-spacing:-.015em}
+.quick .sub{color:#cfe7e3;font-size:14px;font-weight:600;margin-top:2px}
+.flame{position:relative;z-index:1;width:104px;text-align:center}
+.flame svg{width:96px;height:112px;display:block;margin:0 auto;filter:drop-shadow(0 8px 14px rgba(236,108,0,.5));transform-origin:50% 90%}
+.flame .n{position:absolute;left:0;right:0;top:44px;font-size:40px;font-weight:900;color:var(--teal-deep);line-height:1;letter-spacing:-.04em}
+.flame .lbl{font-size:12.5px;font-weight:800;color:#ffe0bd;margin-top:2px}
+.flame.pop svg{animation:flamePop .7s var(--spring)}
+.flame.pop .n{animation:numPop .7s var(--spring)}
+@keyframes flamePop{0%{transform:scale(1)}30%{transform:scale(1.25,1.32) rotate(-4deg)}60%{transform:scale(.94,.96) rotate(2deg)}100%{transform:scale(1)}}
+@keyframes numPop{0%{transform:translateY(0)}35%{transform:translateY(-8px) scale(1.2)}100%{transform:none}}
+.flame svg .flicker{animation:flick 2.6s ease-in-out infinite;transform-origin:50% 100%}
+@keyframes flick{0%,100%{transform:scaleY(1) skewX(0)}50%{transform:scaleY(1.06) skewX(-3deg)}}
+
+.logrow{grid-column:1 / -1;position:relative;z-index:1;margin-top:10px}
+.mins{display:flex;align-items:center;gap:10px;background:rgba(255,255,255,.1);border-radius:18px;padding:6px 6px 6px 14px;width:max-content;max-width:100%}
+.mins input{
+  width:3.2ch;font:inherit;font-size:30px;font-weight:900;color:#fff;background:none;border:0;padding:0;text-align:right;
+  -moz-appearance:textfield;appearance:textfield;
+}
+.mins input::-webkit-outer-spin-button,.mins input::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
+.mins input:focus-visible{outline:none}
+.mins:focus-within{box-shadow:0 0 0 3px var(--amber)}
+.mins span{font-weight:800;color:#cfe7e3}
+.mins .clear{width:34px;height:34px;border-radius:12px;display:grid;place-items:center;color:#cfe7e3}
+.mins .clear:hover{background:rgba(255,255,255,.12);color:#fff}
+.chips{display:flex;gap:8px;margin-top:12px}
+.chip{
+  flex:1 1 0;min-width:0;max-width:96px;height:44px;padding:0 14px;border-radius:999px;background:var(--peach);color:var(--teal-deep);
+  font-weight:900;font-size:17px;box-shadow:0 3px 0 var(--peach-deep);
+  transition:transform .18s var(--spring), box-shadow .18s;
+}
+.chip:hover{transform:translateY(-2px);box-shadow:0 5px 0 var(--peach-deep)}
+.chip:active{transform:translateY(3px);box-shadow:0 0 0 var(--peach-deep)}
+.btn-go{
+  grid-column:1 / -1;position:relative;z-index:1;margin-top:14px;
+  height:54px;border-radius:18px;background:var(--orange);color:#fff;font-weight:900;font-size:17px;
+  display:flex;align-items:center;justify-content:center;gap:8px;box-shadow:0 4px 0 var(--brick);
+  transition:transform .18s var(--spring), box-shadow .18s, background .2s;
+}
+.btn-go:hover{background:#f57a10}
+.btn-go:active{transform:translateY(4px);box-shadow:0 0 0 var(--brick)}
+.btn-go:focus-visible{outline-color:var(--amber)}
+.week{grid-column:1 / -1;position:relative;z-index:1;margin-top:14px;font-size:14px;font-weight:700;color:#cfe7e3}
+.week b{color:#fff;font-weight:900}
+.bar{height:10px;border-radius:99px;background:rgba(255,255,255,.14);overflow:hidden;margin-top:6px}
+.bar i{display:block;height:100%;border-radius:99px;background:linear-gradient(90deg,var(--amber),var(--orange));transition:width .6s var(--spring)}
+
+/* ---------- Carousel ---------- */
+.row-head{display:flex;align-items:end;justify-content:space-between;gap:12px;margin:30px 0 12px}
+.row-head h2{font-size:21px;font-weight:900;letter-spacing:-.015em}
+.row-head p{font-size:14px;color:var(--ink-soft);font-weight:600}
+.arrows{display:none;gap:6px}
+.arrow{width:40px;height:40px;border-radius:14px;background:var(--paper);box-shadow:var(--lift);display:grid;place-items:center;transition:transform .15s var(--spring)}
+.arrow:active{transform:scale(.92)}
+.carousel{
+  display:flex;gap:12px;overflow-x:auto;scroll-snap-type:x mandatory;scroll-padding:16px;
+  margin:0 -16px;padding:4px 16px 18px;scrollbar-width:none;overscroll-behavior-x:contain;
+}
+.carousel::-webkit-scrollbar{display:none}
+.widget{
+  flex:0 0 min(80vw, 290px);scroll-snap-align:start;border-radius:var(--r-card);padding:18px;
+  background:var(--paper);box-shadow:var(--lift);display:flex;flex-direction:column;gap:10px;min-height:208px;
+  transition:transform .2s var(--spring), box-shadow .2s;
+}
+.widget:hover{transform:translateY(-3px)}
+.widget:active{transform:scale(.98);box-shadow:var(--lift-press)}
+.w-top{display:flex;align-items:center;gap:8px;font-size:13.5px;font-weight:800;color:var(--ink-soft)}
+.w-top .ico{width:30px;height:30px;border-radius:10px;display:grid;place-items:center}
+.w-top .ico .i{width:18px;height:18px}
+.widget h3{font-size:20px;font-weight:900;line-height:1.15;letter-spacing:-.01em}
+.widget .meta{font-size:14px;color:var(--ink-soft);font-weight:600}
+.w-next .ico{background:var(--teal-soft);color:var(--teal)}
+.w-next .when{font-size:15px;font-weight:800;color:var(--teal)}
+.songs{list-style:none;margin:auto 0 0;padding:0;display:flex;flex-wrap:wrap;gap:6px}
+.songs li{font-size:13px;font-weight:800;background:var(--cream);border-radius:99px;padding:4px 10px}
+.w-rep{background:var(--peach)}
+.w-rep .ico{background:var(--orange);color:#fff}
+.stack{display:flex;height:14px;border-radius:99px;overflow:hidden;gap:3px;margin-top:auto}
+.stack span{display:block;height:100%}
+.legend{display:flex;gap:12px;flex-wrap:wrap;font-size:12.5px;font-weight:800;color:var(--ink-soft)}
+.legend span::before{content:"";display:inline-block;width:9px;height:9px;border-radius:3px;margin-right:5px;background:var(--c)}
+.w-doc .ico{background:var(--cream);color:var(--brick)}
+.w-doc .paper{margin-top:auto;border-radius:14px;background:var(--cream);padding:12px 14px;display:flex;gap:10px;align-items:center;font-weight:800;font-size:14px}
+.w-ach{background:var(--orange);color:#fff}
+.w-ach .w-top{color:#ffe2c6}
+.w-ach .ico{background:rgba(255,255,255,.2);color:#fff}
+.w-ach .meta{color:#ffe2c6}
+.medal{margin-top:auto;display:flex;align-items:center;gap:12px}
+.medal .coin{width:56px;height:56px;border-radius:50%;background:var(--flame-core);color:var(--brick);display:grid;place-items:center;box-shadow:inset 0 -4px 0 var(--amber), 0 3px 0 var(--brick);font-weight:900;font-size:13px;line-height:1;text-align:center}
+.medal b{font-size:26px;font-weight:900;letter-spacing:-.03em}
+
+/* ---------- Launcher ---------- */
+.launcher{display:grid;gap:14px}
+.shelf{background:var(--paper);border-radius:var(--r-card);padding:14px 14px 18px;box-shadow:var(--lift)}
+.shelf-head{display:flex;align-items:center;gap:10px;margin-bottom:12px}
+.shelf-head h3{font-size:17px;font-weight:900;flex:1}
+.shelf-head .hint{font-size:13px;color:var(--ink-soft);font-weight:600}
+.shelf-head button{font-size:13.5px;font-weight:800;color:var(--teal);padding:6px 12px;border-radius:99px;background:var(--teal-soft)}
+.shelf-head button:hover{background:#c4e3de}
+.tiles{display:grid;grid-template-columns:repeat(auto-fill,minmax(76px,1fr));gap:14px 8px}
+.tile{display:flex;flex-direction:column;align-items:center;gap:6px;text-align:center;border-radius:16px;padding:2px}
+.tile .sq{
+  position:relative;width:60px;height:60px;border-radius:var(--r-tile);display:grid;place-items:center;
+  background:var(--tone);color:var(--tone-fg,#fff);
+  box-shadow:0 3px 0 var(--tone-edge), 0 8px 14px -10px var(--tone-edge);
+  transition:transform .2s var(--spring), box-shadow .2s;
+}
+.tile .sq .i{width:28px;height:28px}
+.tile:hover .sq{transform:translateY(-3px) rotate(-3deg)}
+.tile:active .sq{transform:translateY(3px) scale(.95);box-shadow:0 0 0 var(--tone-edge)}
+.tile .lbl{font-size:12px;font-weight:800;line-height:1.2;color:var(--ink);max-width:100%;hyphens:auto;-webkit-hyphens:auto}
+.tile .ext{position:absolute;top:-5px;right:-5px;width:20px;height:20px;border-radius:50%;background:var(--paper);color:var(--ink);display:grid;place-items:center;box-shadow:0 1px 3px rgba(0,0,0,.15)}
+.tile .ext .i{width:12px;height:12px;stroke-width:2.6}
+.tile .badge{position:absolute;bottom:-9px;border:2px solid var(--paper);left:50%;transform:translateX(-50%);white-space:nowrap}
+.folder .sq{background:var(--cream);box-shadow:inset 0 0 0 2px var(--tone), 0 3px 0 var(--tone-edge);display:grid;grid-template-columns:1fr 1fr;gap:3px;padding:9px}
+.folder .sq .mini{width:100%;aspect-ratio:1;border-radius:6px;background:var(--tone);display:grid;place-items:center;color:var(--tone-fg,#fff)}
+.folder .sq .mini .i{width:11px;height:11px;stroke-width:2.8}
+.tone-orange{--tone:var(--orange);--tone-edge:var(--brick)}
+.tone-teal{--tone:var(--teal-mid);--tone-edge:var(--teal-deep)}
+.tone-amber{--tone:var(--amber);--tone-edge:#c27a07;--tone-fg:var(--ink)}
+.tone-brick{--tone:var(--brick);--tone-edge:#7e2c05}
+.tone-ink{--tone:#3a302a;--tone-edge:#16110e}
+.badge{display:inline-flex;align-items:center;gap:3px;font-size:10.5px;font-weight:900;padding:2px 7px;border-radius:99px;background:var(--ink);color:#fff;letter-spacing:.01em}
+.badge .i{width:10px;height:10px;stroke-width:3}
+.badge.notes{background:var(--teal)}
+.badge.master{background:var(--brick)}
+
+footer{margin-top:36px;padding:22px 4px 0;border-top:2px dashed var(--line);display:flex;gap:14px;align-items:center;color:var(--ink-soft);font-size:13.5px;font-weight:600}
+footer img{height:44px;width:auto}
+footer a{text-decoration:underline;text-decoration-color:var(--peach-deep);text-underline-offset:3px}
+
+/* ---------- Tab bar / rail ---------- */
+.tabbar{
+  position:fixed;left:0;right:0;bottom:0;z-index:30;
+  display:grid;grid-template-columns:repeat(5,1fr);
+  height:calc(var(--tab-h) + var(--safe-b));padding:6px 6px calc(6px + var(--safe-b));
+  background:var(--paper);border-radius:26px 26px 0 0;
+  box-shadow:0 -1px 0 var(--line), 0 -10px 30px -18px rgba(120,55,10,.4);
+}
+.rail-logo{display:none}
+.tab{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;font-size:11.5px;font-weight:800;color:var(--ink-soft);border-radius:18px;position:relative}
+.tab .pill{width:56px;height:32px;border-radius:99px;display:grid;place-items:center;transition:background .25s var(--ease), transform .25s var(--spring)}
+.tab:active .pill{transform:scale(.88)}
+.tab[aria-current="true"],.tab[aria-expanded="true"]{color:var(--ink)}
+.tab[aria-current="true"] .pill,.tab[aria-expanded="true"] .pill{background:var(--peach);color:var(--orange)}
+.tab[aria-expanded="true"] .i{stroke-width:2.4}
+
+/* ---------- Sheets ---------- */
+.scrim{position:fixed;inset:0;z-index:40;background:rgba(40,22,10,.36);opacity:0;visibility:hidden;transition:opacity .3s var(--ease), visibility 0s .3s}
+.scrim.on{opacity:1;visibility:visible;transition:opacity .3s var(--ease)}
+.sheet{
+  position:fixed;left:0;right:0;bottom:0;z-index:50;max-height:88dvh;
+  display:flex;flex-direction:column;
+  background:var(--cream);border-radius:var(--r-sheet) var(--r-sheet) 0 0;
+  box-shadow:0 -20px 50px -20px rgba(60,25,5,.5);
+  transform:translateY(104%);visibility:hidden;
+  transition:transform .42s var(--spring), visibility 0s .42s;
+}
+.sheet.on{transform:translateY(0);visibility:visible;transition:transform .46s var(--spring)}
+.sheet.dragging{transition:none}
+.grab{flex:none;padding:10px 0 4px;display:grid;place-items:center;cursor:grab;touch-action:none}
+.grab::before{content:"";width:44px;height:5px;border-radius:9px;background:rgba(98,60,30,.25)}
+.sheet-head{flex:none;display:flex;gap:14px;align-items:center;padding:6px 18px 14px}
+.sheet-head .big{width:52px;height:52px;border-radius:var(--r-tile);display:grid;place-items:center;background:var(--tone);color:var(--tone-fg,#fff);box-shadow:0 3px 0 var(--tone-edge)}
+.sheet-head h2{font-size:24px;font-weight:900;letter-spacing:-.02em;line-height:1.1}
+.sheet-head p{font-size:14px;color:var(--ink-soft);font-weight:600}
+.x{margin-left:auto;align-self:flex-start;width:40px;height:40px;border-radius:14px;background:var(--paper);display:grid;place-items:center;flex:none;box-shadow:var(--lift)}
+.x:active{transform:scale(.92)}
+.sheet-body{overflow-y:auto;padding:0 14px calc(22px + var(--safe-b));overscroll-behavior:contain}
+.grp{margin-top:8px}
+.grp + .grp{margin-top:18px}
+.grp-label{display:flex;align-items:center;gap:8px;font-size:14px;font-weight:900;color:var(--ink-soft);padding:0 6px 8px}
+.grp-label .badge{font-size:10.5px}
+.grp.admin{background:repeating-linear-gradient(-45deg, rgba(184,67,10,.045) 0 10px, transparent 10px 20px);border-radius:22px;padding:12px 8px 8px;border:2px dashed rgba(184,67,10,.25)}
+.grp.admin.flash{animation:flash 1.2s var(--ease)}
+@keyframes flash{0%,100%{border-color:rgba(184,67,10,.25)}30%{border-color:var(--orange);box-shadow:0 0 0 4px rgba(236,108,0,.18)}}
+.rows{display:grid;gap:8px}
+.rowlink{
+  display:flex;align-items:center;gap:12px;padding:12px;border-radius:20px;background:var(--paper);
+  box-shadow:0 2px 0 rgba(150,70,10,.08);transition:transform .18s var(--spring), background .2s;
+}
+.rowlink:hover{background:#fff}
+.rowlink:active{transform:scale(.98)}
+.rowlink .sq{width:44px;height:44px;border-radius:14px;display:grid;place-items:center;background:var(--tone);color:var(--tone-fg,#fff);flex:none}
+.rowlink .sq .i{width:22px;height:22px}
+.rowlink .t{flex:1;min-width:0}
+.rowlink .t b{display:flex;align-items:center;gap:6px;font-weight:900;font-size:16px}
+.rowlink .t b .i{width:14px;height:14px;stroke-width:2.6;color:var(--ink-faint)}
+.rowlink .t > span{display:block;font-size:13.5px;color:var(--ink-soft);font-weight:600;line-height:1.35}
+.rowlink .chev{color:var(--ink-faint);width:18px;height:18px}
+.board{margin-top:18px;padding:14px;border-radius:22px;background:var(--teal-soft)}
+.board h3{font-size:14px;font-weight:900;color:var(--teal);margin-bottom:8px}
+.board ul{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.board li{background:var(--paper);border-radius:14px;padding:8px 10px;font-size:13px;font-weight:600;color:var(--ink-soft);line-height:1.3}
+.board li b{display:block;color:var(--ink);font-weight:900;font-size:13.5px}
+.locked-note{margin:18px 6px 0;font-size:13px;color:var(--ink-faint);font-weight:700;display:flex;gap:6px;align-items:center}
+
+/* profile sheet */
+.prof-top{display:flex;gap:16px;align-items:flex-end;padding:4px 18px 16px}
+.prof-top .photo{height:128px;border-width:4px;transform:rotate(-2deg)}
+.prof-top h2{font-size:26px;font-weight:900;letter-spacing:-.02em;line-height:1.05}
+.prof-top p{color:var(--ink-soft);font-weight:700;font-size:14.5px}
+.status{display:inline-flex;margin-top:8px;font-size:12.5px;font-weight:900;padding:3px 10px;border-radius:99px;background:var(--teal-soft);color:var(--teal)}
+.status.old{background:var(--peach);color:var(--brick)}
+.ranks{list-style:none;margin:0 4px 16px;padding:0;display:flex;gap:4px;overflow-x:auto;scrollbar-width:none}
+.ranks li{flex:1 0 auto;font-size:11.5px;font-weight:800;color:var(--ink-faint);text-align:center;padding:8px 8px 0;border-top:5px solid var(--peach);border-radius:2px}
+.ranks li.done{border-top-color:var(--amber);color:var(--ink-soft)}
+.ranks li.now{border-top-color:var(--orange);color:var(--orange)}
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:0 4px 16px}
+.stats div{background:var(--paper);border-radius:18px;padding:10px 12px;box-shadow:0 2px 0 rgba(150,70,10,.08)}
+.stats b{display:block;font-size:22px;font-weight:900;letter-spacing:-.02em;line-height:1.1}
+.stats span{font-size:12px;font-weight:700;color:var(--ink-soft)}
+.logout{margin:16px 4px 0;width:calc(100% - 8px);height:50px;border-radius:18px;border:2px solid rgba(184,67,10,.35);color:var(--brick);font-weight:900;display:flex;align-items:center;justify-content:center;gap:8px}
+.logout:hover{background:rgba(184,67,10,.06)}
+
+/* ---------- Demo control ---------- */
+.demo{position:fixed;right:12px;bottom:calc(var(--tab-h) + var(--safe-b) + 12px);z-index:35}
+.demo-btn{display:flex;align-items:center;gap:6px;height:38px;padding:0 14px;border-radius:99px;background:#fff;border:2px dashed var(--ink);font-weight:900;font-size:13px;box-shadow:0 4px 14px -6px rgba(0,0,0,.3)}
+.demo-panel{position:absolute;right:0;bottom:48px;width:272px;background:#fff;border:2px dashed var(--ink);border-radius:20px;padding:14px;box-shadow:0 18px 40px -16px rgba(0,0,0,.4)}
+.demo-panel h3{font-size:13px;font-weight:900;margin-bottom:6px}
+.demo-panel p{font-size:12px;color:var(--ink-soft);font-weight:600;margin-bottom:12px}
+.seg{display:grid;grid-template-columns:1fr 1fr;background:var(--cream);border-radius:14px;padding:3px;margin-bottom:12px}
+.seg label{position:relative;display:block;text-align:center;font-size:12.5px;font-weight:800;padding:7px 4px;border-radius:11px;cursor:pointer}
+.seg input{position:absolute;opacity:0;inset:0;cursor:pointer}
+.seg label:has(input:checked){background:#fff;box-shadow:0 1px 4px rgba(0,0,0,.12)}
+.seg label:has(input:focus-visible){outline:3px solid var(--focus)}
+.tog{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:6px 0;font-size:13.5px;font-weight:800;cursor:pointer}
+.tog code{font-size:11.5px;color:var(--ink-faint);font-weight:700;font-family:inherit}
+.tog input{appearance:none;width:44px;height:26px;border-radius:99px;background:#ddd2c8;position:relative;cursor:pointer;transition:background .2s;flex:none;margin:0}
+.tog input::after{content:"";position:absolute;top:3px;left:3px;width:20px;height:20px;border-radius:50%;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.25);transition:transform .25s var(--spring)}
+.tog input:checked{background:var(--orange)}
+.tog input:checked::after{transform:translateX(18px)}
+
+/* ---------- Toast ---------- */
+.toast{
+  position:fixed;left:50%;top:calc(12px + env(safe-area-inset-top));z-index:70;
+  transform:translate(-50%,-140%);visibility:hidden;transition:transform .45s var(--spring), visibility 0s .45s;
+  background:var(--ink);color:#fff;font-weight:800;font-size:14.5px;border-radius:18px;padding:12px 16px;
+  display:flex;gap:10px;align-items:center;max-width:calc(100% - 32px);box-shadow:0 14px 30px -12px rgba(0,0,0,.5)
+}
+.toast.on{transform:translate(-50%,0);visibility:visible;transition:transform .45s var(--spring)}
+.toast .i{color:var(--amber)}
+
+/* ---------- Desktop ---------- */
+@media (min-width:901px){
+  body{padding-left:var(--rail-w)}
+  .topbar{padding:14px 32px}
+  .topbar .brand{visibility:hidden}
+  main{padding:0 32px 60px}
+  .when-mob{display:none}.when-desk{display:inline}
+  .top-grid{display:grid;grid-template-columns:minmax(0,1.05fr) minmax(0,1fr);gap:20px 28px;align-items:start}
+  .greet{margin-top:0}
+  .greet img{height:112px}
+  .top-grid .quick{grid-row:span 2}
+  .arrows{display:flex}
+  .carousel{margin:0;padding:4px 2px 18px;scroll-padding:2px}
+  .widget{flex-basis:280px}
+  .launcher{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .demo{bottom:20px;right:20px}
+
+  .tabbar{
+    top:0;right:auto;width:var(--rail-w);height:auto;z-index:60;
+    display:flex;flex-direction:column;align-items:stretch;justify-content:flex-start;gap:6px;
+    padding:18px 8px;border-radius:0 28px 28px 0;
+    box-shadow:1px 0 0 var(--line), 10px 0 30px -22px rgba(120,55,10,.5);
+  }
+  .rail-logo{display:grid;place-items:center;padding:0 0 14px;margin-bottom:6px;border-bottom:2px dashed var(--line)}
+  .rail-logo img{height:64px;width:auto}
+  .tab{padding:8px 0;font-size:12px}
+  .tab .pill{width:58px;height:36px}
+
+  .scrim{left:var(--rail-w);background:rgba(40,22,10,.18)}
+  .sheet{
+    top:0;bottom:0;left:var(--rail-w);right:auto;width:400px;max-height:none;
+    border-radius:0 var(--r-sheet) var(--r-sheet) 0;
+    transform:translateX(-104%);box-shadow:20px 0 50px -24px rgba(60,25,5,.45);
+  }
+  .sheet.on{transform:translateX(0)}
+  .sheet .grab{display:none}
+  .sheet-head{padding-top:26px}
+  .prof-top{padding-top:30px}
+  .sheet.right{left:auto;right:0;width:420px;border-radius:var(--r-sheet) 0 0 var(--r-sheet);transform:translateX(104%);box-shadow:-20px 0 50px -24px rgba(60,25,5,.45)}
+  .sheet.right.on{transform:translateX(0)}
+  .scrim.full{left:var(--rail-w)}
+}
+@media (min-width:1200px){
+  .launcher{grid-template-columns:repeat(3,minmax(0,1fr))}
+}
+@media (prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation:none!important;transition-duration:.01ms!important;scroll-behavior:auto!important}
+}
+</style>
+<script>
+function lommeApp(){
+  const S = (name, icon, desc, extra={}) => ({name, icon, desc, ...extra});
+  return {
+    status:'aktiv',
+    roles:{master:false, notes:false},
+    demoOpen:false,
+    sheetOpen:false, sheetId:'noter', profileOpen:false,
+    opener:null,
+    minutes:10, week:85, goal:120, streak:6, total:1520, loggedToday:false, pop:false,
+    toastMsg:'', toastOn:false, toastT:null,
+    dragY:0, dragStart:null,
+    ranks:['Aspirant','Knekt','Ridder','Ridder av 1. klasse','Kommandørridder','Storridder'],
+    rank:2,
+    board:[
+      {role:'Rittmester', who:'Nr. 31, Henrik Aas'},
+      {role:'Paragrafrytter', who:'Sindre Lie'},
+      {role:'Finansridder', who:'Jonas Berg'},
+      {role:'Noteridder', who:'Eirik Dahl'},
+      {role:'Lagersjef', who:'Magnus Vik'},
+      {role:'Dirigent', who:'Kari Solheim'},
+    ],
+    sections:[
+      {id:'noter', title:'Noter', icon:'note', tone:'orange', blurb:'Sangene, repertoaret og øvingsplanen.',
+        groups:[
+          {label:'Sanger', items:[
+            S('Sanger','library','Hele sangbiblioteket, rundt 400 sanger.'),
+            S('Repertoar','list','Det vi synger nå. Kun for aktive.',{needs:'active'}),
+            S('Øvingsplan','clock','Hva vi øver på, øving for øving. Kun for aktive.',{needs:'active'}),
+          ]},
+          {label:'Verktøy', items:[
+            S('Toneangiver','sound','Klikk på en sang og hør startklippet.',{ext:true, href:'/toneangiver'}),
+          ]},
+          {label:'Note-admin', needs:'notes', admin:true, items:[
+            S('Sanger','library','Legg til sanger, noter og lydfiler.'),
+            S('Repertoar','list','Sett sammen repertoar til konsertene.'),
+            S('Sangkunnskap','bulb','Se hvem som kan hva, stemme for stemme.'),
+            S('Øvingsplan','clock','Planlegg øvingene fremover.'),
+            S('Øvingskonkurranse','medal','Sett opp og følg konkurransen.'),
+          ]},
+        ]},
+      {id:'medlemmer', title:'Medlemmer', icon:'users', tone:'teal', blurb:'Hvem som synger, og hvem som styrer.',
+        groups:[
+          {label:null, items:[
+            S('Medlemmer','users','Galleri og liste. Aktive og ypp.com.'),
+            S('Styret','crown','Nåværende styre og hele historikken.'),
+          ]},
+          {label:'Admin', needs:'master', admin:true, items:[
+            S('Medlemmer','users','Legg til, rediger og flytt medlemmer.'),
+            S('Styret','crown','Oppdater verv og styrehistorikk.'),
+            S('Opptellinger','tally','Tell opp oppmøte og øvingsminutter.'),
+            S('Dokumenter','file','Last opp og ordne dokumentarkivet.'),
+            S('Resolusjonar','scroll','Før inn vedtekne resolusjonar.'),
+            S('Bakgrunnsbilete','wall','Byt bakgrunnsbiletet i appen.'),
+          ]},
+        ]},
+      {id:'ridderdata', title:'Ridderdata', icon:'data', tone:'amber', blurb:'Det som skjer nå, og alt vi har tatt vare på.',
+        groups:[
+          {label:'Det som skjer', items:[
+            S('Kalender','calendar','Øvinger, konserter og fester i Google Calendar.',{ext:true}),
+          ]},
+          {label:'Arkivet', items:[
+            S('Dokumenter','file','Referater og papirer, nyeste først. Søkbart.'),
+            S('RidderWiki','book','Korets felles hukommelse.',{ext:true}),
+            S('Videoarkiv','film','Opptak fra konserter, samlet på RidderWiki.',{ext:true}),
+            S('Bildearkiv','camera','Bilder på armeriddere.smugmug.com.',{ext:true}),
+          ]},
+        ]},
+      {id:'kontakt', title:'Kontakt', icon:'mail', tone:'brick', blurb:'Nå riktig person, eller si fra anonymt.',
+        groups:[
+          {label:null, items:[
+            S('Epostlister','mail','Rolle-eposter og distribusjonslister.'),
+            S('Anonym Forum','chat','Varsling, ektesnakk og anonyme innspill.'),
+          ]},
+        ]},
+    ],
+    profileItems:[
+      S('Registrer øving','timer','Før opp minuttene du har øvd.',{action:'log'}),
+      S('Repertoar','list','Marker sangene som kjent, litt kjent eller ikke kjent.',{needs:'active'}),
+      S('Achievements','star','Merkene du har samlet så langt.'),
+      S('MAR Games','game','Spill og konkurranser for koret.',{ext:true}),
+      S('Profilinnstillinger','gear','Bilde, stemme, kontaktinfo og varsler.'),
+    ],
+
+    get greeting(){ const h=new Date().getHours(); return h<5?'God natt':h<10?'God morgen':h<17?'God dag':'God kveld'; },
+    get active(){ return this.status==='aktiv'; },
+    get current(){ return this.sections.find(s=>s.id===this.sheetId); },
+    can(n){ if(!n) return true; if(n==='active') return this.active; if(n==='notes') return this.roles.notes||this.roles.master; if(n==='master') return this.roles.master; return false; },
+    items(g){ return g.items.filter(i=>this.can(i.needs)); },
+    groupsOf(sec){ return sec.groups.filter(g=>this.can(g.needs) && this.items(g).length); },
+    badgeFor(g){ return g.needs==='master' ? {cls:'master', txt:'Mester'} : {cls:'notes', txt:'Note'}; },
+    tilesFor(sec){
+      const out=[];
+      this.groupsOf(sec).forEach(g=>{
+        if(g.admin) out.push({folder:true, name:g.label, items:this.items(g), badge:this.badgeFor(g)});
+        else this.items(g).forEach(i=>out.push(i));
+      });
+      return out;
+    },
+    hiddenCount(sec){
+      let n=0; sec.groups.forEach(g=>{ if(!this.can(g.needs)) n+=g.items.length; else n+=g.items.filter(i=>!this.can(i.needs)).length; });
+      return n;
+    },
+
+    openSection(id, focusGroup){
+      if(!this.sheetOpen && !this.profileOpen) this.opener=document.activeElement;
+      this.profileOpen=false;
+      if(this.sheetOpen && this.sheetId===id && !focusGroup){ this.closeAll(); return; }
+      this.sheetId=id; this.sheetOpen=true; this.lock();
+      this.$nextTick(()=>{
+        const sh=this.$refs.sheet; sh.querySelector('.sheet-body').scrollTop=0;
+        if(focusGroup){
+          const el=sh.querySelector(`[data-group="${focusGroup}"]`);
+          if(el){ setTimeout(()=>{ el.scrollIntoView({block:'nearest',behavior:'smooth'}); el.classList.remove('flash'); void el.offsetWidth; el.classList.add('flash'); },260); }
+        }
+        this.$refs.sheetClose.focus({preventScroll:true});
+      });
+    },
+    openProfile(){
+      if(!this.sheetOpen && !this.profileOpen) this.opener=document.activeElement;
+      this.sheetOpen=false; this.profileOpen=true; this.lock();
+      this.$nextTick(()=>this.$refs.profClose.focus({preventScroll:true}));
+    },
+    closeAll(){
+      const was=this.sheetOpen||this.profileOpen;
+      this.sheetOpen=false; this.profileOpen=false; document.body.classList.remove('locked');
+      if(was && this.opener && document.contains(this.opener)) this.opener.focus({preventScroll:true});
+      this.opener=null;
+    },
+    goHome(){ this.closeAll(); window.scrollTo({top:0,behavior:matchMedia('(prefers-reduced-motion: reduce)').matches?'auto':'smooth'}); },
+    lock(){ if(matchMedia('(max-width:900px)').matches) document.body.classList.add('locked'); },
+    trap(e){
+      if(e.key!=='Tab') return;
+      const f=[...e.currentTarget.querySelectorAll('a[href],button:not([disabled]),input')].filter(el=>el.offsetParent!==null);
+      if(!f.length) return;
+      const first=f[0], last=f[f.length-1];
+      if(e.shiftKey && document.activeElement===first){ e.preventDefault(); last.focus(); }
+      else if(!e.shiftKey && document.activeElement===last){ e.preventDefault(); first.focus(); }
+    },
+    dragDown(e){ this.dragStart=e.clientY; this.dragY=0; e.currentTarget.setPointerCapture(e.pointerId); e.currentTarget.closest('.sheet').classList.add('dragging'); },
+    dragMove(e){ if(this.dragStart===null) return; this.dragY=Math.max(0,e.clientY-this.dragStart); e.currentTarget.closest('.sheet').style.transform=`translateY(${this.dragY}px)`; },
+    dragUp(e){
+      if(this.dragStart===null) return;
+      const sh=e.currentTarget.closest('.sheet'); sh.classList.remove('dragging'); sh.style.transform='';
+      if(this.dragY>90) this.closeAll();
+      this.dragStart=null; this.dragY=0;
+    },
+
+    add(n){ this.minutes=Math.min(600,(parseInt(this.minutes)||0)+n); },
+    register(){
+      const m=parseInt(this.minutes)||0;
+      if(m<=0){ this.toast('Velg hvor mange minutter du øvde først.'); this.$refs.mins.focus(); return; }
+      this.week+=m; this.total+=m;
+      let msg=`Registrert ${m} min.`;
+      if(!this.loggedToday){ this.loggedToday=true; this.streak++; msg+=` Streaken er nå ${this.streak} dager!`; this.pop=false; this.$nextTick(()=>{ this.pop=true; setTimeout(()=>this.pop=false,800); }); }
+      else msg+=` ${this.week} min denne uka.`;
+      this.minutes=0; this.toast(msg);
+    },
+    logFromProfile(){ this.closeAll(); this.$nextTick(()=>{ document.getElementById('quick').scrollIntoView({behavior:'smooth',block:'center'}); this.$refs.mins.focus({preventScroll:true}); }); },
+    toast(m){ this.toastMsg=m; this.toastOn=true; clearTimeout(this.toastT); this.toastT=setTimeout(()=>this.toastOn=false,2800); },
+    scrollCar(d){ this.$refs.car.scrollBy({left:d*300,behavior:'smooth'}); },
+  };
+}
+</script>
+<script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3/dist/cdn.min.js"></script>
+</head>
+<body x-data="lommeApp()" @keydown.escape.window="demoOpen ? demoOpen=false : closeAll()">
+
+<!-- Icon sprite -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <symbol id="i-home" viewBox="0 0 24 24"><path d="M3.5 11 12 4l8.5 7"/><path d="M5.5 9.5V20h13V9.5"/><path d="M10 20v-5h4v5"/></symbol>
+    <symbol id="i-note" viewBox="0 0 24 24"><path d="M9 18V5.5l11-2.5v12.5"/><circle cx="6" cy="18" r="3"/><circle cx="17" cy="15.5" r="3"/></symbol>
+    <symbol id="i-users" viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.6"/><path d="M2.5 20.5c.4-3.8 3.1-6.3 6.5-6.3s6.1 2.5 6.5 6.3"/><path d="M15.5 4.6a3.6 3.6 0 0 1 0 6.8"/><path d="M18 14.6c2 .8 3.3 2.9 3.5 5.9"/></symbol>
+    <symbol id="i-data" viewBox="0 0 24 24"><ellipse cx="12" cy="5.5" rx="7.5" ry="2.8"/><path d="M4.5 5.5v13c0 1.5 3.4 2.8 7.5 2.8s7.5-1.3 7.5-2.8v-13"/><path d="M4.5 12c0 1.5 3.4 2.8 7.5 2.8s7.5-1.3 7.5-2.8"/></symbol>
+    <symbol id="i-mail" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="3"/><path d="m3.5 7.5 8.5 6 8.5-6"/></symbol>
+    <symbol id="i-library" viewBox="0 0 24 24"><rect x="3.5" y="4" width="4" height="16" rx="1"/><rect x="9.5" y="4" width="4" height="16" rx="1"/><path d="m15.6 5.4 3.7-.9 3 14.8-3.7.9z"/></symbol>
+    <symbol id="i-list" viewBox="0 0 24 24"><path d="M9 6.5h11M9 12h11M9 17.5h11"/><path d="m3.5 6.5 1.3 1.3 2.2-2.6"/><path d="m3.5 12 1.3 1.3 2.2-2.6"/><circle cx="5" cy="17.5" r="1.2"/></symbol>
+    <symbol id="i-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/></symbol>
+    <symbol id="i-timer" viewBox="0 0 24 24"><circle cx="12" cy="13.5" r="7.5"/><path d="M12 13.5V10M9.5 2.5h5M19 6.5l1.5-1.5"/></symbol>
+    <symbol id="i-sound" viewBox="0 0 24 24"><path d="M11 5 6.5 9H3.5v6h3L11 19z"/><path d="M15.5 9a4.5 4.5 0 0 1 0 6"/><path d="M18.5 6a8.5 8.5 0 0 1 0 12"/></symbol>
+    <symbol id="i-bulb" viewBox="0 0 24 24"><path d="M9.5 18h5M10.5 21h3"/><path d="M12 3a6 6 0 0 0-3.8 10.6c.8.7 1.3 1.5 1.3 2.4h5c0-.9.5-1.7 1.3-2.4A6 6 0 0 0 12 3z"/></symbol>
+    <symbol id="i-medal" viewBox="0 0 24 24"><circle cx="12" cy="15" r="5.5"/><path d="M8.6 10.7 6 3h4l2 5 2-5h4l-2.6 7.7"/><path d="m12 12.6.8 1.6 1.7.2-1.2 1.2.3 1.7-1.6-.8-1.6.8.3-1.7-1.2-1.2 1.7-.2z"/></symbol>
+    <symbol id="i-crown" viewBox="0 0 24 24"><path d="M3.5 8 7.5 12 12 5l4.5 7 4-4-1.8 10.5H5.3z"/><path d="M5.5 21h13"/></symbol>
+    <symbol id="i-tally" viewBox="0 0 24 24"><path d="M6 5v14M10 5v14M14 5v14M18 5v14"/><path d="m3.5 16.5 17-9"/></symbol>
+    <symbol id="i-file" viewBox="0 0 24 24"><path d="M14 3H7.5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h9a2 2 0 0 0 2-2V7.5z"/><path d="M14 3v4.5h4.5"/><path d="M9 13h6M9 17h4"/></symbol>
+    <symbol id="i-scroll" viewBox="0 0 24 24"><path d="M7 4h11a2 2 0 0 1 2 2v1h-4"/><path d="M16 7v11a3 3 0 0 1-3 3H6a3 3 0 0 1-3-3v-1h10v1a3 3 0 0 0 3 3"/><path d="M7 4a2 2 0 0 0-2 2v11"/><path d="M8.5 9h4M8.5 12.5h4"/></symbol>
+    <symbol id="i-wall" viewBox="0 0 24 24"><rect x="3" y="3.5" width="18" height="17" rx="3"/><path d="m3.5 16 5-4.5 4 3.5 3-2.5 5 4.5"/><circle cx="15.5" cy="8.5" r="1.8"/></symbol>
+    <symbol id="i-calendar" viewBox="0 0 24 24"><rect x="3.5" y="5" width="17" height="15.5" rx="3"/><path d="M3.5 10h17M8 3v4M16 3v4"/><path d="M8 14h2M14 14h2M8 17h2"/></symbol>
+    <symbol id="i-book" viewBox="0 0 24 24"><path d="M4.5 5.5A2.5 2.5 0 0 1 7 3h12.5v14.5H7a2.5 2.5 0 0 0-2.5 2.5z"/><path d="M4.5 20A1.5 1.5 0 0 0 6 21.5h13.5v-4"/><path d="M9 7.5h6"/></symbol>
+    <symbol id="i-film" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="3"/><path d="M7.5 4v16M16.5 4v16M3 9h4.5M3 15h4.5M16.5 9H21M16.5 15H21"/></symbol>
+    <symbol id="i-camera" viewBox="0 0 24 24"><path d="M3.5 8.5a2 2 0 0 1 2-2h2L9 4h6l1.5 2.5h2a2 2 0 0 1 2 2V18a2 2 0 0 1-2 2h-13a2 2 0 0 1-2-2z"/><circle cx="12" cy="13" r="3.5"/></symbol>
+    <symbol id="i-chat" viewBox="0 0 24 24"><path d="M4 6a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v8.5a2 2 0 0 1-2 2H10l-5 4v-4H6"/><circle cx="9" cy="10.3" r=".6"/><circle cx="12" cy="10.3" r=".6"/><circle cx="15" cy="10.3" r=".6"/></symbol>
+    <symbol id="i-star" viewBox="0 0 24 24"><path d="m12 3 2.7 5.5 6 .9-4.4 4.3 1 6-5.3-2.8-5.3 2.8 1-6-4.4-4.3 6-.9z"/></symbol>
+    <symbol id="i-game" viewBox="0 0 24 24"><rect x="2.5" y="7" width="19" height="11" rx="5.5"/><path d="M7.5 10.5v4M5.5 12.5h4"/><circle cx="15.5" cy="11.5" r=".9"/><circle cx="18" cy="13.8" r=".9"/></symbol>
+    <symbol id="i-gear" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3.2"/><path d="M12 2.8v2.6M12 18.6v2.6M2.8 12h2.6M18.6 12h2.6M5.5 5.5l1.9 1.9M16.6 16.6l1.9 1.9M5.5 18.5l1.9-1.9M16.6 7.4l1.9-1.9"/></symbol>
+    <symbol id="i-logout" viewBox="0 0 24 24"><path d="M14 4h4a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-4"/><path d="M9 8l-4 4 4 4M5 12h10"/></symbol>
+    <symbol id="i-ext" viewBox="0 0 24 24"><path d="M7 17 17 7M9 7h8v8"/></symbol>
+    <symbol id="i-chev" viewBox="0 0 24 24"><path d="m9 6 6 6-6 6"/></symbol>
+    <symbol id="i-left" viewBox="0 0 24 24"><path d="m15 6-6 6 6 6"/></symbol>
+    <symbol id="i-x" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18"/></symbol>
+    <symbol id="i-lock" viewBox="0 0 24 24"><rect x="5" y="10.5" width="14" height="10" rx="2.5"/><path d="M8 10.5V8a4 4 0 0 1 8 0v2.5"/></symbol>
+    <symbol id="i-check" viewBox="0 0 24 24"><path d="m5 12.5 4.5 4.5L19 7.5"/></symbol>
+    <symbol id="i-flask" viewBox="0 0 24 24"><path d="M9.5 3h5M10 3v6l-5 9a2 2 0 0 0 1.8 3h10.4a2 2 0 0 0 1.8-3l-5-9V3"/><path d="M7.5 15h9"/></symbol>
+    <symbol id="i-flame" viewBox="0 0 24 24"><path d="M12 3c.6 3.2 4.8 5.1 4.8 10.2A4.8 4.8 0 0 1 12 18a4.8 4.8 0 0 1-4.8-4.8c0-2.2 1.1-3.6 2.2-4.6 0 2 .9 3 1.9 3.3C11 9 10.6 6.2 12 3z"/></symbol>
+  </defs>
+</svg>
+
+<header class="topbar">
+  <a href="#" class="brand" @click.prevent="goHome()" aria-label="Armé Riddere, til hjem">
+    <img src="../logo.png" alt="">
+    <span>Armé Riddere<small>internappen</small></span>
+  </a>
+  <button class="photo-btn" type="button" @click="openProfile()" :aria-expanded="profileOpen" aria-controls="profile-sheet" aria-label="Åpne profilen din">
+    <span class="photo"><img src="../portrett.png" alt=""></span>
+    <span class="dot" aria-hidden="true"><svg class="i" style="width:10px;height:10px;color:#fff;stroke-width:3"><use href="#i-star"/></svg></span>
+  </button>
+</header>
+
+<main id="top">
+  <div class="top-grid">
+    <div>
+      <div class="greet">
+        <img src="../logo.png" alt="Armé Riddere-skjoldet, MCMXCVI">
+        <div>
+          <h1><span x-text="greeting">God kveld</span>, Ola!</h1>
+          <p x-text="ranks[rank] + ' i 2. tenor' + (active ? '' : ', ypp.com.')">Ridder i 2. tenor</p>
+        </div>
+      </div>
+      <p class="intro">
+        Internsidene og appen er nå <strong>ett sted</strong>. Her finner du noter, medlemmer, arkivet og kontaktinfo.
+        Trykk på fanene <span class="when-mob">nederst</span><span class="when-desk">til venstre</span> for å bla i en seksjon,
+        eller hopp rett til en side i oversikten lenger ned. Profilen din ligger bak bildet oppe til høyre.
+      </p>
+    </div>
+
+    <!-- Quick action -->
+    <section class="quick" id="quick" aria-labelledby="quick-h">
+      <div style="position:relative;z-index:1">
+        <h2 id="quick-h">Registrer øving</h2>
+        <p class="sub" x-text="loggedToday ? 'Fint! Legg til mer om du øver igjen i dag.' : 'Du har ikke øvd i dag ennå. Hold flammen i live.'">Du har ikke øvd i dag ennå.</p>
+      </div>
+      <div class="flame" :class="pop && 'pop'" role="img" :aria-label="streak + ' dager på rad'">
+        <svg viewBox="0 0 96 112" aria-hidden="true">
+          <defs>
+            <linearGradient id="fg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffb52e"/><stop offset="1" stop-color="#ec6c00"/></linearGradient>
+          </defs>
+          <g class="flicker">
+            <path fill="url(#fg)" d="M48 4c4 17 30 29 30 62a30 30 0 0 1-60 0c0-14 7-23 14-29 0 12 5 18 11 20C40 43 38 26 48 4z"/>
+            <path fill="#ffd66b" d="M48 50c2 9 16 14 16 30a16 16 0 0 1-32 0c0-8 4-12 8-15 0 6 3 9 6 10-1-9-1-17 2-25z"/>
+          </g>
+        </svg>
+        <span class="n" x-text="streak" aria-hidden="true">6</span>
+        <div class="lbl" aria-hidden="true">dager på rad</div>
+      </div>
+      <div class="logrow">
+        <label class="mins">
+          <span class="sr">Minutter øvd</span>
+          <input x-ref="mins" type="number" inputmode="numeric" min="0" max="600" x-model.number="minutes" @keydown.enter="register()">
+          <span>min</span>
+          <button type="button" class="clear" @click="minutes=0" aria-label="Nullstill minutter"><svg class="i" style="width:18px;height:18px"><use href="#i-x"/></svg></button>
+        </label>
+        <div class="chips" role="group" aria-label="Legg til minutter">
+          <button type="button" class="chip" @click="add(5)">+5</button>
+          <button type="button" class="chip" @click="add(10)">+10</button>
+          <button type="button" class="chip" @click="add(15)">+15</button>
+        </div>
+      </div>
+      <button type="button" class="btn-go" @click="register()">
+        <svg class="i"><use href="#i-check"/></svg>
+        <span x-text="'Registrer ' + (minutes||0) + ' min'">Registrer 10 min</span>
+      </button>
+      <div class="week">
+        <b x-text="week">85</b> av <span x-text="goal">120</span> min denne uka<span x-show="week>=goal" x-cloak>. Ukesmålet er nådd!</span>
+        <div class="bar" role="progressbar" aria-label="Øvingsminutter denne uka" :aria-valuenow="week" aria-valuemin="0" :aria-valuemax="goal"><i :style="`width:${Math.min(100,week/goal*100)}%`" style="width:71%"></i></div>
+      </div>
+    </section>
+
+    <!-- Carousel -->
+    <section aria-labelledby="now-h" style="min-width:0">
+      <div class="row-head">
+        <div>
+          <h2 id="now-h">Akkurat nå</h2>
+          <p>Det viktigste for deg denne uka.</p>
+        </div>
+        <div class="arrows">
+          <button class="arrow" type="button" @click="scrollCar(-1)" aria-label="Forrige"><svg class="i"><use href="#i-left"/></svg></button>
+          <button class="arrow" type="button" @click="scrollCar(1)" aria-label="Neste"><svg class="i"><use href="#i-chev"/></svg></button>
+        </div>
+      </div>
+      <div class="carousel" x-ref="car" tabindex="0" aria-label="Widgets, rull sidelengs">
+        <a href="#" class="widget w-next" x-show="active">
+          <div class="w-top"><span class="ico"><svg class="i"><use href="#i-clock"/></svg></span>Neste øving</div>
+          <div>
+            <p class="when">Torsdag 2. okt, kl. 19.00</p>
+            <h3>Julekonsert-innspurt</h3>
+          </div>
+          <ul class="songs" aria-label="Sanger på planen">
+            <li>Stille Natt</li><li>Deilig er jorden</li><li>Glade jul</li>
+          </ul>
+        </a>
+        <a href="#" class="widget w-rep" x-show="active">
+          <div class="w-top"><span class="ico"><svg class="i"><use href="#i-list"/></svg></span>Repertoar</div>
+          <div>
+            <h3>Julekonsert 2026</h3>
+            <p class="meta">Du kan 7 av 12 sanger. 5 igjen til 11. desember.</p>
+          </div>
+          <div class="stack" aria-hidden="true">
+            <span style="flex:7;background:var(--teal-mid)"></span>
+            <span style="flex:3;background:var(--amber)"></span>
+            <span style="flex:2;background:#fff"></span>
+          </div>
+          <div class="legend"><span style="--c:var(--teal-mid)">7 kjent</span><span style="--c:var(--amber)">3 litt kjent</span><span style="--c:#fff">2 ikke kjent</span></div>
+        </a>
+        <a href="#" class="widget w-doc">
+          <div class="w-top"><span class="ico"><svg class="i"><use href="#i-file"/></svg></span>Siste dokument</div>
+          <div>
+            <h3>Styrereferat 18.09.2026</h3>
+            <p class="meta">Lagt ut av Paragrafrytteren for en uke siden.</p>
+          </div>
+          <div class="paper"><svg class="i" style="color:var(--brick)"><use href="#i-file"/></svg> Åpne referatet</div>
+        </a>
+        <a href="#" class="widget w-ach">
+          <div class="w-top"><span class="ico"><svg class="i"><use href="#i-star"/></svg></span>Nytt merke</div>
+          <div>
+            <h3>Øvd totalt en dag</h3>
+            <p class="meta">1440 minutter med øving, samlet opp litt etter litt.</p>
+          </div>
+          <div class="medal"><span class="coin">24<br>timer</span><div><b x-text="total.toLocaleString('nb-NO')">1 520</b><br><span class="meta">min totalt</span></div></div>
+        </a>
+      </div>
+    </section>
+  </div>
+
+  <!-- Launcher -->
+  <section aria-labelledby="all-h">
+    <div class="row-head">
+      <div>
+        <h2 id="all-h">Alle sider</h2>
+        <p>Hele appen, sortert som fanene.</p>
+      </div>
+    </div>
+    <div class="launcher">
+      <template x-for="sec in sections" :key="sec.id">
+        <section class="shelf" :class="'tone-' + sec.tone" :aria-label="sec.title">
+          <div class="shelf-head">
+            <h3 x-text="sec.title"></h3>
+            <button type="button" @click="openSection(sec.id)" :aria-label="'Vis ' + sec.title + ' som liste'">Vis liste</button>
+          </div>
+          <div class="tiles">
+            <template x-for="(t, i) in tilesFor(sec)" :key="sec.id + t.name + i">
+              <a :href="t.href || '#'" class="tile" :class="t.folder && 'folder'"
+                 @click="if (t.folder) { $event.preventDefault(); openSection(sec.id, t.name) }"
+                 :aria-label="t.folder ? (t.name + ', mappe med ' + t.items.length + ' sider') : (t.name + (t.ext ? ', åpnes eksternt' : ''))">
+                <span class="sq">
+                  <svg class="i" x-show="!t.folder"><use :href="'#i-' + (t.icon || 'note')"></use></svg>
+                  <template x-for="(m, k) in (t.folder ? t.items.slice(0,4) : [])" :key="k"><span class="mini"><svg class="i"><use :href="'#i-' + m.icon"></use></svg></span></template>
+                  <span class="ext" x-show="t.ext" aria-hidden="true"><svg class="i"><use href="#i-ext"/></svg></span>
+                  <span class="badge" :class="t.badge && t.badge.cls" x-show="t.folder" x-text="t.badge ? t.badge.txt : ''" aria-hidden="true"></span>
+                </span>
+                <span class="lbl" x-text="t.name"></span>
+              </a>
+            </template>
+          </div>
+        </section>
+      </template>
+      <section class="shelf tone-ink" aria-label="Deg">
+        <div class="shelf-head">
+          <h3>Deg</h3>
+          <button type="button" @click="openProfile()">Åpne profil</button>
+        </div>
+        <div class="tiles">
+          <template x-for="t in profileItems.filter(p => can(p.needs))" :key="t.name">
+            <a href="#" class="tile" @click="if (t.action === 'log') { $event.preventDefault(); logFromProfile() }" :aria-label="t.name + (t.ext ? ', åpnes eksternt' : '')">
+              <span class="sq"><svg class="i"><use :href="'#i-' + t.icon"></use></svg>
+                <span class="ext" x-show="t.ext" aria-hidden="true"><svg class="i"><use href="#i-ext"/></svg></span>
+              </span>
+              <span class="lbl" x-text="t.name"></span>
+            </a>
+          </template>
+        </div>
+      </section>
+    </div>
+  </section>
+
+  <footer>
+    <img src="../logo.png" alt="">
+    <div>
+      <p><b>Armé Riddere</b>, mannskor ved UiB siden 1996.</p>
+      <p>Noe som ikke virker? Si fra til <a href="#">webansvarlig</a>.</p>
+    </div>
+  </footer>
+</main>
+
+<!-- Tab bar / rail -->
+<nav class="tabbar" aria-label="Hovedmeny">
+  <a href="#" class="rail-logo" @click.prevent="goHome()" aria-label="Armé Riddere, til hjem"><img src="../logo.png" alt=""></a>
+  <button type="button" class="tab" @click="goHome()" :aria-current="(!sheetOpen && !profileOpen) ? 'true' : 'false'">
+    <span class="pill"><svg class="i"><use href="#i-home"/></svg></span>Hjem
+  </button>
+  <template x-for="sec in sections" :key="'tab-' + sec.id">
+    <button type="button" class="tab" @click="openSection(sec.id)" aria-controls="section-sheet" :aria-expanded="(sheetOpen && sheetId === sec.id) ? 'true' : 'false'">
+      <span class="pill"><svg class="i"><use :href="'#i-' + sec.icon"></use></svg></span><span x-text="sec.title"></span>
+    </button>
+  </template>
+</nav>
+
+<div class="scrim" :class="(sheetOpen || profileOpen) && 'on'" @click="closeAll()" aria-hidden="true"></div>
+
+<!-- Section sheet -->
+<div id="section-sheet" class="sheet" :class="[sheetOpen && 'on', 'tone-' + current.tone]" x-ref="sheet"
+     role="dialog" aria-modal="true" aria-labelledby="sheet-title" @keydown="trap($event)" x-effect="$el.inert = !sheetOpen">
+  <div class="grab" @pointerdown="dragDown($event)" @pointermove="dragMove($event)" @pointerup="dragUp($event)" @pointercancel="dragUp($event)" aria-hidden="true"></div>
+  <div class="sheet-head">
+    <span class="big"><svg class="i" style="width:28px;height:28px"><use :href="'#i-' + current.icon"></use></svg></span>
+    <div>
+      <h2 id="sheet-title" x-text="current.title"></h2>
+      <p x-text="current.blurb"></p>
+    </div>
+    <button type="button" class="x" x-ref="sheetClose" @click="closeAll()" aria-label="Lukk"><svg class="i"><use href="#i-x"/></svg></button>
+  </div>
+  <div class="sheet-body">
+    <template x-for="g in groupsOf(current)" :key="current.id + (g.label || 'main')">
+      <div class="grp" :class="g.admin && 'admin'" :data-group="g.label">
+        <div class="grp-label" x-show="g.label">
+          <span x-text="g.label"></span>
+          <span class="badge" :class="badgeFor(g).cls" x-show="g.admin"><svg class="i"><use href="#i-lock"/></svg><span x-text="badgeFor(g).txt"></span></span>
+        </div>
+        <div class="rows">
+          <template x-for="it in items(g)" :key="it.name">
+            <a :href="it.href || '#'" class="rowlink" :class="'tone-' + current.tone">
+              <span class="sq"><svg class="i"><use :href="'#i-' + it.icon"></use></svg></span>
+              <span class="t">
+                <b><span x-text="it.name"></span><svg class="i" x-show="it.ext" aria-label="åpnes eksternt" role="img"><use href="#i-ext"/></svg></b>
+                <span x-text="it.desc"></span>
+              </span>
+              <svg class="i chev" x-show="!it.ext" aria-hidden="true"><use href="#i-chev"/></svg>
+            </a>
+          </template>
+        </div>
+      </div>
+    </template>
+
+    <div class="board" x-show="current.id === 'medlemmer'">
+      <h3>Styret nå</h3>
+      <ul>
+        <template x-for="b in board" :key="b.role"><li><b x-text="b.role"></b><span x-text="b.who"></span></li></template>
+      </ul>
+    </div>
+
+    <p class="locked-note" x-show="hiddenCount(current) > 0">
+      <svg class="i i-sm"><use href="#i-lock"/></svg>
+      <span x-text="hiddenCount(current) + (hiddenCount(current) === 1 ? ' side er skjult' : ' sider er skjult') + ' for din rolle eller status.'"></span>
+    </p>
+  </div>
+</div>
+
+<!-- Profile sheet -->
+<div id="profile-sheet" class="sheet right" :class="profileOpen && 'on'" role="dialog" aria-modal="true" aria-labelledby="prof-title" @keydown="trap($event)" x-effect="$el.inert = !profileOpen">
+  <div class="grab" @pointerdown="dragDown($event)" @pointermove="dragMove($event)" @pointerup="dragUp($event)" @pointercancel="dragUp($event)" aria-hidden="true"></div>
+  <div class="prof-top">
+    <span class="photo"><img src="../portrett.png" alt="Profilbilde av Ola Nordmann"></span>
+    <div style="flex:1;min-width:0">
+      <h2 id="prof-title">Ola Nordmann</h2>
+      <p>2. tenor (T2)</p>
+      <span class="status" :class="!active && 'old'" x-text="active ? 'Aktiv ' + ranks[rank].toLowerCase() : 'Tidligere, ypp.com.'">Aktiv ridder</span>
+    </div>
+    <button type="button" class="x" x-ref="profClose" @click="closeAll()" aria-label="Lukk profilen"><svg class="i"><use href="#i-x"/></svg></button>
+  </div>
+  <div class="sheet-body">
+    <ol class="ranks" aria-label="Rangstigen">
+      <template x-for="(r, i) in ranks" :key="r">
+        <li :class="i < rank ? 'done' : (i === rank ? 'now' : '')" :aria-current="i === rank ? 'step' : null" x-text="r"></li>
+      </template>
+    </ol>
+    <div class="stats">
+      <div><b x-text="streak">6</b><span>dager på rad</span></div>
+      <div><b x-text="week">85</b><span>min denne uka</span></div>
+      <div><b x-text="total.toLocaleString('nb-NO')">1 520</b><span>min totalt</span></div>
+    </div>
+    <div class="rows">
+      <template x-for="it in profileItems.filter(p => can(p.needs))" :key="'p' + it.name">
+        <a href="#" class="rowlink tone-orange" @click="if (it.action === 'log') { $event.preventDefault(); logFromProfile() }">
+          <span class="sq"><svg class="i"><use :href="'#i-' + it.icon"></use></svg></span>
+          <span class="t">
+            <b><span x-text="it.name"></span><svg class="i" x-show="it.ext" aria-label="åpnes eksternt" role="img"><use href="#i-ext"/></svg></b>
+            <span x-text="it.desc"></span>
+          </span>
+          <svg class="i chev" x-show="!it.ext" aria-hidden="true"><use href="#i-chev"/></svg>
+        </a>
+      </template>
+    </div>
+    <button type="button" class="logout"><svg class="i"><use href="#i-logout"/></svg>Logg ut</button>
+  </div>
+</div>
+
+<!-- Demo control -->
+<div class="demo" @click.outside="demoOpen=false">
+  <div class="demo-panel" x-show="demoOpen" x-cloak x-transition.opacity.scale.origin.bottom.right id="demo-panel" role="group" aria-label="Demo-innstillinger">
+    <h3>Demo: bytt bruker</h3>
+    <p>Bare for å teste. Menyene endrer seg med status og roller.</p>
+    <div class="seg" role="radiogroup" aria-label="Status">
+      <label><input type="radio" name="status" value="aktiv" x-model="status">Aktiv</label>
+      <label><input type="radio" name="status" value="tidligere" x-model="status">Tidligere – ypp.com.</label>
+    </div>
+    <label class="tog"><span>Mester <code>master</code></span><input type="checkbox" x-model="roles.master"></label>
+    <label class="tog"><span>Note <code>notes</code></span><input type="checkbox" x-model="roles.notes"></label>
+  </div>
+  <button type="button" class="demo-btn" @click="demoOpen=!demoOpen" :aria-expanded="demoOpen" aria-controls="demo-panel">
+    <svg class="i" style="width:16px;height:16px"><use href="#i-flask"/></svg>Demo
+  </button>
+</div>
+
+<div class="toast" :class="toastOn && 'on'" role="status" aria-live="polite">
+  <svg class="i"><use href="#i-flame"/></svg><span x-text="toastMsg"></span>
+</div>
+
+</body>
+</html>

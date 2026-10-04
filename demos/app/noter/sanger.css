@@ -1,0 +1,18 @@
+/* sanger.css — Noter → Sanger: the editable knowledge picker */
+.know{display:inline-flex;background:var(--bg-2);border:1px solid var(--line-soft);border-radius:var(--r-s);padding:2px}
+.know button{
+  display:inline-flex;align-items:center;gap:.4rem;background:none;border:0;border-radius:4px;cursor:pointer;
+  padding:.28rem .6rem;font-size:.82rem;color:var(--faint);white-space:nowrap;transition:color .15s,background .15s;
+}
+.know button:hover{color:var(--ink)}
+.know button[aria-pressed="true"]{background:var(--bg-3);color:var(--ink)}
+.know .pip{width:.55rem;height:.55rem;border-radius:50%;border:1.5px solid currentColor;flex:none;opacity:.7}
+.know button[aria-pressed="true"] .pip{opacity:1}
+.know .k-kjent[aria-pressed="true"] .pip{background:var(--k-ok);border-color:var(--k-ok)}
+.know .k-litt[aria-pressed="true"] .pip{background:var(--k-mid);border-color:var(--k-mid)}
+.know .k-ikke[aria-pressed="true"] .pip{background:var(--k-no);border-color:var(--k-no)}
+.know button:focus-visible{outline-offset:0}
+@media (max-width:720px){
+  .rows.songs>li{grid-template-columns:1fr}
+  .rows.songs .aside{text-align:left}
+}

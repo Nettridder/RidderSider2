@@ -1,0 +1,1062 @@
+<!doctype html>
+<html lang="nb">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Armé Riddere – Mørk rustning</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=Schibsted+Grotesk:ital,wght@0,400;0,500;0,600;0,700;1,400&display=swap" rel="stylesheet">
+<script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3/dist/cdn.min.js"></script>
+<style>
+:root {
+  /* Iron base */
+  --iron-900: #17191c;
+  --iron-800: #1e2125;
+  --iron-700: #262a2f;
+  --iron-600: #30353b;
+  --iron-500: #3d434a;
+  --iron-400: #59606a;
+  /* Text */
+  --bone: #efe8dc;
+  --bone-dim: #b9b2a6;
+  --bone-faint: #857f76;
+  /* Brand + complements */
+  --ember: #ec6c00;
+  --ember-hot: #ff8a2b;
+  --ember-glow: rgba(236, 108, 0, 0.28);
+  --brick: #b8430a;
+  --amber: #f0ad3c;
+  --steel: #6c9dcc;
+  --steel-deep: #3f6a93;
+  --ok: #7fb58a;
+
+  --font-display: "DM Serif Display", "Georgia", serif;
+  --font-ui: "Schibsted Grotesk", system-ui, sans-serif;
+
+  --sb-w: 268px;
+  --sb-rail: 68px;
+  --top-h: 64px;
+  --r-s: 4px;
+  --r-m: 8px;
+  --r-l: 12px;
+  --ease: cubic-bezier(.2, .7, .2, 1);
+  --shadow-photo: 0 1px 2px rgba(0,0,0,.35), 0 0 0 1px rgba(255,255,255,.06);
+}
+
+*, *::before, *::after { box-sizing: border-box; }
+[x-cloak] { display: none !important; }
+html { -webkit-text-size-adjust: 100%; }
+body {
+  margin: 0;
+  background: var(--iron-800);
+  color: var(--bone);
+  font-family: var(--font-ui);
+  font-size: 15px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  overflow-x: hidden;
+}
+/* Faint brushed-metal grain */
+body::before {
+  content: "";
+  position: fixed; inset: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(1200px 600px at 85% -10%, rgba(236,108,0,.07), transparent 60%),
+    repeating-linear-gradient(90deg, rgba(255,255,255,.012) 0 1px, transparent 1px 3px);
+  z-index: 0;
+}
+a { color: inherit; }
+button { font: inherit; color: inherit; }
+:focus-visible { outline: 2px solid var(--ember-hot); outline-offset: 2px; border-radius: var(--r-s); }
+.sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+svg.i { width: 20px; height: 20px; flex: none; stroke: currentColor; fill: none; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
+svg.ext { width: 12px; height: 12px; flex: none; stroke: currentColor; fill: none; stroke-width: 1.8; opacity: .7; }
+
+/* ---------- App shell ---------- */
+.shell {
+  position: relative; z-index: 1;
+  display: grid;
+  grid-template-columns: var(--sb-w) minmax(0, 1fr);
+  min-height: 100vh;
+  transition: grid-template-columns .28s var(--ease);
+}
+.shell.is-collapsed { grid-template-columns: var(--sb-rail) minmax(0, 1fr); }
+
+/* ---------- Sidebar ---------- */
+.sidebar {
+  position: sticky; top: 0;
+  height: 100vh;
+  display: flex; flex-direction: column;
+  background: var(--iron-900);
+  border-right: 1px solid var(--iron-600);
+  overflow: hidden;
+}
+.sb-head {
+  display: flex; align-items: center; gap: 10px;
+  height: var(--top-h);
+  padding: 0 14px;
+  border-bottom: 1px solid var(--iron-700);
+  flex: none;
+}
+.sb-logo { display: flex; align-items: center; gap: 10px; text-decoration: none; min-width: 0; }
+.sb-logo img { height: 40px; width: auto; flex: none; filter: drop-shadow(0 0 10px rgba(236,108,0,.35)); }
+.sb-logo span { font-family: var(--font-display); font-size: 19px; line-height: 1.05; white-space: nowrap; }
+.sb-logo small { display: block; font-family: var(--font-ui); font-size: 12px; color: var(--bone-faint); letter-spacing: .01em; }
+.is-collapsed .sb-logo span { opacity: 0; pointer-events: none; }
+
+.sb-nav { flex: 1; overflow-y: auto; overflow-x: hidden; padding: 12px 10px 16px; scrollbar-width: thin; scrollbar-color: var(--iron-500) transparent; }
+.sb-group + .sb-group { margin-top: 4px; }
+.sb-group-btn {
+  width: 100%;
+  display: flex; align-items: center; gap: 12px;
+  padding: 9px 10px;
+  border: 0; background: transparent;
+  border-radius: var(--r-m);
+  cursor: pointer;
+  color: var(--bone-dim);
+  font-weight: 600; font-size: 14.5px;
+  text-align: left;
+  transition: background .15s, color .15s;
+}
+.sb-group-btn:hover { background: var(--iron-700); color: var(--bone); }
+.sb-group-btn[aria-expanded="true"] { color: var(--bone); }
+.sb-group-btn[aria-expanded="true"] svg.i { color: var(--ember); }
+.sb-group-btn .lbl { flex: 1; white-space: nowrap; }
+.chev { width: 14px; height: 14px; stroke: currentColor; fill: none; stroke-width: 2; transition: transform .2s var(--ease); opacity: .6; flex: none; }
+[aria-expanded="true"] > .chev { transform: rotate(90deg); }
+.is-collapsed .sb-group-btn .lbl, .is-collapsed .sb-group-btn .chev { display: none; }
+.is-collapsed .sb-group-btn { justify-content: center; padding: 10px 0; }
+
+.sb-list { list-style: none; margin: 2px 0 8px; padding: 0 0 0 20px; position: relative; }
+.sb-list::before { content: ""; position: absolute; left: 19px; top: 4px; bottom: 6px; width: 1px; background: var(--iron-600); }
+.is-collapsed .sb-list { display: none; }
+.sb-list .sb-list { padding-left: 12px; margin: 0 0 4px; }
+.sb-list .sb-list::before { left: 11px; }
+.sb-link, .sb-sub-btn {
+  display: flex; align-items: center; gap: 8px;
+  width: 100%;
+  padding: 6px 10px 6px 16px;
+  border: 0; background: none;
+  border-radius: var(--r-s);
+  color: var(--bone-dim);
+  text-decoration: none; text-align: left;
+  font-size: 14px;
+  cursor: pointer;
+  position: relative;
+}
+.sb-link:hover, .sb-sub-btn:hover { color: var(--bone); background: rgba(255,255,255,.035); }
+.sb-link.is-current { color: var(--bone); }
+.sb-link.is-current::before { content: ""; position: absolute; left: -1px; top: 7px; bottom: 7px; width: 2px; background: var(--ember); border-radius: 2px; box-shadow: 0 0 8px var(--ember); }
+.sb-sub-btn .lbl { flex: 1; }
+.role-tag {
+  font-size: 11px; font-weight: 600;
+  padding: 1px 6px; border-radius: 99px;
+  color: var(--amber);
+  background: rgba(240,173,60,.1);
+  border: 1px solid rgba(240,173,60,.25);
+}
+.sb-divider { height: 1px; margin: 12px 8px; background: var(--iron-700); }
+
+.sb-foot { flex: none; border-top: 1px solid var(--iron-700); padding: 10px; }
+.sb-toggle {
+  width: 100%;
+  display: flex; align-items: center; gap: 12px;
+  padding: 9px 10px;
+  border: 0; background: none;
+  border-radius: var(--r-m);
+  color: var(--bone-faint);
+  cursor: pointer; font-size: 13.5px;
+}
+.sb-toggle:hover { background: var(--iron-700); color: var(--bone); }
+.sb-toggle svg.i { transition: transform .28s var(--ease); }
+.is-collapsed .sb-toggle { justify-content: center; }
+.is-collapsed .sb-toggle svg.i { transform: rotate(180deg); }
+.is-collapsed .sb-toggle .lbl { display: none; }
+
+/* ---------- Topbar ---------- */
+.main { min-width: 0; display: flex; flex-direction: column; }
+.topbar {
+  position: sticky; top: 0; z-index: 20;
+  height: var(--top-h);
+  display: flex; align-items: center; gap: 14px;
+  padding: 0 24px;
+  background: rgba(30,33,37,.86);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border-bottom: 1px solid var(--iron-600);
+}
+.icon-btn.hamburger { display: none; }
+.icon-btn {
+  display: inline-grid; place-items: center;
+  width: 40px; height: 40px;
+  border: 1px solid var(--iron-600); background: var(--iron-700);
+  border-radius: var(--r-m); cursor: pointer; color: var(--bone-dim);
+}
+.icon-btn:hover { color: var(--bone); border-color: var(--iron-500); }
+.search { position: relative; flex: 1; max-width: 460px; }
+.search svg.i { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: var(--bone-faint); width: 18px; height: 18px; pointer-events: none; }
+.search input {
+  width: 100%; height: 40px;
+  padding: 0 44px 0 40px;
+  background: var(--iron-900);
+  border: 1px solid var(--iron-600);
+  border-radius: var(--r-m);
+  color: var(--bone);
+  font: inherit; font-size: 14.5px;
+  transition: border-color .15s, box-shadow .15s;
+}
+.search input::placeholder { color: var(--bone-faint); }
+.search input:focus { outline: none; border-color: var(--ember); box-shadow: 0 0 0 3px var(--ember-glow); }
+.search kbd {
+  position: absolute; right: 10px; top: 50%; transform: translateY(-50%);
+  font: 600 12px var(--font-ui); color: var(--bone-faint);
+  border: 1px solid var(--iron-500); border-radius: 4px; padding: 0 6px;
+}
+.search-results {
+  position: absolute; left: 0; right: 0; top: calc(100% + 6px);
+  list-style: none; margin: 0; padding: 6px;
+  background: var(--iron-700);
+  border: 1px solid var(--iron-500);
+  border-radius: var(--r-l);
+  box-shadow: 0 18px 40px rgba(0,0,0,.45);
+  max-height: 360px; overflow: auto;
+}
+.search-results a { display: flex; align-items: baseline; gap: 10px; padding: 8px 10px; border-radius: var(--r-s); text-decoration: none; }
+.search-results a:hover, .search-results a.is-active { background: var(--iron-600); }
+.search-results .path { font-size: 12.5px; color: var(--bone-faint); margin-left: auto; white-space: nowrap; }
+.search-empty { padding: 10px 12px; color: var(--bone-dim); font-size: 14px; }
+
+.top-spacer { flex: 1; }
+.profile { position: relative; }
+.profile-btn {
+  display: flex; align-items: center; gap: 10px;
+  padding: 4px 8px 4px 4px;
+  border: 1px solid transparent; background: none;
+  border-radius: var(--r-m); cursor: pointer;
+}
+.profile-btn:hover, .profile-btn[aria-expanded="true"] { background: var(--iron-700); border-color: var(--iron-600); }
+.frame {
+  display: block;
+  object-fit: cover; object-position: center 20%;
+  border-radius: 3px;
+  box-shadow: var(--shadow-photo);
+  background: #d9d9d9;
+}
+.frame-sm { height: 42px; width: 34px; }
+.frame-md { height: 88px; width: 70px; }
+.profile-btn .who { text-align: left; line-height: 1.2; }
+.profile-btn .who b { display: block; font-size: 14px; font-weight: 600; }
+.profile-btn .who span { font-size: 12.5px; color: var(--bone-faint); }
+
+.popover {
+  position: absolute; right: 0; top: calc(100% + 8px);
+  width: 290px;
+  background: var(--iron-700);
+  border: 1px solid var(--iron-500);
+  border-radius: var(--r-l);
+  box-shadow: 0 22px 50px rgba(0,0,0,.5);
+  padding: 8px;
+  z-index: 40;
+}
+.pop-head { display: flex; gap: 14px; padding: 10px 10px 14px; border-bottom: 1px solid var(--iron-600); margin-bottom: 6px; }
+.pop-head h3 { margin: 2px 0 2px; font-family: var(--font-display); font-weight: 400; font-size: 20px; line-height: 1.15; }
+.pop-head p { margin: 0; font-size: 13px; color: var(--bone-dim); }
+.pop-head a { font-size: 13px; color: var(--ember-hot); text-decoration: none; display: inline-block; margin-top: 8px; }
+.pop-head a:hover { text-decoration: underline; }
+.menu { list-style: none; margin: 0; padding: 0; }
+.menu a, .menu button {
+  display: flex; align-items: center; gap: 10px;
+  width: 100%;
+  padding: 8px 10px;
+  border: 0; background: none;
+  border-radius: var(--r-s);
+  font-size: 14px; text-decoration: none; text-align: left; cursor: pointer;
+  color: var(--bone-dim);
+}
+.menu a:hover, .menu a:focus-visible, .menu button:hover, .menu button:focus-visible { background: var(--iron-600); color: var(--bone); }
+.menu svg.i { width: 18px; height: 18px; color: var(--bone-faint); }
+.menu .sep { height: 1px; background: var(--iron-600); margin: 6px 4px; }
+.menu .logout { color: #e79a86; }
+
+/* ---------- Content ---------- */
+.content { padding: 32px 32px 48px; max-width: 1320px; width: 100%; }
+.welcome { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 24px 40px; align-items: end; margin-bottom: 28px; }
+.welcome h1 { margin: 0 0 8px; font-family: var(--font-display); font-weight: 400; font-size: clamp(30px, 4vw, 44px); line-height: 1.05; letter-spacing: -.01em; }
+.welcome p { margin: 0; max-width: 62ch; color: var(--bone-dim); }
+.welcome p + p { margin-top: 6px; }
+.rank-track { min-width: 380px; }
+.rank-track .cap { display: flex; justify-content: space-between; font-size: 13px; color: var(--bone-faint); margin-bottom: 8px; }
+.rank-track .cap b { color: var(--bone); font-weight: 600; }
+.pips { display: grid; grid-template-columns: repeat(6, 1fr); gap: 4px; }
+.pip { height: 6px; border-radius: 2px; background: var(--iron-600); }
+.pip.done { background: var(--brick); }
+.pip.now { background: var(--ember); box-shadow: 0 0 10px var(--ember); }
+.pip-names { display: grid; grid-template-columns: repeat(6, 1fr); gap: 4px; margin-top: 6px; font-size: 11px; color: var(--bone-faint); line-height: 1.2; overflow-wrap: anywhere; }
+.pip-names span.now { color: var(--ember-hot); }
+
+.status-note {
+  display: flex; gap: 10px; align-items: center;
+  padding: 10px 14px; margin-bottom: 20px;
+  border: 1px solid rgba(108,157,204,.3); background: rgba(108,157,204,.08);
+  color: #c7dcef; border-radius: var(--r-m); font-size: 14px;
+}
+
+/* Widgets */
+.widgets { display: grid; grid-template-columns: repeat(12, minmax(0, 1fr)); gap: 16px; }
+.w {
+  background: var(--iron-700);
+  border: 1px solid var(--iron-600);
+  border-radius: var(--r-l);
+  padding: 18px 20px;
+  min-width: 0;
+  display: flex; flex-direction: column;
+}
+.w-head { display: flex; align-items: center; gap: 8px; margin-bottom: 12px; color: var(--bone-dim); font-size: 13.5px; font-weight: 500; }
+.w-head svg.i { width: 18px; height: 18px; color: var(--bone-faint); }
+.w-head a { margin-left: auto; font-size: 13px; color: var(--bone-faint); text-decoration: none; }
+.w-head a:hover { color: var(--ember-hot); }
+.w h2 { margin: 0; font-family: var(--font-display); font-weight: 400; font-size: 22px; line-height: 1.2; }
+.w-sub { color: var(--bone-dim); font-size: 14px; margin: 4px 0 0; }
+
+.w-streak { grid-column: span 5; position: relative; overflow: hidden; border-color: rgba(236,108,0,.35); background: linear-gradient(180deg, rgba(236,108,0,.07), transparent 55%), var(--iron-700); }
+.w-next { grid-column: span 4; }
+.w-badge { grid-column: span 3; }
+.w-rep { grid-column: span 7; }
+.w-doc { grid-column: span 5; }
+
+.streak-top { display: flex; align-items: flex-end; gap: 22px; }
+.streak-num { font-family: var(--font-display); font-size: 64px; line-height: .9; color: var(--ember-hot); text-shadow: 0 0 24px rgba(236,108,0,.55); }
+.streak-num small { font-family: var(--font-ui); font-size: 15px; color: var(--bone-dim); text-shadow: none; margin-left: 6px; }
+.streak-meta { font-size: 14px; color: var(--bone-dim); padding-bottom: 4px; }
+.streak-meta b { color: var(--bone); font-weight: 600; font-size: 18px; }
+.week-chart { margin: 16px 0 14px; }
+.week-chart svg { display: block; width: 100%; height: auto; overflow: visible; }
+.register { display: flex; gap: 8px; margin-top: auto; }
+.register label { flex: 1; position: relative; }
+.register input {
+  width: 100%; height: 40px;
+  padding: 0 44px 0 12px;
+  background: var(--iron-900); border: 1px solid var(--iron-500);
+  border-radius: var(--r-m); color: var(--bone); font: inherit;
+}
+.register input:focus { outline: none; border-color: var(--ember); box-shadow: 0 0 0 3px var(--ember-glow); }
+.register .unit { position: absolute; right: 12px; top: 50%; transform: translateY(-50%); color: var(--bone-faint); font-size: 13px; pointer-events: none; }
+.btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+  height: 40px; padding: 0 16px;
+  border-radius: var(--r-m);
+  border: 1px solid var(--ember);
+  background: var(--ember); color: #1a0e04;
+  font-weight: 600; font-size: 14px; cursor: pointer; text-decoration: none; white-space: nowrap;
+  transition: background .15s, box-shadow .15s;
+}
+.btn:hover { background: var(--ember-hot); box-shadow: 0 0 18px var(--ember-glow); }
+.btn-ghost { background: transparent; color: var(--bone); border-color: var(--iron-500); }
+.btn-ghost:hover { background: var(--iron-600); box-shadow: none; }
+.toast { font-size: 13px; color: var(--ok); margin-top: 8px; min-height: 1.4em; }
+
+.when { display: flex; gap: 14px; align-items: center; margin-bottom: 12px; }
+.date-plate {
+  flex: none; width: 56px; text-align: center;
+  border: 1px solid var(--iron-500); border-radius: var(--r-m); overflow: hidden;
+  background: var(--iron-900);
+}
+.date-plate span { display: block; font-size: 12px; padding: 2px 0; background: var(--brick); color: var(--bone); font-weight: 600; }
+.date-plate b { display: block; font-family: var(--font-display); font-weight: 400; font-size: 26px; line-height: 1.3; }
+.songs { list-style: none; margin: 0 0 14px; padding: 0; }
+.songs li { display: flex; gap: 10px; align-items: center; padding: 6px 0; border-top: 1px solid var(--iron-600); font-size: 14.5px; }
+.songs li:first-child { border-top: 0; }
+.dot { width: 8px; height: 8px; border-radius: 50%; flex: none; }
+.w-next .btn-ghost { margin-top: auto; align-self: flex-start; }
+
+.badge-wrap { display: flex; flex-direction: column; align-items: center; text-align: center; gap: 10px; flex: 1; justify-content: center; }
+.badge-wrap svg { width: 84px; height: 96px; filter: drop-shadow(0 0 14px rgba(240,173,60,.35)); }
+.badge-wrap h2 { font-size: 20px; }
+.badge-wrap p { margin: 0; font-size: 13.5px; color: var(--bone-dim); }
+
+.stack { display: flex; height: 14px; border-radius: 4px; overflow: hidden; margin: 16px 0 12px; background: var(--iron-600); }
+.stack span { display: block; height: 100%; transition: width .4s var(--ease); }
+.stack span + span { border-left: 2px solid var(--iron-700); }
+.legend { display: flex; flex-wrap: wrap; gap: 8px 22px; font-size: 14px; color: var(--bone-dim); }
+.legend b { color: var(--bone); font-weight: 600; margin-right: 2px; }
+.legend span { display: inline-flex; align-items: center; gap: 8px; }
+.rep-foot { display: flex; align-items: center; gap: 12px; margin-top: 16px; flex-wrap: wrap; }
+.rep-foot p { margin: 0; font-size: 14px; color: var(--bone-dim); flex: 1; min-width: 200px; }
+
+.doc-main { display: flex; gap: 14px; align-items: flex-start; text-decoration: none; padding: 10px; margin: -10px -10px 10px; border-radius: var(--r-m); }
+.doc-main:hover { background: var(--iron-600); }
+.doc-icon { flex: none; width: 40px; height: 48px; border-radius: 3px; background: var(--bone); color: var(--iron-800); display: grid; place-items: end center; padding-bottom: 5px; font-size: 10px; font-weight: 700; position: relative; }
+.doc-icon::after { content: ""; position: absolute; top: 0; right: 0; border-style: solid; border-width: 0 10px 10px 0; border-color: var(--iron-700) var(--iron-700) var(--bone-faint) var(--bone-faint); }
+.doc-main h2 { font-size: 19px; }
+.doc-list { list-style: none; margin: 0; padding: 0; font-size: 14px; }
+.doc-list li { display: flex; justify-content: space-between; gap: 12px; padding: 7px 0; border-top: 1px solid var(--iron-600); }
+.doc-list a { text-decoration: none; color: var(--bone-dim); }
+.doc-list a:hover { color: var(--bone); text-decoration: underline; }
+.doc-list time { color: var(--bone-faint); white-space: nowrap; font-size: 13px; }
+
+/* App map */
+.map-head { display: flex; align-items: baseline; gap: 16px; margin: 44px 0 16px; flex-wrap: wrap; }
+.map-head h2 { margin: 0; font-family: var(--font-display); font-weight: 400; font-size: 28px; }
+.map-head p { margin: 0; color: var(--bone-faint); font-size: 14px; }
+.map { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 16px; align-items: start; }
+.map-card { background: var(--iron-900); border: 1px solid var(--iron-600); border-radius: var(--r-l); padding: 16px 16px 10px; }
+.map-card > header { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
+.map-card > header svg.i { color: var(--ember); }
+.map-card h3 { margin: 0; font-size: 16px; font-weight: 700; }
+.map-card ul { list-style: none; margin: 0; padding: 0; }
+.map-card li a { display: block; padding: 7px 8px; margin: 0 -8px; border-radius: var(--r-s); text-decoration: none; }
+.map-card li a:hover { background: var(--iron-700); }
+.map-card li a .t { display: flex; align-items: center; gap: 6px; font-size: 14.5px; font-weight: 500; }
+.map-card li a .d { display: block; font-size: 13px; color: var(--bone-faint); line-height: 1.4; }
+.map-card .sub { margin: 4px 0 6px; padding: 8px 0 2px 12px; border-left: 2px solid var(--iron-600); }
+.map-card .sub-title { display: flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 600; color: var(--bone-dim); margin-bottom: 2px; }
+.map-card.archive { border-style: dashed; }
+
+.footer { margin-top: auto; border-top: 1px solid var(--iron-600); padding: 22px 32px; display: flex; flex-wrap: wrap; gap: 10px 28px; align-items: center; color: var(--bone-faint); font-size: 13px; }
+.footer img { height: 28px; }
+.footer a { color: var(--bone-dim); text-decoration: none; }
+.footer a:hover { color: var(--ember-hot); }
+.footer .grow { flex: 1; }
+
+/* Demo control */
+.demo {
+  position: fixed; right: 16px; bottom: 16px; z-index: 60;
+  width: 250px;
+  background: #0f1113;
+  border: 1px dashed var(--amber);
+  border-radius: var(--r-l);
+  padding: 12px 14px;
+  font-size: 13px;
+  box-shadow: 0 16px 40px rgba(0,0,0,.55);
+}
+.demo.is-min { width: auto; padding: 0; }
+.demo-toggle { display: flex; align-items: center; gap: 8px; width: 100%; background: none; border: 0; cursor: pointer; color: var(--amber); font-weight: 700; padding: 0; }
+.demo.is-min .demo-toggle { padding: 10px 14px; }
+.demo-toggle .lbl { flex: 1; text-align: left; }
+.demo-body { margin-top: 10px; }
+.demo fieldset { border: 0; margin: 0 0 10px; padding: 0; }
+.demo legend { color: var(--bone-faint); margin-bottom: 6px; padding: 0; }
+.seg { display: grid; grid-template-columns: 1fr 1fr; border: 1px solid var(--iron-500); border-radius: var(--r-m); overflow: hidden; }
+.seg label { position: relative; }
+.seg input { position: absolute; opacity: 0; inset: 0; }
+.seg span { display: block; text-align: center; padding: 6px 4px; cursor: pointer; color: var(--bone-dim); }
+.seg input:checked + span { background: var(--iron-600); color: var(--bone); font-weight: 600; }
+.seg input:focus-visible + span { outline: 2px solid var(--ember-hot); outline-offset: -2px; }
+.chk { display: flex; align-items: center; gap: 8px; padding: 3px 0; cursor: pointer; color: var(--bone-dim); }
+.chk input { accent-color: var(--ember); width: 16px; height: 16px; }
+.chk code { font-size: 12px; color: var(--bone-faint); }
+
+.scrim { display: none; }
+
+/* ---------- Responsive ---------- */
+@media (max-width: 1100px) {
+  .w-streak { grid-column: span 7; }
+  .w-next { grid-column: span 5; }
+  .w-badge { grid-column: span 4; }
+  .w-rep { grid-column: span 8; }
+  .w-doc { grid-column: span 12; }
+}
+@media (max-width: 900px) {
+  .shell, .shell.is-collapsed { grid-template-columns: minmax(0, 1fr); }
+  .sidebar {
+    position: fixed; left: 0; top: 0; z-index: 50;
+    width: min(300px, 86vw);
+    transform: translateX(-102%);
+    transition: transform .28s var(--ease);
+    box-shadow: 20px 0 50px rgba(0,0,0,.5);
+  }
+  .sidebar.is-open { transform: none; }
+  /* Rail mode is desktop-only */
+  .is-collapsed .sb-logo span { opacity: 1; }
+  .is-collapsed .sb-group-btn .lbl, .is-collapsed .sb-group-btn .chev { display: initial; }
+  .is-collapsed .sb-group-btn { justify-content: flex-start; padding: 9px 10px; }
+  .is-collapsed .sb-list { display: block; }
+  .sb-foot .sb-toggle { display: none; }
+  .scrim { display: block; position: fixed; inset: 0; z-index: 45; background: rgba(8,9,10,.6); }
+  .icon-btn.hamburger { display: inline-grid; }
+  .topbar { padding: 0 16px; gap: 10px; }
+  .profile-btn .who { display: none; }
+  .content { padding: 24px 16px 40px; }
+  .welcome { grid-template-columns: minmax(0, 1fr); }
+  .rank-track { min-width: 0; }
+  .footer { padding: 20px 16px 90px; }
+}
+@media (max-width: 720px) {
+  .widgets { grid-template-columns: minmax(0, 1fr); }
+  .w-streak, .w-next, .w-badge, .w-rep, .w-doc { grid-column: auto; }
+  .search kbd { display: none; }
+  .search input { padding-right: 12px; }
+  .popover { position: fixed; left: 16px; right: 16px; top: calc(var(--top-h) + 4px); width: auto; }
+  .demo { left: 16px; right: auto; bottom: 12px; }
+  .streak-num { font-size: 54px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { transition-duration: .01ms !important; animation-duration: .01ms !important; }
+}
+</style>
+</head>
+<body x-data="app()" x-init="init()" @keydown.window="globalKeys($event)">
+
+<div class="shell" :class="{ 'is-collapsed': collapsed }">
+
+  <!-- ============ SIDEBAR ============ -->
+  <aside class="sidebar" id="sidebar" :class="{ 'is-open': drawer }" aria-label="Hovednavigasjon" @keydown.escape="drawer = false">
+    <div class="sb-head">
+      <a href="#" class="sb-logo" aria-label="Armé Riddere – til hovedsiden">
+        <img src="../logo.png" alt="">
+        <span>Armé Riddere<small>Mannskor ved UiB</small></span>
+      </a>
+    </div>
+
+    <nav class="sb-nav">
+      <template x-for="g in visibleGroups" :key="g.id">
+        <div class="sb-group">
+          <button class="sb-group-btn" type="button"
+                  :aria-expanded="open[g.id] ? 'true' : 'false'"
+                  :aria-controls="'grp-' + g.id"
+                  :title="collapsed ? g.label : ''"
+                  @click="toggleGroup(g.id)">
+            <span x-html="icon(g.icon)" style="display:contents"></span>
+            <span class="lbl" x-text="g.label"></span>
+            <svg class="chev" viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg>
+          </button>
+          <ul class="sb-list" :id="'grp-' + g.id" x-show="open[g.id]">
+            <template x-for="it in visibleItems(g.items)" :key="it.label">
+              <li>
+                <template x-if="!it.children">
+                  <a class="sb-link" :href="it.href || '#'" :class="{ 'is-current': it.current }"
+                     :aria-current="it.current ? 'page' : null"
+                     :target="it.ext ? '_blank' : null" :rel="it.ext ? 'noopener' : null">
+                    <span x-text="it.label"></span>
+                    <template x-if="it.ext"><span x-html="extIcon" style="display:contents"></span></template>
+                    <span class="sr-only" x-show="it.ext">(åpnes i ny fane)</span>
+                  </a>
+                </template>
+                <template x-if="it.children">
+                  <div>
+                    <button class="sb-sub-btn" type="button"
+                            :aria-expanded="sub[g.id + it.label] ? 'true' : 'false'"
+                            @click="sub[g.id + it.label] = !sub[g.id + it.label]">
+                      <span class="lbl" x-text="it.label"></span>
+                      <template x-if="it.roleTag"><span class="role-tag" x-text="it.roleTag"></span></template>
+                      <svg class="chev" viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg>
+                    </button>
+                    <ul class="sb-list" x-show="sub[g.id + it.label]">
+                      <template x-for="c in visibleItems(it.children)" :key="c.label">
+                        <li><a class="sb-link" :href="c.href || '#'" x-text="c.label"></a></li>
+                      </template>
+                    </ul>
+                  </div>
+                </template>
+              </li>
+            </template>
+          </ul>
+        </div>
+      </template>
+    </nav>
+
+    <div class="sb-foot">
+      <button class="sb-toggle" type="button" @click="toggleCollapsed()"
+              :aria-label="collapsed ? 'Utvid menyen' : 'Slå sammen menyen'" :aria-pressed="collapsed ? 'true' : 'false'">
+        <svg class="i" viewBox="0 0 24 24"><path d="M15 6l-6 6 6 6"/><path d="M20 4v16"/></svg>
+        <span class="lbl">Slå sammen menyen</span>
+      </button>
+    </div>
+  </aside>
+  <div class="scrim" x-show="drawer" x-transition.opacity @click="drawer = false" x-cloak></div>
+
+  <!-- ============ MAIN ============ -->
+  <div class="main">
+    <header class="topbar">
+      <button class="icon-btn hamburger" type="button" aria-controls="sidebar" :aria-expanded="drawer ? 'true' : 'false'"
+              aria-label="Åpne menyen" @click="drawer = true; $nextTick(() => document.querySelector('.sb-group-btn')?.focus())">
+        <svg class="i" viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h10"/></svg>
+      </button>
+
+      <div class="search" @click.outside="searchOpen = false">
+        <svg class="i" viewBox="0 0 24 24"><circle cx="11" cy="11" r="6.5"/><path d="M20 20l-4.2-4.2"/></svg>
+        <label for="q" class="sr-only">Søk i appen</label>
+        <input id="q" type="search" x-ref="search" autocomplete="off" placeholder="Søk etter sider, sanger, dokumenter"
+               x-model="q" @focus="searchOpen = true" @input="searchOpen = true; hit = 0"
+               @keydown.down.prevent="hit = Math.min(hit + 1, results.length - 1)"
+               @keydown.up.prevent="hit = Math.max(hit - 1, 0)"
+               @keydown.enter.prevent="if (results[hit]) location.hash = results[hit].href"
+               @keydown.escape="searchOpen = false; $el.blur()"
+               role="combobox" aria-controls="search-results" :aria-expanded="(searchOpen && q) ? 'true' : 'false'">
+        <kbd aria-hidden="true">/</kbd>
+        <ul class="search-results" id="search-results" role="listbox" x-show="searchOpen && q.trim()" x-transition.opacity.duration.120ms x-cloak>
+          <template x-for="(r, idx) in results" :key="r.path + r.label">
+            <li role="option" :aria-selected="idx === hit ? 'true' : 'false'">
+              <a :href="r.href" :class="{ 'is-active': idx === hit }" @mouseenter="hit = idx">
+                <span x-text="r.label"></span>
+                <template x-if="r.ext"><span x-html="extIcon" style="display:contents"></span></template>
+                <span class="path" x-text="r.path"></span>
+              </a>
+            </li>
+          </template>
+          <li x-show="results.length === 0" class="search-empty">Ingen treff på «<span x-text="q"></span>». Prøv et sidenavn, for eksempel Styret.</li>
+        </ul>
+      </div>
+
+      <div class="top-spacer"></div>
+
+      <div class="profile" @click.outside="profileOpen = false" @keydown.escape.stop="closeProfile()">
+        <button class="profile-btn" type="button" x-ref="profileBtn" aria-haspopup="menu" aria-controls="profile-menu"
+                :aria-expanded="profileOpen ? 'true' : 'false'" @click="toggleProfile()" @keydown.down.prevent="openProfile()">
+          <span class="who"><b>Ola Nordmann</b><span x-text="rank + ', T2'"></span></span>
+          <img class="frame frame-sm" src="../portrett.png" alt="Profilbilde av Ola Nordmann">
+        </button>
+        <div class="popover" id="profile-menu" x-show="profileOpen" x-cloak
+             x-transition.opacity.duration.140ms
+             @keydown.down.prevent="moveFocus(1)" @keydown.up.prevent="moveFocus(-1)">
+          <div class="pop-head">
+            <img class="frame frame-md" src="../portrett.png" alt="">
+            <div>
+              <h3>Ola Nordmann</h3>
+              <p>2. tenor (T2)<br><span x-text="rank"></span><span x-show="status === 'tidligere'">, ypp.com.</span></p>
+              <a href="#profil">Gå til profilsiden</a>
+            </div>
+          </div>
+          <ul class="menu" role="menu" aria-label="Profilmeny">
+            <template x-for="m in visibleItems(profileMenu)" :key="m.label">
+              <li role="none">
+                <a role="menuitem" :href="m.href || '#'" :target="m.ext ? '_blank' : null" :rel="m.ext ? 'noopener' : null">
+                  <span x-html="icon(m.icon)" style="display:contents"></span>
+                  <span x-text="m.label" style="flex:1"></span>
+                  <template x-if="m.ext"><span x-html="extIcon" style="display:contents"></span></template>
+                </a>
+              </li>
+            </template>
+            <li role="none" class="sep"></li>
+            <li role="none"><button role="menuitem" type="button" class="logout">
+              <svg class="i" viewBox="0 0 24 24"><path d="M14 4h4a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-4"/><path d="M10 16l-4-4 4-4M6 12h10"/></svg>
+              Logg ut</button></li>
+          </ul>
+        </div>
+      </div>
+    </header>
+
+    <main class="content" id="innhold">
+      <!-- Welcome -->
+      <section class="welcome" aria-labelledby="hello">
+        <div>
+          <h1 id="hello" x-text="greeting + ', Ola'"></h1>
+          <p>Internsidene og appen er nå samlet på ett sted. Alt du trenger som ridder finner du i menyen til venstre, gruppert etter Noter, Medlemmer, Ridderdata og Kontakt.</p>
+          <p>Trykk <b>/</b> for å søke, eller bla ned til oversikten over alle sidene.</p>
+        </div>
+        <div class="rank-track" aria-label="Din rang">
+          <div class="cap"><span>Rang</span><b x-text="rank"></b></div>
+          <div class="pips">
+            <template x-for="(r, i) in ranks" :key="r">
+              <span class="pip" :class="{ done: i < rankIdx, now: i === rankIdx }"></span>
+            </template>
+          </div>
+          <div class="pip-names" aria-hidden="true">
+            <template x-for="(r, i) in ranks" :key="r"><span :class="{ now: i === rankIdx }" x-text="r"></span></template>
+          </div>
+        </div>
+      </section>
+
+      <div class="status-note" x-show="status === 'tidligere'" x-cloak role="status">
+        <svg class="i" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 8v5M12 16.5v.01"/></svg>
+        Du er registrert som tidligere medlem (ypp.com.). Repertoar og øvingsplan er bare for aktive, men arkivet er ditt.
+      </div>
+
+      <!-- Widgets -->
+      <section class="widgets" aria-label="Din oversikt">
+        <!-- Streak -->
+        <article class="w w-streak">
+          <div class="w-head">
+            <svg class="i" viewBox="0 0 24 24"><path d="M12 3c1 3.5 5 5.5 5 10a5 5 0 0 1-10 0c0-2.3 1-3.6 2-4.6.3 1.6 1 2.6 2 3.1C11 9 11 6 12 3z"/></svg>
+            Øvingsstreak
+            <a href="#registrer">Se logg</a>
+          </div>
+          <div class="streak-top">
+            <div class="streak-num" x-text="streak"></div>
+            <div class="streak-meta"><span x-text="streak === 1 ? 'dag' : 'dager'"></span> på rad<br><b x-text="weekTotal + ' min'"></b> denne uka</div>
+          </div>
+          <div class="week-chart" x-html="weekChart" role="img" :aria-label="'Minutter øvd per dag denne uka: ' + week.map(d => d.day + ' ' + (d.future ? 'ikke ennå' : d.min)).join(', ')"></div>
+          <form class="register" @submit.prevent="register()">
+            <label>
+              <span class="sr-only">Minutter øvd i dag</span>
+              <input type="number" inputmode="numeric" min="1" max="600" placeholder="Minutter i dag" x-model.number="minutesInput">
+              <span class="unit">min</span>
+            </label>
+            <button class="btn" type="submit">Registrer øving</button>
+          </form>
+          <div class="toast" aria-live="polite" x-text="toast"></div>
+        </article>
+
+        <!-- Next rehearsal -->
+        <article class="w w-next">
+          <div class="w-head">
+            <svg class="i" viewBox="0 0 24 24"><rect x="4" y="5" width="16" height="15" rx="2"/><path d="M4 10h16M9 3v4M15 3v4"/></svg>
+            Neste øving
+            <a href="#ovingsplan" x-show="status === 'aktiv'">Øvingsplan</a>
+          </div>
+          <template x-if="status === 'aktiv'">
+            <div style="display:flex;flex-direction:column;flex:1">
+              <div class="when">
+                <div class="date-plate"><span>okt</span><b>2</b></div>
+                <div>
+                  <h2>Julekonsert-innspurt</h2>
+                  <p class="w-sub">Torsdag kl. 19:00</p>
+                </div>
+              </div>
+              <ul class="songs">
+                <li><span class="dot" style="background:var(--ember)"></span>Stille Natt</li>
+                <li><span class="dot" style="background:var(--amber)"></span>Deilig er jorden</li>
+                <li><span class="dot" style="background:var(--steel)"></span>Glade jul</li>
+              </ul>
+              <a class="btn btn-ghost" href="#ovingsplan">Se hele planen</a>
+            </div>
+          </template>
+          <template x-if="status !== 'aktiv'">
+            <div>
+              <h2>Ingen øvinger for deg</h2>
+              <p class="w-sub">Øvingsplanen vises bare for aktive medlemmer. Vil du synge igjen? Ta kontakt med Noteridderen.</p>
+            </div>
+          </template>
+        </article>
+
+        <!-- Achievement -->
+        <article class="w w-badge">
+          <div class="w-head">
+            <svg class="i" viewBox="0 0 24 24"><circle cx="12" cy="9" r="5"/><path d="M8.5 13l-1.5 8 5-3 5 3-1.5-8"/></svg>
+            Siste achievement
+            <a href="#achievements">Alle</a>
+          </div>
+          <div class="badge-wrap">
+            <svg viewBox="0 0 84 96" aria-hidden="true">
+              <defs>
+                <linearGradient id="bg1" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#f7c46a"/><stop offset="1" stop-color="#b8430a"/></linearGradient>
+              </defs>
+              <path d="M42 3 78 16v30c0 22-15 38-36 47C21 84 6 68 6 46V16Z" fill="url(#bg1)" stroke="#f7c46a" stroke-width="2"/>
+              <path d="M42 11 71 21v25c0 18-12 31-29 39C25 77 13 64 13 46V21Z" fill="none" stroke="#1e2125" stroke-opacity=".35" stroke-width="1.5"/>
+              <circle cx="42" cy="45" r="16" fill="none" stroke="#1e2125" stroke-width="3"/>
+              <path d="M42 34v11l7 5" fill="none" stroke="#1e2125" stroke-width="3" stroke-linecap="round"/>
+            </svg>
+            <h2>Øvd totalt en dag</h2>
+            <p>1440 minutter samlet. Det er et helt døgn med stemmebånd.</p>
+          </div>
+        </article>
+
+        <!-- Repertoire -->
+        <article class="w w-rep" x-show="status === 'aktiv'">
+          <div class="w-head">
+            <svg class="i" viewBox="0 0 24 24"><path d="M9 18V6l11-2v12"/><circle cx="6.5" cy="18" r="2.5"/><circle cx="17.5" cy="16" r="2.5"/></svg>
+            Ditt repertoar
+            <a href="#mitt-repertoar">Oppdater</a>
+          </div>
+          <h2>Julekonsert 2026</h2>
+          <p class="w-sub"><span x-text="rep.kjent + rep.litt + rep.ikke"></span> sanger på programmet</p>
+          <div class="stack" role="img" :aria-label="`${rep.kjent} kjent, ${rep.litt} litt kjent, ${rep.ikke} ikke kjent`">
+            <span :style="`width:${pct(rep.kjent)}%;background:var(--ember)`"></span>
+            <span :style="`width:${pct(rep.litt)}%;background:var(--amber)`"></span>
+            <span :style="`width:${pct(rep.ikke)}%;background:var(--steel-deep)`"></span>
+          </div>
+          <div class="legend">
+            <span><i class="dot" style="background:var(--ember)"></i><b x-text="rep.kjent"></b> kjent</span>
+            <span><i class="dot" style="background:var(--amber)"></i><b x-text="rep.litt"></b> litt kjent</span>
+            <span><i class="dot" style="background:var(--steel-deep)"></i><b x-text="rep.ikke"></b> ikke kjent</span>
+          </div>
+          <div class="rep-foot">
+            <p>Neste å lære: <b style="color:var(--bone)">Glade jul</b> og <b style="color:var(--bone)">O helga natt</b>. Hør startklippet i Toneangiveren.</p>
+            <a class="btn btn-ghost" href="/toneangiver" target="_blank" rel="noopener">Åpne Toneangiver <span x-html="extIcon" style="display:contents"></span></a>
+          </div>
+        </article>
+
+        <!-- Latest document -->
+        <article class="w w-doc" :style="status !== 'aktiv' ? 'grid-column: 1 / -1' : ''">
+          <div class="w-head">
+            <svg class="i" viewBox="0 0 24 24"><path d="M6 3h8l4 4v14H6z"/><path d="M14 3v4h4M9 12h6M9 16h6"/></svg>
+            Siste dokument
+            <a href="#dokumenter">Arkivet</a>
+          </div>
+          <a class="doc-main" href="#dok-1">
+            <span class="doc-icon" aria-hidden="true">PDF</span>
+            <div>
+              <h2>Styrereferat 18.09.2026</h2>
+              <p class="w-sub">Lagt ut av Paragrafrytteren, 3 sider</p>
+            </div>
+          </a>
+          <ul class="doc-list">
+            <li><a href="#dok-2">Resolusjon om ølkassen</a><time datetime="2026-09-11">11. sep</time></li>
+            <li><a href="#dok-3">Styrereferat 04.09.2026</a><time datetime="2026-09-04">4. sep</time></li>
+          </ul>
+        </article>
+      </section>
+
+      <!-- App map -->
+      <section aria-labelledby="map-title">
+        <div class="map-head">
+          <h2 id="map-title">Alt i appen</h2>
+          <p>Hver side med én linje om hva den er til.</p>
+        </div>
+        <div class="map">
+          <template x-for="g in visibleGroups" :key="g.id">
+            <article class="map-card">
+              <header>
+                <span x-html="icon(g.icon)" style="display:contents"></span>
+                <h3 x-text="g.label"></h3>
+              </header>
+              <ul>
+                <template x-for="it in visibleItems(g.items)" :key="it.label">
+                  <li>
+                    <template x-if="!it.children">
+                      <a :href="it.href || '#'" :target="it.ext ? '_blank' : null" :rel="it.ext ? 'noopener' : null">
+                        <span class="t"><span x-text="it.label"></span><template x-if="it.ext"><span x-html="extIcon" style="display:contents"></span></template></span>
+                        <span class="d" x-text="it.desc"></span>
+                      </a>
+                    </template>
+                    <template x-if="it.children">
+                      <div class="sub">
+                        <div class="sub-title"><span x-text="it.label"></span><template x-if="it.roleTag"><span class="role-tag" x-text="it.roleTag"></span></template></div>
+                        <ul>
+                          <template x-for="c in visibleItems(it.children)" :key="c.label">
+                            <li><a :href="c.href || '#'"><span class="t" x-text="c.label"></span><span class="d" x-text="c.desc"></span></a></li>
+                          </template>
+                        </ul>
+                      </div>
+                    </template>
+                  </li>
+                </template>
+              </ul>
+            </article>
+          </template>
+        </div>
+      </section>
+    </main>
+
+    <footer class="footer">
+      <img src="../logo.png" alt="">
+      <span>Armé Riddere, mannskor ved UiB siden MCMXCVI</span>
+      <span class="grow"></span>
+      <a href="#epostlister">Kontakt styret</a>
+      <a href="https://armeriddere.smugmug.com" target="_blank" rel="noopener">Bildearkiv</a>
+      <a href="#anonym">Anonym Forum</a>
+    </footer>
+  </div>
+</div>
+
+<!-- Demo control -->
+<aside class="demo" :class="{ 'is-min': demoMin }" aria-label="Demokontroll">
+  <button class="demo-toggle" type="button" @click="demoMin = !demoMin" :aria-expanded="demoMin ? 'false' : 'true'">
+    <svg class="i" viewBox="0 0 24 24" style="width:16px;height:16px"><path d="M4 6h10M18 6h2M4 12h4M12 12h8M4 18h12M20 18h0"/><circle cx="16" cy="6" r="2"/><circle cx="10" cy="12" r="2"/><circle cx="18" cy="18" r="2"/></svg>
+    <span class="lbl">Demo: bytt bruker</span>
+    <svg class="chev" viewBox="0 0 24 24" :style="demoMin ? 'transform:rotate(-90deg)' : 'transform:rotate(90deg)'"><path d="M9 6l6 6-6 6"/></svg>
+  </button>
+  <div class="demo-body" x-show="!demoMin">
+    <fieldset>
+      <legend>Status</legend>
+      <div class="seg">
+        <label><input type="radio" name="status" value="aktiv" x-model="status"><span>Aktiv</span></label>
+        <label><input type="radio" name="status" value="tidligere" x-model="status"><span>Tidligere</span></label>
+      </div>
+    </fieldset>
+    <fieldset style="margin:0">
+      <legend>Roller</legend>
+      <label class="chk"><input type="checkbox" x-model="roles.master"> Mester <code>master</code></label>
+      <label class="chk"><input type="checkbox" x-model="roles.notes"> Note <code>notes</code></label>
+    </fieldset>
+  </div>
+</aside>
+
+<script>
+const ICONS = {
+  notes: '<path d="M9 18V6l11-2v12"/><circle cx="6.5" cy="18" r="2.5"/><circle cx="17.5" cy="16" r="2.5"/>',
+  members: '<circle cx="9" cy="8" r="3.2"/><path d="M3 20c0-3.3 2.7-6 6-6s6 2.7 6 6"/><path d="M16 5.2a3 3 0 0 1 0 5.6M18 14.3c1.8.8 3 2.7 3 5.7"/>',
+  data: '<path d="M4 6c0-1.7 3.6-3 8-3s8 1.3 8 3-3.6 3-8 3-8-1.3-8-3z"/><path d="M4 6v6c0 1.7 3.6 3 8 3s8-1.3 8-3V6"/><path d="M4 12v6c0 1.7 3.6 3 8 3s8-1.3 8-3v-6"/>',
+  contact: '<rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3.5 6.5 12 13l8.5-6.5"/>',
+  profile: '<path d="M12 3 5 6v5c0 4.5 3 8.3 7 10 4-1.7 7-5.5 7-10V6z"/><circle cx="12" cy="10" r="2.5"/><path d="M8.5 16c.8-1.6 2-2.4 3.5-2.4s2.7.8 3.5 2.4"/>',
+  clock: '<circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/>',
+  list: '<path d="M9 6h11M9 12h11M9 18h11"/><path d="M4.5 6h.01M4.5 12h.01M4.5 18h.01"/>',
+  trophy: '<path d="M8 4h8v5a4 4 0 0 1-8 0z"/><path d="M8 6H5a3 3 0 0 0 3 4M16 6h3a3 3 0 0 1-3 4M12 13v4M8.5 20h7"/>',
+  game: '<rect x="3" y="7" width="18" height="11" rx="4"/><path d="M8 11v3M6.5 12.5h3M15.5 12h.01M17.5 14h.01"/>',
+  cog: '<circle cx="12" cy="12" r="3"/><path d="M12 2.5v3M12 18.5v3M2.5 12h3M18.5 12h3M5.3 5.3l2.1 2.1M16.6 16.6l2.1 2.1M5.3 18.7l2.1-2.1M16.6 7.4l2.1-2.1"/>'
+};
+
+function app() {
+  return {
+    collapsed: false,
+    drawer: false,
+    profileOpen: false,
+    searchOpen: false,
+    demoMin: false,
+    q: '',
+    hit: 0,
+    status: 'aktiv',
+    roles: { master: false, notes: false },
+    open: { noter: true, medlemmer: true, ridderdata: false, kontakt: false, profil: false },
+    sub: { noterSanger: true },
+    ranks: ['Aspirant', 'Knekt', 'Ridder', 'Ridder av 1. klasse', 'Kommandørridder', 'Storridder'],
+    rankIdx: 2,
+    streak: 6,
+    minutesInput: '',
+    toast: '',
+    week: [
+      { day: 'Man', min: 20 }, { day: 'Tir', min: 15 }, { day: 'Ons', min: 10 },
+      { day: 'Tor', min: 25 }, { day: 'Fre', min: 15, today: true },
+      { day: 'Lør', min: 0, future: true }, { day: 'Søn', min: 0, future: true }
+    ],
+    rep: { kjent: 7, litt: 4, ikke: 3 },
+    extIcon: '<svg class="ext" viewBox="0 0 12 12" aria-hidden="true"><path d="M4.5 2.5h5v5M9.5 2.5l-7 7"/></svg>',
+
+    groups: [
+      { id: 'noter', label: 'Noter', icon: 'notes', items: [
+        { label: 'Sanger', children: [
+          { label: 'Sanger', href: '#sanger', desc: 'Hele sangbiblioteket, rundt 400 sanger med noter og lydfiler.' },
+          { label: 'Repertoar', href: '#repertoar', activeOnly: true, desc: 'Sangene vi synger nå, med status per sang.' },
+          { label: 'Øvingsplan', href: '#ovingsplan', activeOnly: true, desc: 'Hva som øves på hver torsdag fremover.' }
+        ]},
+        { label: 'Toneangiver', href: '/toneangiver', ext: true, desc: 'Klikk en sang og hør startklippet.' },
+        { label: 'Note-admin', roles: ['notes', 'master'], roleTag: 'Note', children: [
+          { label: 'Sanger', href: '#na-sanger', desc: 'Legg til og rediger sanger i biblioteket.' },
+          { label: 'Repertoar', href: '#na-repertoar', desc: 'Sett sammen repertoaret for semesteret.' },
+          { label: 'Sangkunnskap', href: '#na-kunnskap', desc: 'Se hvem som kan hva, stemme for stemme.' },
+          { label: 'Øvingsplan', href: '#na-plan', desc: 'Planlegg øvingene og sangene på dem.' },
+          { label: 'Øvingskonkurranse', href: '#na-konk', desc: 'Start og følg konkurranser om øvingsminutter.' }
+        ]}
+      ]},
+      { id: 'medlemmer', label: 'Medlemmer', icon: 'members', items: [
+        { label: 'Medlemmer', href: '#medlemmer', current: false, desc: 'Galleri og liste over aktive og ypp.com.' },
+        { label: 'Styret', href: '#styret', desc: 'Nåværende styre og historikk, fra Rittmester til Dirigent.' },
+        { label: 'Admin', roles: ['master'], roleTag: 'Mester', href: '/app/admin', children: [
+          { label: 'Medlemmer', href: '#adm-medlemmer', desc: 'Opprett, rediger og sett status på medlemmer.' },
+          { label: 'Styret', href: '#adm-styret', desc: 'Oppdater styreverv og periode.' },
+          { label: 'Opptellinger', href: '#adm-opptelling', desc: 'Registrer opptellinger og ranger.' },
+          { label: 'Dokumenter', href: '#adm-dok', desc: 'Last opp referater og andre dokumenter.' },
+          { label: 'Resolusjonar', href: '#adm-res', desc: 'Før inn vedtatte resolusjonar.' },
+          { label: 'Bakgrunnsbilete', href: '#adm-bg', desc: 'Bytt bakgrunnsbildet på forsiden.' }
+        ]}
+      ]},
+      { id: 'ridderdata', label: 'Ridderdata', icon: 'data', items: [
+        { label: 'RidderWiki', href: '#wiki', ext: true, desc: 'Korets samlede kunnskap, tradisjoner og historie.' },
+        { label: 'Kalender', href: '#kalender', desc: 'Øvinger, konserter og fester i Google Calendar.' },
+        { label: 'Dokumenter', href: '#dokumenter', desc: 'Arkivet, nyeste først og søkbart.' },
+        { label: 'Videoarkiv', href: '#video', ext: true, desc: 'Opptak fra konserter, samlet på RidderWiki.' },
+        { label: 'Bildearkiv', href: 'https://armeriddere.smugmug.com', ext: true, desc: 'Bilder fra alle år på armeriddere.smugmug.com.' }
+      ]},
+      { id: 'kontakt', label: 'Kontakt', icon: 'contact', items: [
+        { label: 'Epostlister', href: '#epostlister', desc: 'Rolle-eposter og distribusjonslister.' },
+        { label: 'Anonym Forum', href: '#anonym', desc: 'Varsling, ektesnakk og anonyme innspill.' }
+      ]},
+      { id: 'profil', label: 'Min side', icon: 'profile', items: [
+        { label: 'Profilen min', href: '#profil', desc: 'Din egen side med rang, stemme og historikk.' },
+        { label: 'Registrer øving', href: '#registrer', desc: 'Før opp minutter og hold streaken i live.' },
+        { label: 'Repertoar', href: '#mitt-repertoar', activeOnly: true, desc: 'Merk sangene som kjent, litt kjent eller ikke kjent.' },
+        { label: 'Achievements', href: '#achievements', desc: 'Merkene du har samlet.' },
+        { label: 'MAR Games', href: '#games', ext: true, desc: 'Korets egne spill.' },
+        { label: 'Profilinnstillinger', href: '#innstillinger', desc: 'Bilde, kontaktinfo og varsler.' }
+      ]}
+    ],
+    profileMenu: [
+      { label: 'Registrer øving', href: '#registrer', icon: 'clock' },
+      { label: 'Repertoar', href: '#mitt-repertoar', icon: 'list', activeOnly: true },
+      { label: 'Achievements', href: '#achievements', icon: 'trophy' },
+      { label: 'MAR Games', href: '#games', icon: 'game', ext: true },
+      { label: 'Profilinnstillinger', href: '#innstillinger', icon: 'cog' }
+    ],
+
+    init() {
+      this.demoMin = window.innerWidth < 720;
+      try { this.collapsed = localStorage.getItem('ar-sidebar-collapsed') === '1'; } catch (e) { /* storage blocked */ }
+    },
+    toggleCollapsed() {
+      this.collapsed = !this.collapsed;
+      try { localStorage.setItem('ar-sidebar-collapsed', this.collapsed ? '1' : '0'); } catch (e) { /* storage blocked */ }
+    },
+    toggleGroup(id) {
+      if (this.collapsed && window.innerWidth > 900) {
+        this.toggleCollapsed();
+        this.open[id] = true;
+        return;
+      }
+      this.open[id] = !this.open[id];
+    },
+    visible(it) {
+      if (it.activeOnly && this.status !== 'aktiv') return false;
+      if (it.roles && !it.roles.some(r => this.roles[r])) return false;
+      return true;
+    },
+    visibleItems(list) { return list.filter(i => this.visible(i)); },
+    get visibleGroups() { return this.groups.filter(g => this.visible(g)); },
+    get rank() { return this.ranks[this.rankIdx]; },
+    get greeting() {
+      const h = new Date().getHours();
+      return h < 5 ? 'God natt' : h < 10 ? 'God morgen' : h < 18 ? 'God dag' : 'God kveld';
+    },
+    get results() {
+      const q = this.q.trim().toLowerCase();
+      if (!q) return [];
+      const out = [];
+      this.visibleGroups.forEach(g => this.visibleItems(g.items).forEach(it => {
+        if (it.children) {
+          this.visibleItems(it.children).forEach(c => {
+            if ((c.label + ' ' + c.desc).toLowerCase().includes(q)) out.push({ label: c.label, href: c.href, path: g.label + ' / ' + it.label });
+          });
+        } else if ((it.label + ' ' + it.desc).toLowerCase().includes(q)) {
+          out.push({ label: it.label, href: it.href, path: g.label, ext: it.ext });
+        }
+      }));
+      return out.slice(0, 8);
+    },
+    icon(name) { return '<svg class="i" viewBox="0 0 24 24" aria-hidden="true">' + (ICONS[name] || '') + '</svg>'; },
+
+    get weekTotal() { return this.week.reduce((s, d) => s + d.min, 0); },
+    get weekChart() {
+      const W = 320, H = 96, base = 76, gap = 10, bw = (W - gap * 6) / 7;
+      const max = Math.max(30, ...this.week.map(d => d.min));
+      let s = `<svg viewBox="0 0 ${W} ${H}" aria-hidden="true">
+        <defs><linearGradient id="emb" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ff8a2b"/><stop offset="1" stop-color="#b8430a"/></linearGradient></defs>
+        <line x1="0" y1="${base + .5}" x2="${W}" y2="${base + .5}" stroke="#3d434a"/>`;
+      this.week.forEach((d, i) => {
+        const x = i * (bw + gap);
+        const h = d.future ? 0 : Math.max(3, (d.min / max) * 62);
+        if (d.future) {
+          s += `<rect x="${x}" y="${base - 3}" width="${bw}" height="3" rx="1.5" fill="#30353b"/>`;
+        } else {
+          s += `<rect x="${x}" y="${base - h}" width="${bw}" height="${h}" rx="3" fill="${d.today ? 'url(#emb)' : '#6c9dcc'}" ${d.today ? 'style="filter:drop-shadow(0 0 6px rgba(236,108,0,.6))"' : 'fill-opacity=".55"'}/>`;
+          s += `<text x="${x + bw / 2}" y="${base - h - 5}" text-anchor="middle" font-size="10" fill="${d.today ? '#ff8a2b' : '#b9b2a6'}" font-family="Schibsted Grotesk, sans-serif">${d.min}</text>`;
+        }
+        s += `<text x="${x + bw / 2}" y="${H - 4}" text-anchor="middle" font-size="11" fill="${d.today ? '#efe8dc' : '#857f76'}" font-weight="${d.today ? 700 : 400}" font-family="Schibsted Grotesk, sans-serif">${d.day}</text>`;
+      });
+      return s + '</svg>';
+    },
+    register() {
+      const m = parseInt(this.minutesInput, 10);
+      if (!m || m < 1) { this.toast = 'Skriv inn antall minutter, for eksempel 20.'; return; }
+      if (m > 600) { this.toast = 'Maks 600 minutter per registrering.'; return; }
+      const today = this.week.find(d => d.today);
+      today.min += m;
+      this.minutesInput = '';
+      this.toast = `Registrert ${m} min. Totalt ${today.min} min i dag.`;
+      clearTimeout(this._t);
+      this._t = setTimeout(() => this.toast = '', 4000);
+    },
+    pct(n) { const t = this.rep.kjent + this.rep.litt + this.rep.ikke; return (n / t) * 100; },
+
+    toggleProfile() { this.profileOpen ? this.closeProfile() : this.openProfile(); },
+    openProfile() {
+      this.profileOpen = true;
+      this.$nextTick(() => document.querySelector('#profile-menu [role=menuitem]')?.focus());
+    },
+    closeProfile() { this.profileOpen = false; this.$refs.profileBtn.focus(); },
+    moveFocus(dir) {
+      const items = [...document.querySelectorAll('#profile-menu [role=menuitem]')];
+      const i = items.indexOf(document.activeElement);
+      items[(i + dir + items.length) % items.length]?.focus();
+    },
+    globalKeys(e) {
+      if (e.key === '/' && !['INPUT', 'TEXTAREA'].includes(document.activeElement.tagName)) {
+        e.preventDefault(); this.$refs.search.focus();
+      }
+      if (e.key === 'Escape' && this.drawer) this.drawer = false;
+    }
+  };
+}
+</script>
+</body>
+</html>

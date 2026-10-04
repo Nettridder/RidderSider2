@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="nb">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Toneangiver – Mannskoret Arme Riddere</title>
+<link rel="stylesheet" href="../felles/global.css">
+<link rel="stylesheet" href="toneangiver.css">
+<script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3/dist/cdn.min.js"></script>
+</head>
+<body data-page="noter/toneangiver">
+
+<main class="page" x-data="toneangiver()">
+  <div class="inner body">
+    <div class="body-h">
+      <div><h1 tabindex="-1">Toneangiver</h1><p>Trykk på sangen for å høre alle starttonene, eller på én tone.</p></div>
+      <input class="search" type="search" placeholder="Søk etter sang" aria-label="Søk i toneangiver" x-model="q">
+    </div>
+    <ul class="rows tlist">
+      <template x-for="s in list" :key="s.id">
+        <li :class="playing.s===s.id && 'playing'">
+          <button type="button" class="tone" @click="playSong(s)" :aria-label="'Spill starttonene for ' + s.t + ': ' + s.pitch.map(p => p.v+' '+p.n).join(', ')">
+            <span class="play" aria-hidden="true"><svg><use href="#i-play"/></svg></span>
+            <span class="nm"><span x-text="s.t"></span><span class="bars" x-show="playing.s===s.id" aria-hidden="true"><i></i><i></i><i></i></span><small x-text="playing.s===s.id ? 'Spiller' : s.g.join(', ')"></small></span>
+          </button>
+          <div class="chips">
+            <template x-for="(p,i) in s.pitch" :key="i">
+              <button type="button" class="chip" :class="playing.s===s.id && playing.i===i && 'on'" @click="playNote(s,i)" :aria-label="'Spill ' + RD.voiceName(p.v) + ', ' + p.n">
+                <span class="cv" x-text="p.v"></span><span class="cn"><span x-text="parts(p.n).l"></span><span class="acc" x-show="parts(p.n).acc" x-text="parts(p.n).acc"></span><span x-text="parts(p.n).o"></span></span>
+              </button>
+            </template>
+          </div>
+        </li>
+      </template>
+    </ul>
+    <p class="empty" x-show="!list.length">Ingen sanger passer søket.</p>
+    <p class="sr" aria-live="polite" x-text="playing.s!==null ? 'Spiller ' + (A.songById(playing.s) || {}).t : ''"></p>
+  </div>
+</main>
+
+<script src="../felles/data.js"></script>
+<script src="../felles/meny.js"></script>
+<script src="toneangiver.js"></script>
+</body>
+</html>

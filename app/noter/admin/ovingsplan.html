@@ -1,0 +1,93 @@
+<!doctype html>
+<html lang="nb">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Note-admin: Øvingsplan – Mannskoret Arme Riddere</title>
+<link rel="stylesheet" href="../../css/global.css">
+<link rel="stylesheet" href="../../css/songs.css">
+<script defer src="../../js/global.js"></script>
+<script defer src="../../js/songs.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3/dist/cdn.min.js"></script>
+</head>
+<body data-page="noter/admin/ovingsplan">
+
+<main>
+  <div class="content content--wide" x-data="adminPracticePlanPage()">
+    <div class="page-header">
+      <div>
+        <h1 class="page-header__title" tabindex="-1">Øvingsplan</h1>
+        <p class="page-header__intro">Øvingene vises for aktive medlemmer under Noter → Øvingsplan. Skriv hva som skal øves i beskrivelsen.</p>
+      </div>
+    </div>
+
+    <form class="admin-form" @submit.prevent="addPlan()" novalidate aria-labelledby="add-plan-title">
+      <h2 id="add-plan-title" class="section-title">Ny øving</h2>
+      <div data-form-template="template-plan:newPlan:new-plan"></div>
+      <div class="admin-form__actions"><button class="button" type="submit">Legg til øving</button></div>
+    </form>
+
+    <div class="admin-list-header">
+      <div>
+        <h2 class="section-title">Øvinger</h2>
+        <p class="hint" x-text="upcomingPlans.length + ' kommende, ' + pastPlans.length + ' tidligere'"></p>
+      </div>
+      <div class="segmented" role="group" aria-label="Vis øvinger">
+        <button type="button" :aria-pressed="showing === 'upcoming'" @click="showing = 'upcoming'">Kommende <span class="count" x-text="upcomingPlans.length"></span></button>
+        <button type="button" :aria-pressed="showing === 'past'" @click="showing = 'past'">Tidligere <span class="count" x-text="pastPlans.length"></span></button>
+      </div>
+    </div>
+    <ul class="admin-list practice-plan-list">
+      <template x-for="plan in shownPlans" :key="plan.id">
+        <li class="admin-list__row">
+          <span class="admin-list__cell practice-plan-list__date" x-text="format.shortDate(format.parseDate(plan.date))"></span>
+          <span class="admin-list__name">
+            <span x-text="plan.title"></span>
+            <small x-text="plan.description || 'Ingen beskrivelse'"></small>
+          </span>
+          <span class="admin-list__actions" x-show="confirmingDeleteId !== plan.id">
+            <button class="button button--secondary button--small" type="button" @click="editPlan(plan, $event)" :aria-label="'Rediger ' + plan.title">Rediger</button>
+            <button class="button button--danger button--small" type="button" @click="confirmingDeleteId = plan.id" :aria-label="'Slett ' + plan.title">Slett</button>
+          </span>
+          <span class="admin-list__confirm" x-show="confirmingDeleteId === plan.id">
+            <span>Slette øvingen?</span>
+            <button class="button button--danger-filled button--small" type="button" @click="deletePlan(plan)">Ja, slett</button>
+            <button class="button button--secondary button--small" type="button" @click="confirmingDeleteId = null">Avbryt</button>
+          </span>
+        </li>
+      </template>
+    </ul>
+    <p class="empty-state" x-show="!shownPlans.length" x-text="showing === 'upcoming' ? 'Ingen kommende øvinger. Legg til den neste over.' : 'Ingen tidligere øvinger.'"></p>
+
+    <div data-edit-drawer>
+      <form @submit.prevent="savePlan()" novalidate>
+        <div class="drawer__body"><div data-form-template="template-plan:editedPlan:edited-plan"></div></div>
+        <div class="drawer__footer">
+          <div class="drawer__footer-group">
+            <button class="button" type="submit">Lagre endringer</button>
+            <button class="button button--secondary" type="button" @click="closeDrawer()">Avbryt</button>
+          </div>
+        </div>
+      </form>
+    </div>
+  </div>
+</main>
+
+<template id="template-plan">
+  <div class="form-grid">
+    <label class="field" for="ID-date">Dato
+      <input id="ID-date" class="input" type="date" x-model="FORM.date" :aria-invalid="FORM.showErrors && !FORM.date ? 'true' : null">
+      <span class="field-error" x-show="FORM.showErrors && !FORM.date">Velg dato for øvingen.</span>
+    </label>
+    <label class="field" for="ID-title">Tittel
+      <input id="ID-title" class="input" type="text" x-model="FORM.title" placeholder="For eksempel Julekonsert-øving" :aria-invalid="FORM.showErrors && !FORM.title.trim() ? 'true' : null">
+      <span class="field-error" x-show="FORM.showErrors && !FORM.title.trim()">Gi øvingen en tittel.</span>
+    </label>
+    <label class="field form-grid__full" for="ID-description">Beskrivelse
+      <textarea id="ID-description" class="input" rows="4" x-model="FORM.description" placeholder="Hva skal øves, oppmøte og annet praktisk"></textarea>
+    </label>
+  </div>
+</template>
+
+</body>
+</html>

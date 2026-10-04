@@ -1,0 +1,646 @@
+<!doctype html>
+<html lang="nb">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Menypanel – Armé Riddere</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Newsreader:opsz,wght@6..72,400;6..72,500&family=Schibsted+Grotesk:wght@400;500;600&display=swap" rel="stylesheet">
+<script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3/dist/cdn.min.js"></script>
+<style>
+  :root{
+    --bg:#1f1c1a;
+    --bg-2:#272320;
+    --bg-3:#2f2a26;
+    --line:#3a3430;
+    --ink:#f0e8dd;
+    --muted:#a69a8c;
+    --faint:#72685e;
+    --ember:#ec6c00;
+    --ember-hot:#ff8a2b;
+    --ember-ink:#1f1406;
+    --ember-soft:rgba(236,108,0,.13);
+    --r-s:6px;
+    --r-m:8px;
+    --r-l:10px;
+    --top-h:64px;
+    --serif:"Newsreader",Georgia,serif;
+    --sans:"Schibsted Grotesk",system-ui,sans-serif;
+    --ease:cubic-bezier(.2,.7,.2,1);
+  }
+  *{box-sizing:border-box}
+  html{background:var(--bg)}
+  body{
+    margin:0;min-height:100vh;background:var(--bg);color:var(--ink);
+    font-family:var(--sans);font-size:1rem;line-height:1.5;
+    -webkit-font-smoothing:antialiased;overflow-x:hidden;
+  }
+  body.locked{overflow:hidden}
+  a{color:inherit;text-decoration:none}
+  button{font:inherit;color:inherit}
+  :focus-visible{outline:2px solid var(--ember-hot);outline-offset:3px;border-radius:var(--r-s)}
+  [x-cloak]{display:none!important}
+  svg.i{width:1.1em;height:1.1em;flex:none}
+  .sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+
+  /* ---------- top bar ---------- */
+  .top{
+    position:sticky;top:0;z-index:40;height:var(--top-h);
+    display:flex;align-items:center;gap:.75rem;padding:0 clamp(1rem,3vw,2rem);
+    background:var(--bg);border-bottom:1px solid transparent;transition:border-color .2s;
+  }
+  .top.open{border-color:var(--line)}
+  .menu-btn{
+    display:inline-flex;align-items:center;gap:.5rem;height:40px;padding:0 .9rem 0 .75rem;
+    background:none;border:1px solid var(--line);border-radius:var(--r-m);cursor:pointer;
+    font-size:.95rem;font-weight:500;transition:border-color .15s,background .15s;
+  }
+  .menu-btn:hover{border-color:var(--faint)}
+  .menu-btn[aria-expanded="true"]{background:var(--bg-3);border-color:var(--faint)}
+  .brand{display:flex;align-items:center;gap:.6rem;padding:.25rem .35rem;margin-left:.25rem}
+  .brand img{width:22px;height:auto}
+  .brand span{font-family:var(--serif);font-size:1.2rem;font-weight:500;letter-spacing:-.005em;white-space:nowrap}
+  .spacer{flex:1}
+
+  .me{position:relative}
+  .me-btn{
+    display:flex;align-items:center;gap:.75rem;background:none;border:0;cursor:pointer;
+    padding:.25rem .25rem .25rem .6rem;border-radius:var(--r-m);text-align:right;
+  }
+  .me-btn:hover{background:var(--bg-2)}
+  .me-btn .who{line-height:1.2}
+  .me-btn .who b{display:block;font-weight:500;font-size:.95rem}
+  .me-btn .who small{color:var(--muted);font-size:.8rem}
+  .portrait{
+    width:38px;height:47px;border-radius:5px;overflow:hidden;flex:none;background:#d9d6d2;
+    border:2px solid #4a423c;box-shadow:0 6px 16px rgba(0,0,0,.45);
+  }
+  .portrait img{width:100%;height:100%;object-fit:cover;display:block}
+  .me-menu{
+    position:absolute;right:0;top:calc(100% + .5rem);width:15.5rem;padding:.4rem;
+    background:var(--bg-2);border:1px solid var(--line);border-radius:var(--r-l);
+    box-shadow:0 20px 50px rgba(0,0,0,.5);list-style:none;margin:0;
+  }
+  .me-menu a{display:flex;align-items:center;justify-content:space-between;padding:.6rem .75rem;border-radius:var(--r-s);font-size:.95rem}
+  .me-menu a:hover,.me-menu a:focus-visible{background:var(--bg-3);outline-offset:-2px}
+  .me-menu .sep{height:1px;background:var(--line);margin:.35rem .4rem}
+  .me-menu .ext{color:var(--faint)}
+  .me-menu .out{color:var(--muted)}
+
+  /* ---------- menu panel ---------- */
+  .scrim{position:fixed;inset:var(--top-h) 0 0 0;z-index:30;background:rgba(18,15,13,.6)}
+  .panel{
+    position:fixed;left:0;right:0;top:var(--top-h);z-index:35;
+    background:var(--bg);border-bottom:1px solid var(--line);
+    box-shadow:0 30px 60px rgba(0,0,0,.45);
+    transform-origin:top center;
+  }
+  .panel-in{
+    max-width:68rem;margin:0 auto;padding:2rem clamp(1rem,3vw,2rem) 2.5rem;
+    display:grid;grid-template-columns:minmax(15rem,20rem) 1fr;gap:clamp(1.5rem,4vw,4rem);
+  }
+  .groups{list-style:none;margin:0;padding:0;display:grid;gap:.25rem;align-content:start}
+  .group{
+    width:100%;display:flex;align-items:center;gap:1rem;padding:.8rem 1rem .8rem .9rem;
+    background:none;border:0;border-left:2px solid transparent;border-radius:0 var(--r-m) var(--r-m) 0;
+    cursor:pointer;text-align:left;color:var(--muted);transition:color .15s,background .15s,border-color .15s;
+  }
+  .group svg.i{width:1.45rem;height:1.45rem}
+  .group .gl{font-family:var(--serif);font-size:clamp(1.6rem,2.6vw,2.05rem);line-height:1.1;font-weight:400;letter-spacing:-.01em}
+  .group .chev{margin-left:auto;opacity:0;transition:opacity .15s,transform .15s}
+  .group:hover{color:var(--ink)}
+  .group[aria-selected="true"]{color:var(--ink);background:var(--bg-2);border-left-color:var(--ember)}
+  .group[aria-selected="true"] svg.i:first-child{color:var(--ember-hot)}
+  .group[aria-selected="true"] .chev{opacity:.6}
+  .group:focus-visible{outline-offset:-2px;border-radius:0 var(--r-m) var(--r-m) 0}
+  .hint{margin:1.25rem 0 0 1rem;color:var(--faint);font-size:.82rem}
+  .hint kbd{font:inherit;border:1px solid var(--line);border-radius:4px;padding:0 .3rem}
+
+  .pages{min-width:0;border-left:1px solid var(--line);padding-left:clamp(1.5rem,4vw,4rem)}
+  .pages-head{display:flex;align-items:center;gap:.75rem;margin:0 0 1.25rem;min-height:2.5rem}
+  .pages-head p{margin:0;color:var(--muted);font-size:.98rem;max-width:40ch}
+  .back{display:none}
+  .plist{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:.25rem 1.5rem}
+  .page{display:block;padding:.85rem 1rem;border-radius:var(--r-m);transition:background .15s}
+  .page:hover{background:var(--bg-2)}
+  .page:focus-visible{outline-offset:-2px;background:var(--bg-2)}
+  .page b{display:flex;align-items:center;gap:.4rem;font-weight:500;font-size:1.08rem}
+  .page b svg{width:.8em;height:.8em;color:var(--faint)}
+  .page > span{display:block;color:var(--muted);font-size:.9rem;margin-top:.1rem}
+  .page:hover b{color:var(--ember-hot)}
+  .adm{margin-top:1.25rem;padding-top:1rem;border-top:1px dashed var(--line)}
+  .adm .page b{font-size:.95rem;color:var(--muted)}
+  .adm .page > span{color:var(--faint);font-size:.85rem}
+  .adm .page:hover b{color:var(--ink)}
+  .adm .page b small{font-weight:400;font-size:.75rem;color:var(--faint);border:1px solid var(--line);border-radius:999px;padding:0 .45rem;margin-left:.2rem}
+
+  @media (min-width:761px){
+    .panel[data-anim="in"]{animation:drop .22s var(--ease)}
+  }
+  @keyframes drop{from{opacity:0;transform:translateY(-10px)}}
+
+  /* mobile: full screen drill-down */
+  @media (max-width:760px){
+    .panel{bottom:0;overflow:hidden;border:0}
+    .panel-in{display:block;padding:0;height:100%;max-width:none}
+    .track{display:flex;width:200%;height:100%;transition:transform .28s var(--ease)}
+    .track.drill{transform:translateX(-50%)}
+    .pane{width:50%;height:100%;overflow-y:auto;padding:1.25rem 1rem 2rem}
+    .pages{border:0;padding-left:1rem}
+    .group{padding:1.05rem .9rem;border-left:0;border-radius:var(--r-m);border-bottom:1px solid var(--line);border-radius:0}
+    .group[aria-selected="true"]{background:none;color:var(--ink)}
+    .group .chev{opacity:.5}
+    .group[aria-selected="true"] svg.i:first-child{color:inherit}
+    .hint{display:none}
+    .back{display:inline-flex;align-items:center;gap:.35rem;background:none;border:1px solid var(--line);border-radius:var(--r-m);height:38px;padding:0 .8rem 0 .55rem;cursor:pointer;font-size:.92rem}
+    .pages-head{flex-direction:column;align-items:flex-start;gap:1rem}
+    .pages-head h2{margin:0;font-family:var(--serif);font-weight:400;font-size:2rem;line-height:1.1}
+    .plist{grid-template-columns:1fr}
+    .page{padding:.9rem .25rem;border-radius:0;border-bottom:1px solid var(--line)}
+  }
+  @media (min-width:761px){
+    .track{display:contents}
+    .pane{display:contents}
+    .pages-head h2{display:none}
+  }
+
+  /* ---------- page body ---------- */
+  .wrap{max-width:46rem;margin:0 auto;padding:clamp(3.5rem,12vh,7.5rem) clamp(1rem,4vw,2rem) 8rem;text-align:center}
+  .hello{
+    margin:0;font-family:var(--serif);font-weight:400;
+    font-size:clamp(2.6rem,7vw,4.6rem);line-height:1.02;letter-spacing:-.02em;
+    font-variation-settings:"opsz" 72;
+  }
+  .hello-sub{margin:.9rem auto 0;color:var(--muted);font-size:1.05rem;max-width:34ch}
+
+  .hero{
+    margin:clamp(2.5rem,7vh,4rem) 0 0;text-align:left;
+    background:var(--bg-2);border:1px solid var(--line);border-radius:var(--r-l);
+    padding:clamp(1.5rem,4vw,2.25rem);
+    display:grid;grid-template-columns:auto 1fr;gap:1.25rem 2rem;align-items:start;
+    position:relative;
+  }
+  .hero::before{content:"";position:absolute;left:-1px;top:1.5rem;bottom:1.5rem;width:3px;background:var(--ember);border-radius:0 3px 3px 0}
+  .date{
+    text-align:center;min-width:5.5rem;padding:.6rem .5rem .7rem;border:1px solid var(--line);border-radius:var(--r-m);background:var(--bg);
+  }
+  .date small{display:block;color:var(--ember-hot);font-size:.85rem;font-weight:500}
+  .date b{display:block;font-family:var(--serif);font-weight:400;font-size:2.8rem;line-height:1}
+  .date span{display:block;color:var(--muted);font-size:.85rem}
+  .hero-kicker{margin:0;color:var(--muted);font-size:.95rem}
+  .hero h2{margin:.15rem 0 .35rem;font-family:var(--serif);font-weight:400;font-size:clamp(1.7rem,4vw,2.3rem);line-height:1.1;letter-spacing:-.01em}
+  .hero-meta{margin:0;color:var(--ink);font-size:1rem}
+  .hero-meta span{color:var(--muted)}
+  .hero-foot{
+    grid-column:1/-1;display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:.75rem 1rem;
+    padding-top:1.1rem;border-top:1px solid var(--line);
+  }
+  .streak{display:flex;align-items:center;gap:.6rem;flex-wrap:wrap}
+  .badge{
+    display:inline-flex;align-items:center;gap:.35rem;padding:.2rem .65rem .22rem .5rem;border-radius:999px;
+    background:var(--ember-soft);color:var(--ember-hot);font-size:.9rem;font-weight:500;
+  }
+  .badge svg{width:.95em;height:.95em}
+  .link-quiet{
+    background:none;border:0;padding:.15rem 0;cursor:pointer;color:var(--muted);font-size:.9rem;
+    border-bottom:1px solid var(--faint);
+  }
+  .link-quiet:hover{color:var(--ink);border-color:var(--ink)}
+  .link-strong{display:inline-flex;align-items:center;gap:.35rem;font-weight:500;font-size:.95rem;padding:.4rem .8rem;border-radius:var(--r-m);border:1px solid var(--line)}
+  .link-strong:hover{border-color:var(--ember);color:var(--ember-hot)}
+  @media (max-width:520px){
+    .hero{grid-template-columns:1fr;gap:1rem}
+    .date{display:flex;align-items:baseline;gap:.5rem;min-width:0;width:max-content;padding:.4rem .75rem}
+    .date b{font-size:1.6rem}
+  }
+
+  .shortcuts{margin:1.5rem 0 0;padding:0;list-style:none;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:.6rem}
+  .shortcuts a{
+    display:flex;align-items:center;justify-content:center;gap:.5rem;height:44px;padding:0 .5rem;
+    border-radius:var(--r-m);border:1px solid var(--line);color:var(--muted);font-size:.92rem;
+    transition:color .15s,border-color .15s;
+  }
+  .shortcuts a svg{width:1rem;height:1rem;color:var(--faint);transition:color .15s}
+  .shortcuts a:hover{color:var(--ink);border-color:var(--faint)}
+  .shortcuts a:hover svg{color:var(--ember-hot)}
+  @media (max-width:520px){.shortcuts{grid-template-columns:repeat(2,minmax(0,1fr))}}
+
+  .cal{margin:clamp(3rem,8vh,4.5rem) 0 0;text-align:left}
+  .cal-head{display:flex;align-items:baseline;justify-content:space-between;gap:1rem;margin-bottom:1rem}
+  .cal-head h2{margin:0;font-family:var(--serif);font-weight:400;font-size:1.45rem}
+  .cal-head a{color:var(--muted);font-size:.9rem;border-bottom:1px solid var(--faint)}
+  .cal-head a:hover{color:var(--ink);border-color:var(--ink)}
+  .strip{display:grid;grid-template-columns:repeat(21,minmax(0,1fr));column-gap:2px;row-gap:.5rem}
+  .strip .wk-gap{margin-left:.55rem}
+  .day{
+    display:flex;flex-direction:column;align-items:center;gap:.1rem;padding:.35rem 0 .45rem;border-radius:var(--r-s);
+    color:var(--faint);font-size:.72rem;line-height:1.2;position:relative;min-width:0;
+  }
+  .day b{font-weight:500;font-size:.9rem;color:var(--muted)}
+  .day.we b{color:var(--faint)}
+  .day .dot{width:6px;height:6px;border-radius:50%;background:transparent;margin-top:.15rem}
+  .day.ev .dot{background:var(--ember)}
+  .day.ev b{color:var(--ink)}
+  .day.ev{cursor:pointer}
+  .day.ev:hover,.day.hl{background:var(--bg-2)}
+  .day.today{box-shadow:inset 0 0 0 1px var(--faint)}
+  .day.today small{color:var(--ink)}
+  .mlabel{grid-column:1/-1;display:flex;justify-content:space-between;color:var(--faint);font-size:.8rem;margin-bottom:-.2rem}
+  @media (max-width:600px){
+    .strip{grid-template-columns:repeat(7,minmax(0,1fr))}
+    .mlabel{display:none}
+    .strip .wk-gap{margin-left:0}
+  }
+  .events{list-style:none;margin:1.1rem 0 0;padding:0;border-top:1px solid var(--line)}
+  .events a{
+    display:grid;grid-template-columns:6.5rem 1fr auto;gap:1rem;align-items:baseline;
+    padding:.8rem .5rem;border-bottom:1px solid var(--line);transition:background .15s;
+  }
+  .events a:hover,.events a.hl{background:var(--bg-2)}
+  .events .d{color:var(--muted);font-size:.92rem}
+  .events .w{font-size:1rem}
+  .events .w span{display:block;color:var(--muted);font-size:.86rem}
+  .events .t{color:var(--muted);font-size:.92rem;font-variant-numeric:tabular-nums}
+  .events a.first .d{color:var(--ember-hot)}
+  @media (max-width:420px){.events a{grid-template-columns:5rem 1fr auto;gap:.6rem}}
+
+  /* ---------- toast + demo ---------- */
+  .toast{position:fixed;left:50%;bottom:1.5rem;transform:translateX(-50%);z-index:60;background:var(--ink);color:var(--bg);padding:.6rem 1rem;border-radius:var(--r-m);font-size:.95rem;box-shadow:0 10px 30px rgba(0,0,0,.45);max-width:calc(100vw - 2rem)}
+  .demo{position:fixed;left:1rem;bottom:1rem;z-index:25;font-size:.85rem}
+  .demo > button{background:var(--bg);color:var(--muted);border:1px dashed var(--faint);border-radius:var(--r-m);padding:.4rem .75rem;cursor:pointer}
+  .demo > button:hover{color:var(--ink)}
+  .demo-panel{position:absolute;bottom:calc(100% + .5rem);left:0;width:14rem;background:var(--bg-2);border:1px dashed var(--faint);border-radius:var(--r-l);padding:.9rem 1rem;display:grid;gap:.75rem}
+  .demo-panel fieldset{border:0;margin:0;padding:0;display:grid;gap:.3rem}
+  .demo-panel legend{color:var(--ink);font-weight:500;margin-bottom:.25rem}
+  .demo-panel label{display:flex;gap:.5rem;align-items:center;cursor:pointer;color:var(--muted)}
+  .demo-panel input{accent-color:var(--ember)}
+
+  @media (prefers-reduced-motion:reduce){
+    *,*::before,*::after{animation:none!important;transition:none!important}
+  }
+</style>
+</head>
+<body x-data="app()" :class="menuOpen && 'locked'" @keydown.escape.window="onEscape()">
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="i-menu" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" d="M4 7h16M4 12h16M4 17h10"/></symbol>
+  <symbol id="i-x" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" d="M6 6l12 12M18 6 6 18"/></symbol>
+  <symbol id="i-note" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18V5l11-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="17" cy="16" r="3"/></g></symbol>
+  <symbol id="i-people" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c.6-3.6 3.2-5.5 6.5-5.5s5.9 1.9 6.5 5.5"/><path d="M16 4.8a3.3 3.3 0 0 1 0 6.4M18.5 14.8c1.7.8 2.7 2.5 3 5.2"/></g></symbol>
+  <symbol id="i-archive" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="5" rx="1.2"/><path d="M5 9v10a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V9M10 13h4"/></g></symbol>
+  <symbol id="i-mail" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="1.5"/><path d="m4 7 8 6 8-6"/></g></symbol>
+  <symbol id="i-cal" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><rect x="3.5" y="5" width="17" height="15" rx="1.5"/><path d="M3.5 10h17M8 3v4M16 3v4"/></g></symbol>
+  <symbol id="i-list" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M9 6h11M9 12h11M9 18h11"/><path d="m3.5 6 1 1 2-2M3.5 12l1 1 2-2M3.5 18l1 1 2-2"/></g></symbol>
+  <symbol id="i-chev" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="m9 6 6 6-6 6"/></symbol>
+  <symbol id="i-back" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="m15 6-6 6 6 6"/></symbol>
+  <symbol id="i-out" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" d="M8 16 16 8M9.5 8H16v6.5"/></symbol>
+  <symbol id="i-flame" viewBox="0 0 24 24"><path fill="currentColor" d="M12.6 2.2c.3 3-1.1 4.6-2.6 6.2C8.4 10 7 11.6 7 14.3A5 5 0 0 0 12 19.5a5 5 0 0 0 5-5.1c0-1.5-.5-2.7-1.2-3.7-.2 1.2-.9 2.2-2 2.6.6-2.9-.1-7-1.2-11.1ZM12 22a7.4 7.4 0 0 1-7.5-7.6c0-3.7 2-5.8 3.7-7.6C9.8 5 11 3.7 10.6.9c-.1-.7.7-1.1 1.2-.6 3 2.8 6.6 7.3 6.8 7.5A9 9 0 0 1 19.5 14.4 7.4 7.4 0 0 1 12 22Z"/></symbol>
+</svg>
+
+<!-- ============ TOP BAR ============ -->
+<header class="top" :class="menuOpen && 'open'">
+  <button class="menu-btn" x-ref="menuBtn" type="button"
+          :aria-expanded="menuOpen" aria-controls="menypanel" @click="toggleMenu()">
+    <svg class="i" x-show="!menuOpen"><use href="#i-menu"/></svg>
+    <svg class="i" x-show="menuOpen" x-cloak><use href="#i-x"/></svg>
+    <span x-text="menuOpen ? 'Lukk' : 'Meny'">Meny</span>
+  </button>
+  <a class="brand" href="/app" aria-label="Armé Riddere, til forsiden">
+    <img src="../../logo.png" alt="">
+    <span>Armé Riddere</span>
+  </a>
+  <div class="spacer"></div>
+
+  <div class="me" @click.outside="meOpen=false">
+    <button class="me-btn" x-ref="meBtn" type="button" aria-haspopup="menu" :aria-expanded="meOpen"
+            aria-controls="profilmeny" @click="toggleMe()" @keydown.down.prevent="openMe(0)">
+      <span class="who" x-show="wide">
+        <b>Ola Nordmann</b>
+        <small x-text="status==='aktiv' ? '2. tenor, Ridder' : 'Ridder, ypp.com.'"></small>
+      </span>
+      <span class="sr" x-show="!wide">Profilmeny for Ola Nordmann</span>
+      <span class="portrait"><img src="../../portrett.png" alt=""></span>
+    </button>
+    <ul class="me-menu" id="profilmeny" role="menu" x-show="meOpen" x-cloak x-ref="meMenu"
+        @keydown.down.prevent="moveMe(1)" @keydown.up.prevent="moveMe(-1)"
+        @keydown.home.prevent="focusMe(0)" @keydown.end.prevent="focusMe(-1)" @keydown.tab="meOpen=false">
+      <li role="none"><a role="menuitem" href="/app/registrer">Registrer øving</a></li>
+      <li role="none"><a role="menuitem" href="/app/repertoar/mitt">Mitt repertoar</a></li>
+      <li role="none"><a role="menuitem" href="/app/achievements">Achievements</a></li>
+      <li role="none"><a role="menuitem" href="/app/profil">Profilinnstillinger</a></li>
+      <li role="none"><a role="menuitem" href="/margames" target="_blank" rel="noopener">MAR Games <svg class="i ext"><use href="#i-out"/></svg></a></li>
+      <li role="separator" class="sep"></li>
+      <li role="none"><a role="menuitem" class="out" href="/app/logg-ut">Logg ut</a></li>
+    </ul>
+  </div>
+</header>
+
+<!-- ============ MENU PANEL ============ -->
+<div class="scrim" x-show="menuOpen" x-cloak @click="closeMenu()" aria-hidden="true"></div>
+<nav class="panel" id="menypanel" aria-label="Hovedmeny" x-show="menuOpen" x-cloak x-ref="panel"
+     :data-anim="menuOpen ? 'in' : ''" @keydown.tab="trap($event)">
+  <div class="panel-in">
+    <div class="track" :class="drill && 'drill'">
+      <!-- left pane: groups -->
+      <div class="pane" :inert="!wide && drill">
+        <div>
+          <ul class="groups" role="tablist" aria-orientation="vertical" aria-label="Menygrupper" x-ref="groups">
+            <template x-for="(g,i) in groups" :key="g.id">
+              <li role="none">
+                <button class="group" type="button" role="tab" :id="'tab-'+g.id"
+                        :aria-selected="active===i" :aria-controls="'pages-'+g.id"
+                        :tabindex="active===i ? 0 : -1"
+                        @mouseenter="wide && (active=i)" @focus="wide && (active=i)"
+                        @click="pick(i)"
+                        @keydown.down.prevent="moveGroup(1)" @keydown.up.prevent="moveGroup(-1)"
+                        @keydown.home.prevent="setGroup(0)" @keydown.end.prevent="setGroup(groups.length-1)"
+                        @keydown.right.prevent="enterPages()">
+                  <svg class="i"><use :href="'#i-'+g.icon"/></svg>
+                  <span class="gl" x-text="g.label"></span>
+                  <svg class="i chev"><use href="#i-chev"/></svg>
+                </button>
+              </li>
+            </template>
+          </ul>
+          <p class="hint"><kbd>↑</kbd> <kbd>↓</kbd> bytter gruppe, <kbd>→</kbd> går til sidene, <kbd>Esc</kbd> lukker.</p>
+        </div>
+      </div>
+
+      <!-- right pane: pages of the active group only -->
+      <div class="pane" :inert="!wide && !drill">
+        <section class="pages" role="tabpanel" :id="'pages-'+cur.id" :aria-labelledby="'tab-'+cur.id"
+                 x-ref="pages" @keydown.left="wide && $event.target.closest('.page') && ($event.preventDefault(), focusTab())">
+          <div class="pages-head">
+            <button class="back" type="button" @click="backToGroups()"><svg class="i"><use href="#i-back"/></svg>Alle grupper</button>
+            <h2 x-text="cur.label"></h2>
+            <p x-text="cur.blurb"></p>
+          </div>
+          <ul class="plist">
+            <template x-for="p in visible(cur.pages)" :key="p.label">
+              <li>
+                <a class="page" :href="p.href" :target="p.ext ? '_blank' : null" :rel="p.ext ? 'noopener' : null"
+                   @keydown.down.prevent="movePage($event,1)" @keydown.up.prevent="movePage($event,-1)">
+                  <b><span x-text="p.label"></span><svg x-show="p.ext" aria-label="åpnes i ny fane"><use href="#i-out"/></svg></b>
+                  <span x-text="p.desc"></span>
+                </a>
+              </li>
+            </template>
+          </ul>
+          <template x-if="adminFor(cur)">
+            <div class="adm">
+              <a class="page" :href="adminFor(cur).href"
+                 @keydown.down.prevent="movePage($event,1)" @keydown.up.prevent="movePage($event,-1)">
+                <b><span x-text="adminFor(cur).label"></span><small x-text="adminFor(cur).who"></small></b>
+                <span x-text="adminFor(cur).desc"></span>
+              </a>
+            </div>
+          </template>
+        </section>
+      </div>
+    </div>
+  </div>
+</nav>
+
+<!-- ============ PAGE ============ -->
+<main class="wrap" :inert="menuOpen">
+  <h1 class="hello"><span x-text="greeting">God kveld</span>, Ola.</h1>
+  <p class="hello-sub" x-text="status==='aktiv' ? 'Her er det viktigste for uka.' : 'Koret synger fortsatt. Her er det du kan komme på.'"></p>
+
+  <!-- Neste øving (Aktiv) -->
+  <section class="hero" aria-labelledby="hero-h" x-show="status==='aktiv'">
+    <div class="date" aria-hidden="true"><small>Tor</small><b>2</b><span>okt</span></div>
+    <div>
+      <p class="hero-kicker">Neste øving</p>
+      <h2 id="hero-h">Julekonsert-innspurt</h2>
+      <p class="hero-meta">Torsdag 2. oktober, 19:00 <span>i øvingslokalet</span></p>
+    </div>
+    <div class="hero-foot">
+      <div class="streak">
+        <span class="badge"><svg><use href="#i-flame"/></svg><span x-text="streak + ' dager på rad'"></span></span>
+        <button class="link-quiet" type="button" @click="register()" x-text="registered ? 'Registrert i dag' : 'Registrer øving'" :disabled="registered"></button>
+      </div>
+      <a class="link-strong" href="/app/ovingsplan">Se øvingsplanen</a>
+    </div>
+  </section>
+
+  <!-- Neste opptreden (Tidligere) -->
+  <section class="hero" aria-labelledby="hero-h2" x-show="status==='tidligere'" x-cloak>
+    <div class="date" aria-hidden="true"><small>Lør</small><b>4</b><span>okt</span></div>
+    <div>
+      <p class="hero-kicker">Neste opptreden</p>
+      <h2 id="hero-h2">Grieghallen foyer</h2>
+      <p class="hero-meta">Lørdag 4. oktober, 14:00 <span>åpent for alle</span></p>
+    </div>
+    <div class="hero-foot">
+      <span class="hero-meta"><span>Gamle riddere er alltid velkomne på første rad.</span></span>
+      <a class="link-strong" href="/app/kalender#2025-10-04">Se i kalenderen</a>
+    </div>
+  </section>
+
+  <!-- 4 quiet shortcuts -->
+  <nav aria-label="Snarveier">
+    <ul class="shortcuts">
+      <template x-for="s in visible(shortcuts)" :key="s.label">
+        <li><a :href="s.href"><svg><use :href="'#i-'+s.icon"/></svg><span x-text="s.label"></span></a></li>
+      </template>
+    </ul>
+  </nav>
+
+  <!-- week strip -->
+  <section class="cal" aria-labelledby="cal-h">
+    <div class="cal-head">
+      <h2 id="cal-h">De neste ukene</h2>
+      <a href="/app/kalender">Åpne kalenderen</a>
+    </div>
+    <div class="strip" aria-hidden="true">
+      <div class="mlabel"><span>September</span><span>Oktober</span></div>
+      <template x-for="(d,i) in days" :key="d.iso">
+        <div class="day"
+             :class="{we:d.we, ev:!!ev(d.iso), today:d.iso===todayIso, hl:hl===d.iso, 'wk-gap': i>0 && i%7===0}"
+             :title="ev(d.iso) ? ev(d.iso).what : null"
+             @mouseenter="hl=ev(d.iso)?d.iso:null" @mouseleave="hl=null"
+             @click="ev(d.iso) && (location.href='/app/kalender#'+d.iso)">
+          <small x-text="d.wd"></small><b x-text="d.n"></b><span class="dot"></span>
+        </div>
+      </template>
+    </div>
+    <ul class="events">
+      <template x-for="(e,i) in events" :key="e.iso">
+        <li>
+          <a :href="'/app/kalender#'+e.iso" :class="{first:i===0, hl:hl===e.iso}"
+             @mouseenter="hl=e.iso" @mouseleave="hl=null" @focus="hl=e.iso" @blur="hl=null">
+            <span class="d" x-text="e.day"></span>
+            <span class="w"><span class="sr" x-text="e.day+': '"></span><span x-text="e.what" style="display:inline;color:inherit;font-size:inherit"></span><span x-show="e.where" x-text="e.where"></span></span>
+            <span class="t" x-text="e.time"></span>
+          </a>
+        </li>
+      </template>
+    </ul>
+  </section>
+</main>
+
+<div class="toast" role="status" x-show="toast" x-cloak x-text="toast"></div>
+
+<!-- demo control -->
+<div class="demo" @click.outside="demoOpen=false" x-show="!menuOpen">
+  <button type="button" @click="demoOpen=!demoOpen" :aria-expanded="demoOpen">Demo</button>
+  <div class="demo-panel" x-show="demoOpen" x-cloak>
+    <fieldset>
+      <legend>Status</legend>
+      <label><input type="radio" value="aktiv" x-model="status"> Aktiv</label>
+      <label><input type="radio" value="tidligere" x-model="status"> Tidligere</label>
+    </fieldset>
+    <fieldset>
+      <legend>Roller</legend>
+      <label><input type="checkbox" value="master" x-model="roles"> master</label>
+      <label><input type="checkbox" value="notes" x-model="roles"> notes</label>
+    </fieldset>
+  </div>
+</div>
+
+<script>
+function app(){
+  const mq = window.matchMedia('(min-width: 761px)');
+  const EVENTS = [
+    {iso:'2025-10-02', day:'Tor 2. okt',  what:'Øving',        where:'Julekonsert-innspurt', time:'19:00', pub:false},
+    {iso:'2025-10-04', day:'Lør 4. okt',  what:'Opptreden',    where:'Grieghallen foyer',   time:'14:00', pub:true},
+    {iso:'2025-10-09', day:'Tor 9. okt',  what:'Øving',        where:'',                    time:'19:00', pub:false},
+    {iso:'2025-10-17', day:'Fre 17. okt', what:'Semesterfest', where:'',                    time:'',      pub:true},
+  ];
+  return {
+    status:'aktiv', roles:['master'],
+    menuOpen:false, meOpen:false, demoOpen:false,
+    active:0, drill:false, wide:mq.matches,
+    streak:6, registered:false, toast:'', hl:null,
+    todayIso:'2025-09-30',
+
+    groups:[
+      {id:'noter', label:'Noter', icon:'note', blurb:'Alt du trenger for å lære sangene.', pages:[
+        {label:'Sanger', href:'/app/sanger', desc:'Noter, tekster og lydfiler til hver sang.'},
+        {label:'Repertoar', href:'/app/repertoar', desc:'Sangene vi synger dette semesteret.', aktiv:true},
+        {label:'Øvingsplan', href:'/app/ovingsplan', desc:'Hva vi øver på, uke for uke.', aktiv:true},
+        {label:'Toneangiver', href:'/toneangiver', ext:true, desc:'Finn starttonen før dirigenten teller opp.'},
+      ], admin:{label:'Note-admin', href:'/app/note-admin', desc:'Last opp noter og rediger sanger.', who:'notes', roles:['notes','master']}},
+      {id:'medlemmer', label:'Medlemmer', icon:'people', blurb:'Folkene i koret og hvem som styrer det.', pages:[
+        {label:'Medlemmer', href:'/app/medlemmer', desc:'Hvem som synger hva, og hvordan du når dem.'},
+        {label:'Styret', href:'/app/styret', desc:'Hvem som sitter i styret og hva de har ansvar for.'},
+      ], admin:{label:'Admin', href:'/app/admin', desc:'Brukere, roller og status.', who:'master', roles:['master']}},
+      {id:'ridderdata', label:'Ridderdata', icon:'archive', blurb:'Datoer, papirer og alt vi har tatt vare på.', pages:[
+        {label:'Kalender', href:'/app/kalender', desc:'Øvinger, opptredener og fester.'},
+        {label:'Dokumenter', href:'/app/dokumenter', desc:'Vedtekter, referater og skjemaer.'},
+        {label:'RidderWiki', href:'/ridderwiki', ext:true, desc:'Korets historie og tradisjoner, forklart.'},
+        {label:'Videoarkiv', href:'/ridderwiki/Videoarkiv', ext:true, desc:'Opptak fra konserter og turer.'},
+        {label:'Bildearkiv', href:'https://armeriddere.smugmug.com', ext:true, desc:'Bilder fra alle årene, på SmugMug.'},
+      ]},
+      {id:'kontakt', label:'Kontakt', icon:'mail', blurb:'Når du vil si noe til resten av koret.', pages:[
+        {label:'Epostlister', href:'/app/epostlister', desc:'Meld deg på og av korets e-postlister.'},
+        {label:'Anonym Forum', href:'/app/forum', desc:'Si det du tenker, uten navn.'},
+      ]},
+    ],
+    shortcuts:[
+      {label:'Sanger', href:'/app/sanger', icon:'note'},
+      {label:'Øvingsplan', href:'/app/ovingsplan', icon:'list', aktiv:true},
+      {label:'Kalender', href:'/app/kalender', icon:'cal'},
+      {label:'Medlemmer', href:'/app/medlemmer', icon:'people'},
+    ],
+
+    init(){
+      mq.addEventListener('change', e => { this.wide = e.matches; this.drill = false; });
+    },
+    get cur(){ return this.groups[this.active]; },
+    get greeting(){
+      const h = new Date().getHours();
+      if (h < 5) return 'God natt';
+      if (h < 10) return 'God morgen';
+      if (h < 17) return 'God dag';
+      return 'God kveld';
+    },
+    get events(){ return this.status==='aktiv' ? EVENTS : EVENTS.filter(e => e.pub); },
+    get days(){
+      const out = [], start = new Date(2025, 8, 29), wd = ['søn','man','tir','ons','tor','fre','lør'];
+      for (let i = 0; i < 21; i++){
+        const d = new Date(start); d.setDate(start.getDate() + i);
+        const iso = d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+        out.push({iso, n:d.getDate(), wd:wd[d.getDay()], we:d.getDay()===0||d.getDay()===6});
+      }
+      return out;
+    },
+    ev(iso){ return this.events.find(e => e.iso === iso); },
+    visible(list){ return list.filter(p => !(p.aktiv && this.status==='tidligere')); },
+    adminFor(g){ return g.admin && g.admin.roles.some(r => this.roles.includes(r)) ? g.admin : null; },
+
+    /* ----- main menu ----- */
+    toggleMenu(){ this.menuOpen ? this.closeMenu() : this.openMenu(); },
+    openMenu(){
+      this.meOpen = false; this.demoOpen = false;
+      this.menuOpen = true; this.drill = false;
+      this.$nextTick(() => this.focusTab());
+    },
+    closeMenu(returnFocus = true){
+      this.menuOpen = false; this.drill = false;
+      if (returnFocus) this.$nextTick(() => this.$refs.menuBtn.focus());
+    },
+    focusTab(){ this.$refs.groups.querySelectorAll('.group')[this.active]?.focus(); },
+    setGroup(i){ this.active = i; this.$nextTick(() => this.focusTab()); },
+    moveGroup(d){ this.setGroup((this.active + d + this.groups.length) % this.groups.length); },
+    pick(i){
+      this.active = i;
+      if (!this.wide){
+        this.drill = true;
+        this.$nextTick(() => setTimeout(() => this.$refs.pages.querySelector('.back')?.focus(), 30));
+      }
+    },
+    enterPages(){
+      if (!this.wide){ this.pick(this.active); return; }
+      this.$refs.pages.querySelector('.page')?.focus();
+    },
+    backToGroups(){ this.drill = false; this.$nextTick(() => setTimeout(() => this.focusTab(), 30)); },
+    movePage(e, d){
+      const all = [...this.$refs.pages.querySelectorAll('.page')];
+      const i = all.indexOf(e.currentTarget);
+      all[(i + d + all.length) % all.length]?.focus();
+    },
+    trap(e){
+      const f = [this.$refs.menuBtn, ...this.$refs.panel.querySelectorAll('button:not([tabindex="-1"]), a[href]')]
+        .filter(el => el.offsetParent !== null && !el.closest('[inert]'));
+      if (!f.length) return;
+      const first = f[0], last = f[f.length - 1];
+      if (e.shiftKey && document.activeElement === first){ e.preventDefault(); last.focus(); }
+      else if (!e.shiftKey && document.activeElement === last){ e.preventDefault(); first.focus(); }
+    },
+
+    /* ----- profile menu ----- */
+    meItems(){ return [...this.$refs.meMenu.querySelectorAll('[role=menuitem]')]; },
+    toggleMe(){ this.meOpen ? (this.meOpen = false) : this.openMe(0); },
+    openMe(i){
+      if (this.menuOpen) this.closeMenu(false);
+      this.meOpen = true;
+      this.$nextTick(() => this.focusMe(i));
+    },
+    focusMe(i){ const it = this.meItems(); it.at(i)?.focus(); },
+    moveMe(d){
+      const it = this.meItems(), i = it.indexOf(document.activeElement);
+      it[(i + d + it.length) % it.length].focus();
+    },
+
+    onEscape(){
+      if (this.meOpen){ this.meOpen = false; this.$refs.meBtn.focus(); return; }
+      if (this.menuOpen){
+        if (!this.wide && this.drill){ this.backToGroups(); return; }
+        this.closeMenu();
+      }
+      this.demoOpen = false;
+    },
+
+    register(){
+      if (this.registered) return;
+      this.registered = true; this.streak++;
+      this.toast = 'Øving registrert. ' + this.streak + ' dager på rad.';
+      setTimeout(() => this.toast = '', 2600);
+    },
+  };
+}
+</script>
+</body>
+</html>

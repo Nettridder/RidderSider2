@@ -1,0 +1,249 @@
+/* Songs: song list, knowledge colours, starting notes, the note player, and the Noter / Note-admin pages. */
+
+/* ==================== Shared: start notes ==================== */
+
+.start-notes { display: flex; flex-wrap: wrap; gap: 0.35rem; }
+.start-note {
+  display: inline-flex; align-items: baseline; gap: 0.35rem; background: var(--color-surface); border: 1px solid var(--color-border-soft); border-radius: var(--radius-small);
+  padding: 0.25rem 0.55rem; cursor: pointer; transition: border-color 0.15s, background 0.15s;
+}
+.start-note:hover { border-color: var(--color-text-faint); }
+.start-note__voice { font-size: 0.74rem; color: var(--color-text-faint); font-weight: 500; }
+.start-note__pitch { font-family: var(--font-heading); font-size: 1.05rem; font-weight: 450; font-variant-numeric: tabular-nums; }
+.start-note__accidental { display: inline-block; font-family: var(--font-body); font-size: 0.78em; margin: 0 -0.08em 0 0.02em; transform: translateY(-0.12em); }
+.start-note.is-playing { background: var(--color-accent-soft); border-color: var(--color-accent); }
+.start-note.is-playing .start-note__pitch, .start-note.is-playing .start-note__voice { color: var(--color-accent-bright); }
+.sound-bars { display: inline-flex; gap: 2px; align-items: flex-end; height: 0.8rem; margin-left: 0.5rem; vertical-align: -0.05em; }
+.sound-bars i { width: 2px; background: var(--color-accent-bright); border-radius: 1px; animation: sound-bars 0.7s ease-in-out infinite alternate; }
+.sound-bars i:nth-child(2) { animation-delay: -0.25s; }
+.sound-bars i:nth-child(3) { animation-delay: -0.5s; }
+@keyframes sound-bars { from { height: 25%; } to { height: 100%; } }
+
+/* ==================== Shared: song list ==================== */
+
+.song-list__row { grid-template-columns: auto minmax(0, 1fr) auto; gap: 0.5rem 0.9rem; }
+.song-list__link { min-width: 0; }
+.song-list__link:hover .list__title > span:first-child { text-decoration: underline; text-decoration-color: var(--color-accent); text-underline-offset: 4px; }
+.song-list__favorite { width: 0.8rem; height: 0.8rem; color: var(--color-accent); margin-left: 0.4rem; vertical-align: -0.05em; }
+.song-list__media { display: inline-flex; gap: 0.35rem; margin-left: 0.6rem; vertical-align: -0.15em; }
+.song-list__media svg { width: 0.9rem; height: 0.9rem; color: var(--color-text-faint); }
+
+/* ==================== Sanger (noter/sanger) ==================== */
+
+.song-filters { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 0.75rem 1rem; margin-bottom: 1rem; }
+.song-filters__genre { width: auto; min-width: 11rem; padding-top: 0.45rem; padding-bottom: 0.45rem; font-size: 0.9rem; background-color: var(--color-surface); }
+@media (max-width: 720px) {
+  .song-filters__genre { flex: 1 1 100%; }
+}
+
+/* ==================== Repertoar (noter/repertoar) ==================== */
+
+.repertoire-hint { margin-top: 1.25rem; }
+.empty-repertoire { max-width: 32rem; }
+.empty-repertoire p { margin: 0.8rem 0 1.25rem; color: var(--color-text-dim); font-family: var(--font-heading); font-size: 1.12rem; }
+
+/* ==================== Sang (noter/sang) ==================== */
+
+.song-header { display: flex; align-items: flex-end; justify-content: space-between; gap: 1rem 1.5rem; flex-wrap: wrap; margin-bottom: 1.25rem; }
+.song-header__text .page-header__intro { display: flex; flex-wrap: wrap; align-items: center; gap: 0.6rem; }
+.song-header__actions { display: flex; align-items: center; gap: 0.6rem; }
+.favorite-button { width: 2.5rem; height: 2.5rem; display: grid; place-items: center; background: var(--color-surface); border: 1px solid var(--color-border-soft); border-radius: 50%; color: var(--color-text-faint); cursor: pointer; }
+.favorite-button svg { width: 1.05rem; height: 1.05rem; }
+.favorite-button:hover { color: var(--color-text); }
+.favorite-button[aria-pressed="true"] { color: var(--color-accent-bright); border-color: var(--color-accent); background: var(--color-accent-soft); }
+
+.start-notes-row { display: flex; flex-wrap: wrap; align-items: center; gap: 0.6rem 0.9rem; margin-bottom: 1.5rem; }
+
+.player { background: var(--color-surface); border: 1px solid var(--color-border); border-radius: 0; padding: 1.25rem 1.4rem; margin-left: calc(-50vw + 50%); margin-right: calc(-50vw + 50%); width: 100vw; position: sticky; top: 0; z-index: 30; margin-bottom: 2rem; }
+.player--fixed { position: static; margin-left: calc(-50vw + 50%); margin-right: calc(-50vw + 50%); width: 100vw; }
+.player__empty { padding: 0.5rem 0; }
+.player__controls { display: flex; align-items: center; gap: 0.6rem; flex-wrap: nowrap; flex: 1; min-width: 0; }
+.player__voice-select { position: relative; }
+.player__voice-dropdown { display: flex; gap: 0.6rem; align-items: center; flex: none; width: 5rem; }
+.button--active { background: var(--color-accent); color: var(--color-on-accent); border-color: var(--color-accent); }
+.dropdown { position: absolute; top: 100%; left: 0; background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--radius-small); min-width: 12rem; margin-top: 0.3rem; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1); z-index: 10; }
+.dropdown-item { display: flex; width: 100%; padding: 0.6rem 0.9rem; background: none; border: none; text-align: left; cursor: pointer; color: var(--color-text); font-size: 0.95rem; align-items: center; justify-content: space-between; gap: 0.6rem; }
+.dropdown-item:hover { background: var(--color-surface-raised); }
+.dropdown-item--active { background: var(--color-accent-soft); color: var(--color-accent-bright); font-weight: 500; }
+.player__speed { display: inline-flex; align-items: center; gap: 0.5rem; font-size: 0.88rem; color: var(--color-text-faint); flex: none; }
+.player__speed .input { width: auto; padding: 0.35rem 1.9rem 0.35rem 0.6rem; font-size: 0.88rem; }
+.player__timeline { flex: 1; min-width: 0; }
+.player__play { width: 2.8rem; height: 2.8rem; flex: none; display: grid; place-items: center; border-radius: 50%; border: 0; background: var(--color-accent); color: var(--color-on-accent); cursor: pointer; transition: background 0.15s, transform 0.15s; }
+.player__play:hover { background: var(--color-accent-bright); transform: scale(1.04); }
+.player__play svg { width: 1.1rem; height: 1.1rem; }
+.player__skip { width: 2rem; height: 2rem; flex: none; display: grid; place-items: center; border-radius: 50%; border: 0; background: none; color: var(--color-text-dim); cursor: pointer; }
+.player__skip:hover { color: var(--color-text); background: var(--color-surface-raised); }
+.player__skip svg { width: 1rem; height: 1rem; }
+.player__times { display: flex; justify-content: space-between; font-size: 0.8rem; color: var(--color-text-faint); font-variant-numeric: tabular-nums; margin-top: 0.2rem; }
+.player__minimize { background: none; border: none; color: var(--color-text-dim); cursor: pointer; display: grid; place-items: center; width: 2rem; height: 2rem; padding: 0; flex: none; }
+.player__minimize:hover { color: var(--color-text); }
+.player__minimize svg { width: 1.2rem; height: 1.2rem; }
+.player-toggle { position: fixed; top: 0.75rem; right: 0.75rem; z-index: 40; width: 2.5rem; height: 2.5rem; border-radius: 50%; background: var(--color-surface); border: 1px solid var(--color-border); cursor: pointer; display: grid; place-items: center; color: var(--color-text); transition: background 0.15s, transform 0.15s; }
+.player-toggle:hover { background: var(--color-surface-raised); transform: scale(1.05); }
+.player-toggle svg { width: 1.2rem; height: 1.2rem; }
+
+.player__seek, .voice-track__volume {
+  -webkit-appearance: none; appearance: none; width: 100%; height: 1.2rem; background: transparent; cursor: pointer; margin: 0;
+}
+.player__seek::-webkit-slider-runnable-track, .voice-track__volume::-webkit-slider-runnable-track {
+  height: 4px; border-radius: 4px; background: linear-gradient(to right, var(--color-text) var(--progress), var(--color-surface-raised) var(--progress));
+}
+.player__seek::-moz-range-track, .voice-track__volume::-moz-range-track { height: 4px; border-radius: 4px; background: var(--color-surface-raised); }
+.player__seek::-moz-range-progress, .voice-track__volume::-moz-range-progress { height: 4px; border-radius: 4px; background: var(--color-text); }
+.player__seek::-webkit-slider-thumb, .voice-track__volume::-webkit-slider-thumb { -webkit-appearance: none; width: 0.85rem; height: 0.85rem; margin-top: -0.3rem; border-radius: 50%; background: var(--color-text); border: 0; }
+.player__seek::-moz-range-thumb, .voice-track__volume::-moz-range-thumb { width: 0.85rem; height: 0.85rem; border-radius: 50%; background: var(--color-text); border: 0; }
+.player__seek:hover::-webkit-slider-runnable-track { background: linear-gradient(to right, var(--color-accent-bright) var(--progress), var(--color-surface-raised) var(--progress)); }
+
+.voice-mixer { margin-top: 1.4rem; padding-top: 1.1rem; border-top: 1px solid var(--color-border-soft); }
+.voice-mixer__presets { display: flex; flex-wrap: wrap; gap: 0.45rem; margin-bottom: 0.9rem; }
+.voice-mixer__my-presets { display: contents; }
+.voice-mixer__tracks { list-style: none; margin: 0; padding: 0; display: grid; gap: 0.35rem; }
+.voice-track { display: grid; grid-template-columns: minmax(8rem, 12rem) auto auto minmax(6rem, 1fr); gap: 0.6rem; align-items: center; padding: 0.45rem 0.6rem; border-radius: var(--radius-small); transition: opacity 0.2s; }
+.voice-track--mine { background: var(--color-accent-soft); }
+.voice-track--silent { opacity: 0.45; }
+.voice-track__name { display: flex; align-items: center; gap: 0.5rem; font-weight: 500; }
+.voice-track__toggle { background: var(--color-background); border: 1px solid var(--color-border); border-radius: var(--radius-small); padding: 0.25rem 0.6rem; font-size: 0.82rem; color: var(--color-text-dim); cursor: pointer; }
+.voice-track__toggle:hover { color: var(--color-text); }
+.voice-track__toggle[aria-pressed="true"] { background: var(--color-text); color: var(--color-background); border-color: var(--color-text); }
+
+.song-materials { width: 100vw; position: relative; left: 50%; transform: translateX(-50%); padding: 0; }
+.song-materials__tabs { margin-bottom: 1rem; padding: 0 calc(50vw - 50%); }
+.sheet-viewer { display: grid; gap: 0.75rem; padding: 0 calc(50vw - 50%); position: relative; }
+.sheet-pages { display: flex; flex-direction: column; }
+.sheet-page { display: block; width: 100%; height: auto; border: none; background: var(--color-paper); }
+.sheet-viewer .button-row { position: absolute; top: 0.75rem; right: calc(50vw - 50%); z-index: 10; }
+.video-frame { display: block; width: 100%; aspect-ratio: 16 / 9; border: 0; border-radius: var(--radius-small); background: #000; overflow: hidden; }
+.video-frame iframe { width: 100%; height: 100%; border: 0; }
+.lyrics { margin: 0; white-space: pre-line; font-family: var(--font-heading); font-size: 1.15rem; line-height: 1.65; max-width: 34rem; }
+
+@media (max-width: 720px) {
+  .player { padding: 1rem; }
+  .player__transport { flex-wrap: wrap; justify-content: center; }
+  .player__timeline { flex: 1 1 100%; margin-left: 0; order: 4; }
+  .voice-track { grid-template-columns: minmax(0, 1fr) auto auto; }
+  .voice-track__volume { grid-column: 1 / -1; }
+  .sheet-viewer__frame { height: 70vh; }
+}
+
+/* ==================== Øvingsplan (noter/ovingsplan) ==================== */
+
+.practice-plan { list-style: none; margin: 0; padding: 0; display: grid; gap: 1rem; }
+.practice-plan__item { background: var(--color-surface); border: 1px solid var(--color-border-soft); border-radius: var(--radius); padding: 1.1rem 1.25rem; }
+.practice-plan__item--next { border-color: var(--color-border); }
+.practice-plan__date { margin: 0; font-family: var(--font-heading); font-size: 1.35rem; font-weight: 450; }
+.practice-plan__time { color: var(--color-text-dim); font-weight: 350; }
+.practice-plan__title { margin: 0.2rem 0 0; font-weight: 600; }
+.practice-plan__description { margin: 0.35rem 0 0; color: var(--color-text-dim); font-size: 0.93rem; max-width: 40rem; }
+
+/* ==================== Toneangiver (noter/toneangiver) ==================== */
+
+.pitch-list__song { display: flex; align-items: center; gap: 1rem; background: none; border: 0; padding: 0; text-align: left; cursor: pointer; min-width: 0; }
+.pitch-list__song:focus-visible { outline-offset: 4px; }
+.pitch-list__play { width: 2.25rem; height: 2.25rem; border-radius: 50%; flex: none; display: grid; place-items: center; border: 1px solid var(--color-border); background: var(--color-surface); color: var(--color-text-dim); transition: color 0.15s, border-color 0.15s, background 0.15s; }
+.pitch-list__play svg { width: 0.85rem; height: 0.85rem; }
+.pitch-list__song:hover .pitch-list__play { color: var(--color-text); border-color: var(--color-text-faint); }
+.pitch-list__row.is-playing .pitch-list__play { background: var(--color-accent); border-color: var(--color-accent); color: var(--color-on-accent); }
+.pitch-list__notes { justify-content: flex-end; }
+@media (max-width: 720px) {
+  .pitch-list__row { grid-template-columns: 1fr; }
+  .pitch-list__notes { justify-content: flex-start; padding-left: 3.25rem; }
+}
+
+/* ==================== Note-admin: Sanger (noter/admin/sanger) ==================== */
+
+.song-admin-list { --columns: minmax(0, 1.3fr) minmax(0, 1fr) 11rem auto; --columns-narrow: minmax(0, 1fr) auto; }
+.genre-admin-list { --columns: minmax(0, 1fr) 6rem auto; --columns-narrow: minmax(0, 1fr) auto; }
+.genre-admin-list .admin-list__row { min-height: 3.4rem; }
+.song-file-row { grid-template-columns: minmax(0, 1.2fr) 5.6rem 7.6rem 5.6rem minmax(0, 1.3fr) auto; }
+.song-file-row__remove { align-self: end; }
+.genre-section { margin-top: 3rem; }
+.genre-add { display: flex; gap: 0.6rem; max-width: 28rem; margin-bottom: 0.4rem; }
+.genre-add__error { margin-bottom: 0.6rem; }
+.genre-rename { display: flex; flex-wrap: wrap; gap: 0.4rem; align-items: center; min-width: 0; }
+.genre-rename .input { flex: 1 1 10rem; padding: 0.45rem 0.6rem; }
+.genre-rename .field-error { flex-basis: 100%; }
+.drawer .song-file-row { grid-template-columns: minmax(0, 1fr) 5.6rem 7.6rem auto; }
+.drawer .song-file-row__note { grid-column: 1 / 2; }
+.drawer .song-file-row__file { grid-column: 1 / -1; }
+.drawer .song-file-row__remove { grid-column: 4; grid-row: 1; }
+@media (max-width: 900px) {
+  .song-file-row { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) auto; }
+  .song-file-row__name { grid-column: 1 / 3; }
+  .song-file-row__file { grid-column: 1 / -1; }
+  .song-file-row__remove { grid-column: 3; grid-row: 1; }
+  .drawer .song-file-row { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) auto; }
+  .drawer .song-file-row__remove { grid-column: 3; }
+  .drawer .song-file-row__note { grid-column: auto; }
+}
+@media (max-width: 720px) {
+  .genre-add { flex-wrap: wrap; }
+  .genre-add .input { flex: 1 1 100%; }
+}
+
+/* ==================== Note-admin: Repertoar (noter/admin/repertoar) ==================== */
+
+.repertoire-admin-list { --columns: minmax(0, 1fr) 6rem 5.5rem auto; --columns-narrow: minmax(0, 1fr) auto; }
+.repertoire-visibility-field { align-content: end; min-height: 4.2rem; }
+.add-song-row { display: flex; gap: 0.5rem; margin-top: 0.8rem; }
+.add-song-row select { flex: 1; }
+
+/* ==================== Note-admin: Sangkunnskap (noter/admin/sangkunnskap) ==================== */
+
+.song-picker { display: flex; flex-wrap: wrap; gap: 1rem; align-items: end; margin-bottom: 2rem; }
+.song-picker__search { flex: 0 1 16rem; }
+.song-picker__select { flex: 1 1 18rem; max-width: 26rem; }
+.knowledge-summary { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 0.5rem 1.5rem; margin-bottom: 1.25rem; }
+.knowledge-summary__title { margin: 0; }
+.knowledge-summary__counts { display: flex; gap: 1.25rem; list-style: none; margin: 0; padding: 0; font-variant-numeric: tabular-nums; color: var(--color-text-dim); }
+.knowledge-summary__counts li { display: inline-flex; align-items: center; gap: 0.45rem; }
+.voice-groups { display: grid; grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr)); gap: 1.5rem 2rem; }
+.voice-group__title { display: flex; justify-content: space-between; padding-bottom: 0.5rem; border-bottom: 1px solid var(--color-border); }
+.voice-group__count { font-variant-numeric: tabular-nums; }
+.voice-group__members { list-style: none; margin: 0; padding: 0; }
+.voice-group__member { display: flex; align-items: center; justify-content: space-between; gap: 1rem; padding: 0.55rem 0; border-bottom: 1px solid var(--color-border-soft); font-size: 0.95rem; }
+.voice-group__member .knowledge-dot { width: 0.8rem; height: 0.8rem; }
+
+/* ==================== Note-admin: Øvingsplan (noter/admin/ovingsplan) ==================== */
+
+.practice-plan-list { --columns: 6.5rem minmax(0, 1fr) auto; --columns-narrow: 5rem minmax(0, 1fr) auto; }
+.practice-plan-list .admin-list__name small { white-space: normal; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
+.practice-plan-list__date { align-self: start; padding-top: 0.1rem; }
+@media (max-width: 720px) {
+  .practice-plan-list { --columns-narrow: minmax(0, 1fr) auto; }
+  .practice-plan-list__date { grid-column: 1 / -1; padding-top: 0; }
+}
+
+/* ==================== Note-admin: Øvingskonkurranse (noter/admin/ovingskonkurranse) ==================== */
+
+.competition-list { --columns: minmax(0, 1fr) auto auto; --columns-narrow: minmax(0, 1fr) auto; }
+.recent-practice-list { --columns: minmax(0, 1fr) 4.5rem auto; }
+
+.standings { margin-bottom: 2.5rem; }
+.standings__header { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 0.75rem 1.5rem; margin-bottom: 1.25rem; }
+.standings__title { margin: 0 0 0.2rem; }
+.standings__picker { min-width: 14rem; }
+.standings__list { list-style: none; margin: 0; padding: 0; display: grid; gap: 0.35rem; }
+.standings__row { display: grid; grid-template-columns: 1.6rem minmax(7rem, 11rem) minmax(0, 1fr) 5.5rem; gap: 0.75rem; align-items: center; font-size: 0.93rem; }
+.standings__place { color: var(--color-text-faint); font-variant-numeric: tabular-nums; text-align: right; }
+.standings__name { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.standings__bar { height: 0.55rem; background: var(--color-surface-raised); border-radius: 999px; overflow: hidden; }
+.standings__bar i { display: block; height: 100%; background: var(--color-text-faint); border-radius: 999px; transition: width 0.4s var(--ease); }
+.standings__minutes { color: var(--color-text-dim); font-variant-numeric: tabular-nums; text-align: right; white-space: nowrap; }
+.standings__row--top .standings__place, .standings__row--top .standings__name { color: var(--color-text); font-weight: 500; }
+.standings__row--top .standings__bar i { background: var(--color-accent); }
+
+.competition-lower { display: grid; grid-template-columns: minmax(0, 23rem) minmax(0, 1fr); gap: 2rem 3rem; align-items: start; margin-top: 3rem; }
+.weekly-goal-setting .section-title { margin-bottom: 0.3rem; }
+.weekly-goal-setting__row { display: flex; align-items: center; gap: 0.6rem; margin: 1rem 0 0.4rem; flex-wrap: wrap; }
+.weekly-goal-setting__input { width: 6rem; }
+.recent-practice .section-title { margin-bottom: 0.3rem; }
+.recent-practice__hint { margin-bottom: 1rem; }
+
+@media (max-width: 900px) {
+  .competition-lower { grid-template-columns: minmax(0, 1fr); }
+}
+@media (max-width: 720px) {
+  .standings__row { grid-template-columns: 1.4rem minmax(0, 1fr) 4.8rem; row-gap: 0.2rem; }
+  .standings__bar { grid-column: 2 / -1; grid-row: 2; }
+  .standings__picker { min-width: 0; width: 100%; }
+}

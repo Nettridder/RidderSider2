@@ -1,0 +1,106 @@
+<!doctype html>
+<html lang="nb">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Admin: Achievements – Mannskoret Arme Riddere</title>
+<link rel="stylesheet" href="../css/global.css">
+<link rel="stylesheet" href="../css/members.css">
+<script defer src="../js/global.js"></script>
+<script defer src="../js/members.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3/dist/cdn.min.js"></script>
+</head>
+<body data-page="admin/achievements">
+
+<main>
+  <div class="content content--wide" x-data="adminAchievementsPage()">
+    <div class="page-header">
+      <div>
+        <h1 class="page-header__title" tabindex="-1">Achievements</h1>
+        <p class="page-header__intro">Achievements gis automatisk når regelen i koden er oppfylt. Her endrer du tittel, beskrivelse og bilde, og kan gi eller fjerne en achievement for hånd.</p>
+      </div>
+    </div>
+
+    <ul class="admin-list achievements-admin-list">
+      <li class="admin-list__row admin-list__head" aria-hidden="true"><span></span><span>Achievement</span><span>Utløses av</span><span>Oppnådd av</span><span></span></li>
+      <template x-for="achievement in sortedAchievements" :key="achievement.id">
+        <li class="admin-list__row">
+          <span class="achievement-icon" aria-hidden="true"><svg><use href="#icon-medal"/></svg></span>
+          <span class="admin-list__name">
+            <span x-text="achievement.title"></span>
+            <span class="badge badge--muted" x-show="achievement.is_secret">Hemmelig</span>
+            <small x-text="achievement.description"></small>
+            <small class="achievement-key" x-text="achievement.key"></small>
+            <small class="admin-list__narrow-summary" x-text="earnedCount(achievement) + ' medlemmer har den'"></small>
+          </span>
+          <span class="admin-list__cell admin-list__wide-only" x-text="triggerLabel(achievement.trigger_event)"></span>
+          <span class="admin-list__cell admin-list__wide-only" x-text="earnedCount(achievement) + (earnedCount(achievement) === 1 ? ' medlem' : ' medlemmer')"></span>
+          <span class="admin-list__actions"><button class="button button--secondary button--small" type="button" @click="editAchievement(achievement, $event)" :aria-label="'Rediger ' + achievement.title">Rediger</button></span>
+        </li>
+      </template>
+    </ul>
+    <p class="hint achievements-admin__hint">Nye achievements lages i koden med en egen regel og en rad i databasen. Ta kontakt med Nettridderen.</p>
+
+    <div data-edit-drawer>
+      <form @submit.prevent="saveAchievement()" novalidate>
+        <div class="drawer__body">
+          <div class="form-grid">
+            <label class="field form-grid__full" for="achievement-title">Tittel
+              <input id="achievement-title" class="input" type="text" x-model="editedAchievement.title" :aria-invalid="editedAchievement.submitted && !editedAchievement.title.trim()">
+              <span class="field-error" x-show="editedAchievement.submitted && !editedAchievement.title.trim()">Gi achievementen en tittel.</span>
+            </label>
+            <label class="field form-grid__full" for="achievement-description">Beskrivelse
+              <input id="achievement-description" class="input" type="text" x-model="editedAchievement.description" :aria-invalid="editedAchievement.submitted && !editedAchievement.description.trim()">
+              <span class="field-error" x-show="editedAchievement.submitted && !editedAchievement.description.trim()">Skriv en kort beskrivelse.</span>
+            </label>
+            <div class="field">
+              <span>Bilde</span>
+              <div class="file-picker">
+                <label class="file-picker__button"><input class="visually-hidden" type="file" accept="image/*" @change="editedAchievement.new_image = $event.target.files[0] ? $event.target.files[0].name : editedAchievement.new_image"><span>Bytt bilde</span></label>
+                <span class="file-picker__name" x-text="editedAchievement.new_image || editedAchievement.image"></span>
+              </div>
+            </div>
+            <div class="field">
+              <span>Synlighet</span>
+              <label class="switch"><input type="checkbox" x-model="editedAchievement.is_secret"><span class="switch__track" aria-hidden="true"></span>Hemmelig til den er oppnådd</label>
+            </div>
+            <div class="field form-grid__full">
+              <span>Nøkkel</span>
+              <p class="achievement-key achievement-key--readonly" x-text="editedAchievement.key"></p>
+              <p class="hint">Nøkkelen kobler achievementen til regelen i koden og kan ikke endres her.</p>
+            </div>
+          </div>
+
+          <section class="achievement-holders" aria-labelledby="holders-title">
+            <h3 id="holders-title" class="label" x-text="'Oppnådd av ' + holders.length + (holders.length === 1 ? ' medlem' : ' medlemmer')"></h3>
+            <ul class="achievement-holders__list">
+              <template x-for="holder in holders" :key="holder.row.id">
+                <li class="achievement-holders__row">
+                  <span class="person"><span class="portrait portrait--small"><img :src="app.memberImage(holder.member)" alt=""></span>
+                    <span><span x-text="app.memberName(holder.member)"></span><small class="hint achievement-holders__meta" x-text="format.fullDate(format.parseDate(holder.row.created_at)) + (holder.row.created_by ? ', gitt av ' + app.memberName(app.member(holder.row.created_by)) : ', gitt automatisk')"></small></span></span>
+                  <button class="button button--danger button--small" type="button" @click="revoke(holder)" :aria-label="'Fjern fra ' + app.memberName(holder.member)">Fjern</button>
+                </li>
+              </template>
+            </ul>
+            <p class="hint" x-show="!holders.length">Ingen har denne ennå.</p>
+            <div class="achievement-holders__grant">
+              <label class="visually-hidden" for="grant-member">Gi til medlem</label>
+              <select id="grant-member" class="input" x-model.number="grantMemberId">
+                <option value="">Velg medlem</option>
+                <template x-for="member in membersWithout" :key="member.id"><option :value="member.id" x-text="app.memberName(member) + (member.status === 'former' ? ' (ypp.com.)' : '')"></option></template>
+              </select>
+              <button class="button button--secondary button--small" type="button" @click="grant()" :disabled="!grantMemberId">Gi til medlem</button>
+            </div>
+          </section>
+        </div>
+        <div class="drawer__footer">
+          <button class="button" type="submit">Lagre endringer</button>
+          <button class="button button--secondary" type="button" @click="closeDrawer()">Avbryt</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</main>
+
+</body>
+</html>

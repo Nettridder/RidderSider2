@@ -1,0 +1,34 @@
+<!doctype html>
+<html lang="nb">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Anonym Forum – Mannskoret Arme Riddere</title>
+<link rel="stylesheet" href="../felles/global.css">
+<script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3/dist/cdn.min.js"></script>
+</head>
+<body data-page="kontakt/forum">
+
+<main class="page" x-data="{anon:true, sent:false, title:'', body:''}">
+  <div class="inner body">
+    <div class="body-h"><div><h1 tabindex="-1">Anonym Forum</h1><p>Si fra om noe til styret. Du velger selv om navnet ditt følger med.</p></div></div>
+    <form class="form" @submit.prevent="sent = true" x-show="!sent">
+      <label class="f">Emne<input class="fld" type="text" x-model="title" placeholder="Hva gjelder det?"></label>
+      <label class="f">Melding<textarea class="fld" style="min-height:9rem" x-model="body"></textarea></label>
+      <div class="row">
+        <label class="toggle"><input type="checkbox" x-model="anon"><span class="sw" aria-hidden="true"></span>Send anonymt</label>
+        <button class="btn" type="submit" :disabled="!body.trim()" x-text="anon ? 'Send anonymt' : 'Send som Ola'"></button>
+      </div>
+      <p class="hint" x-text="anon ? 'Styret ser ikke hvem som sendte meldingen.' : 'Styret ser at meldingen er fra deg.'"></p>
+    </form>
+    <div x-show="sent" class="ph fade-in">
+      <p x-text="anon ? 'Sendt anonymt. Styret tar det opp på neste møte.' : 'Sendt. Styret svarer deg direkte.'"></p>
+      <button class="btn btn-quiet" type="button" @click="sent=false; title=''; body=''">Skriv en ny</button>
+    </div>
+  </div>
+</main>
+
+<script src="../felles/data.js"></script>
+<script src="../felles/meny.js"></script>
+</body>
+</html>

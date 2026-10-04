@@ -1,0 +1,147 @@
+<!doctype html>
+<html lang="nb">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Note-admin: Repertoar – Mannskoret Arme Riddere</title>
+<link rel="stylesheet" href="../../felles/global.css">
+<link rel="stylesheet" href="../../felles/admin.css">
+<style>
+  /* list columns + song order editor, only on this page */
+  .alist.reps{--cols:minmax(0,1fr) 6rem 5.5rem auto;--cols-narrow:minmax(0,1fr) auto}
+  .rsongs{list-style:none;margin:0;padding:0;border-top:1px solid var(--line-soft)}
+  .rsongs li{display:grid;grid-template-columns:1.6rem minmax(0,1fr) auto;gap:.6rem;align-items:center;padding:.45rem 0;border-bottom:1px solid var(--line-soft);font-size:.95rem;color:var(--ink)}
+  .rsongs .no{color:var(--faint);font-variant-numeric:tabular-nums;font-size:.85rem}
+  .ibtns{display:flex;gap:.25rem}
+  .addrow{display:flex;gap:.5rem;margin-top:.8rem}
+  .addrow select{flex:1}
+</style>
+<script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3/dist/cdn.min.js"></script>
+</head>
+<body data-page="noter/admin/repertoar">
+
+<main class="page" x-data="adminRepertoar()">
+  <div class="inner body wide">
+    <div class="body-h"><div><h1 tabindex="-1">Administrer repertoar</h1><p>Et repertoar er en navngitt liste med sanger i fast rekkefølge.</p></div></div>
+    <p class="flash" aria-live="polite" x-text="flash"></p>
+
+    <form class="adm-add" @submit.prevent="create()" novalidate aria-labelledby="add-h">
+      <h2 id="add-h">Nytt repertoar</h2>
+      <div class="fgrid">
+        <label class="f" for="ny-name">Navn
+          <input id="ny-name" class="fld" type="text" x-model="ny.name" placeholder="For eksempel Vårkonsert 2027" :aria-invalid="ny.tried && !ny.name.trim()">
+        </label>
+        <div class="f" style="align-content:end">
+          <label class="toggle" style="min-height:2.6rem"><input type="checkbox" x-model="ny.visible"><span class="sw" aria-hidden="true"></span>Synlig for medlemmer</label>
+        </div>
+        <p class="err span2" x-show="ny.tried && !ny.name.trim()">Gi repertoaret et navn.</p>
+        <p class="hint span2">Nye repertoarer er skjult til du slår på Synlig, så du kan bygge dem ferdig først.</p>
+      </div>
+      <div class="factions"><button class="btn" type="submit">Opprett repertoar</button></div>
+    </form>
+
+    <div class="adm-list-h"><div><h2>Alle repertoarer</h2><p x-text="A.reps.length ? A.reps.length + ' repertoarer' : 'Ingen repertoarer ennå'"></p></div></div>
+    <ul class="alist reps fold">
+      <template x-for="r in A.reps" :key="r.id">
+        <li>
+          <span class="an"><span x-text="r.name"></span><small class="m-meta" x-text="r.songs.length + ' sanger, ' + (r.visible ? 'synlig' : 'skjult')"></small></span>
+          <span class="ac num wide-only" x-text="r.songs.length + ' sanger'"></span>
+          <span class="wide-only"><span class="tag" :class="r.visible ? 'ok' : 'q'" x-text="r.visible ? 'Synlig' : 'Utkast'"></span></span>
+          <span class="acts" x-show="del!==r.id">
+            <button class="btn btn-quiet btn-s" type="button" @click="edit(r, $event)" :aria-label="'Rediger ' + r.name">Rediger</button>
+            <button class="btn btn-danger btn-s" type="button" @click="del=r.id" :aria-label="'Slett ' + r.name">Slett</button>
+          </span>
+          <span class="confirm" x-show="del===r.id">
+            <span x-text="'Slette «' + r.name + '»?'"></span>
+            <button class="btn btn-danger solid btn-s" type="button" @click="remove(r)">Ja, slett</button>
+            <button class="btn btn-quiet btn-s" type="button" @click="del=null">Avbryt</button>
+          </span>
+        </li>
+      </template>
+    </ul>
+  </div>
+
+  <div data-drawer>
+    <form @submit.prevent="save()" novalidate>
+      <div class="dp-body">
+        <div class="fgrid">
+          <label class="f span2" for="red-name">Navn
+            <input id="red-name" class="fld" type="text" x-model="red.name" :aria-invalid="red.tried && !red.name.trim()">
+          </label>
+          <p class="err span2" x-show="red.tried && !red.name.trim()">Gi repertoaret et navn.</p>
+          <label class="toggle span2"><input type="checkbox" x-model="red.visible"><span class="sw" aria-hidden="true"></span>Synlig for medlemmer</label>
+          <div class="f span2">
+            <span x-text="'Sanger i rekkefølge (' + red.songs.length + ')'"></span>
+            <ol class="rsongs">
+              <template x-for="(id,i) in red.songs" :key="id">
+                <li>
+                  <span class="no" x-text="i+1"></span>
+                  <span x-text="name(id)"></span>
+                  <span class="ibtns">
+                    <button class="ib" type="button" @click="move(i,-1)" :disabled="i===0" :aria-label="'Flytt ' + name(id) + ' opp'"><svg aria-hidden="true"><use href="#i-up"/></svg></button>
+                    <button class="ib" type="button" @click="move(i,1)" :disabled="i===red.songs.length-1" :aria-label="'Flytt ' + name(id) + ' ned'"><svg aria-hidden="true"><use href="#i-dn"/></svg></button>
+                    <button class="ib x" type="button" @click="red.songs.splice(i,1)" :aria-label="'Fjern ' + name(id) + ' fra repertoaret'"><svg aria-hidden="true"><use href="#i-x"/></svg></button>
+                  </span>
+                </li>
+              </template>
+            </ol>
+            <p class="hint" x-show="!red.songs.length">Ingen sanger ennå. Legg til den første under.</p>
+            <div class="addrow">
+              <label class="sr" for="red-add">Legg til sang</label>
+              <select id="red-add" class="fld" x-model="red.add">
+                <option value="">Velg sang å legge til</option>
+                <template x-for="s in A.songs.filter(s => !red.songs.includes(s.id))" :key="s.id">
+                  <option :value="s.id" x-text="s.t + (s.secret ? ' (hemmelig)' : '')"></option>
+                </template>
+              </select>
+              <button class="btn btn-quiet btn-s" type="button" @click="add()" :disabled="red.add===''">Legg til</button>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="dp-f"><button class="btn" type="submit">Lagre endringer</button><button class="btn btn-quiet" type="button" @click="closeDrawer()">Avbryt</button></div>
+    </form>
+  </div>
+</main>
+
+<script src="../../felles/data.js"></script>
+<script src="../../felles/meny.js"></script>
+<script src="../../felles/admin.js"></script>
+<script>
+function adminRepertoar(){
+  return {
+    ...adminBase(),
+    ny:{name:'', visible:false, tried:false},
+    red:{id:null, name:'', visible:false, songs:[], add:'', tried:false},
+    del:null,
+    get A(){ return this.$store.app },
+    get drawerTitle(){ return 'Rediger repertoar' },
+    get drawerSub(){ return (this.A.reps.find(r => r.id===this.red.id) || {}).name || '' },
+    name(id){ return (this.A.songById(id) || {}).t },
+    create(){
+      const F = this.ny; F.tried = true;
+      if(!F.name.trim()){ this.focusFirstInvalid(); return; }
+      const id = Math.max(0, ...this.A.reps.map(r => r.id)) + 1;
+      this.A.reps.push({id, name:F.name.trim(), visible:F.visible, note:'', songs:[]});
+      this.ny = {name:'', visible:false, tried:false};
+      this.say(`«${F.name.trim()}» er opprettet. Trykk Rediger for å legge til sanger.`);
+    },
+    edit(r, e){ this.red = {id:r.id, name:r.name, visible:r.visible, songs:[...r.songs], add:'', tried:false}; this.openDrawer('rep', e); },
+    move(i, d){ const a = this.red.songs, j = i + d; if(j<0 || j>=a.length) return; const [x] = a.splice(i,1); a.splice(j,0,x); },
+    add(){ if(this.red.add==='') return; this.red.songs.push(+this.red.add); this.red.add=''; },
+    save(){
+      const F = this.red; F.tried = true;
+      if(!F.name.trim()){ this.focusFirstInvalid(); return; }
+      const r = this.A.reps.find(r => r.id===F.id);
+      Object.assign(r, {name:F.name.trim(), visible:F.visible, songs:[...F.songs]});
+      this.closeDrawer(); this.say(`«${r.name}» er lagret.`);
+    },
+    remove(r){
+      this.A.reps = this.A.reps.filter(x => x.id!==r.id); this.del = null;
+      this.say(`«${r.name}» er slettet.`); this.focusHeading();
+    },
+  };
+}
+</script>
+</body>
+</html>

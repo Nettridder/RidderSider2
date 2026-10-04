@@ -1,0 +1,1060 @@
+<!doctype html>
+<html lang="nb">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Armé Riddere – Heraldikk</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700&family=Cormorant+Garamond:ital,wght@0,500;0,600;0,700;1,500&family=Hanken+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3/dist/cdn.min.js"></script>
+<style>
+:root {
+  /* Tinkturer */
+  --tenne: #ec6c00;          /* merkefargen */
+  --tenne-deep: #b8430a;     /* besøkt / mørkere */
+  --tenne-tint: #fbe3cf;
+  --azure: #0e1c38;          /* midnatt, komplementet */
+  --azure-deep: #08132a;
+  --azure-soft: #1a2c50;
+  --azure-line: #2b4070;
+  --or: #c6a459;             /* dempet gull */
+  --or-soft: #e5d3a3;
+  --argent: #f7f4ec;         /* elfenben */
+  --argent-2: #eee8d9;
+  --paper: #fffdf8;
+  --ink: #1c1a18;
+  --ink-soft: #5a554c;
+  --rule: #ddd3bd;
+  --on-azure: #eef1f7;
+  --on-azure-soft: #a9b4cc;
+
+  --font-display: "Cormorant Garamond", "Cormorant", Georgia, serif;
+  --font-motto: "Cinzel", "Cormorant Garamond", serif;
+  --font-body: "Hanken Grotesk", system-ui, -apple-system, "Segoe UI", sans-serif;
+
+  --radius-tile: 4px;
+  --radius-frame: 3px;
+  --shadow-frame: 0 1px 2px rgba(8, 19, 42, .18), 0 10px 28px rgba(8, 19, 42, .16);
+  --ease: cubic-bezier(.2, .7, .2, 1);
+  --wrap: 1240px;
+  --header-h: 72px;
+}
+
+*, *::before, *::after { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; }
+body {
+  margin: 0;
+  background: var(--argent);
+  color: var(--ink);
+  font-family: var(--font-body);
+  font-size: 1rem;
+  line-height: 1.55;
+  -webkit-font-smoothing: antialiased;
+  overflow-x: hidden;
+}
+body.locked { overflow: hidden; }
+img { max-width: 100%; display: block; }
+a { color: var(--tenne-deep); text-underline-offset: .18em; }
+a:visited { color: var(--tenne-deep); }
+button, input { font: inherit; }
+[x-cloak] { display: none !important; }
+:focus-visible { outline: 2px solid var(--tenne); outline-offset: 3px; border-radius: 2px; }
+.wrap { max-width: var(--wrap); margin: 0 auto; padding: 0 16px; }
+@media (min-width: 720px) { .wrap { padding: 0 32px; } }
+.sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+.ext { font-size: .78em; margin-left: .25em; opacity: .75; font-family: var(--font-body); }
+
+/* Tinktur-merker: nå vs arkiv */
+.era { display: inline-flex; gap: 3px; margin-left: .45em; vertical-align: middle; }
+.era i { width: 7px; height: 7px; border-radius: 50%; display: inline-block; }
+.era .na { background: var(--tenne); }
+.era .arkiv { border: 1.5px solid var(--or); }
+
+/* ============ HEADER ============ */
+.site-header {
+  position: sticky; top: 0; z-index: 50;
+  background: var(--azure-deep);
+  color: var(--on-azure);
+  border-bottom: 1px solid var(--azure-line);
+}
+.site-header::after { /* tynn gull-linje */
+  content: ""; position: absolute; left: 0; right: 0; bottom: -1px; height: 1px;
+  background: linear-gradient(90deg, transparent, var(--or) 20%, var(--or) 80%, transparent);
+  opacity: .5;
+}
+.bar { display: flex; align-items: center; gap: 24px; height: var(--header-h); }
+.brand { display: flex; align-items: center; gap: 12px; color: var(--on-azure); text-decoration: none; flex-shrink: 0; }
+.brand:visited { color: var(--on-azure); }
+.brand img { height: 50px; width: auto; }
+.brand span { font-family: var(--font-display); font-size: 1.45rem; font-weight: 600; letter-spacing: .01em; line-height: 1; }
+.primary-nav { flex: 1; display: none; }
+.primary-nav ul { list-style: none; margin: 0; padding: 0; display: flex; gap: 4px; justify-content: center; }
+.nav-trigger {
+  background: none; border: 0; color: var(--on-azure); cursor: pointer;
+  padding: 10px 14px; font-weight: 600; font-size: .98rem; border-radius: 3px;
+  display: inline-flex; align-items: center; gap: 8px; position: relative;
+}
+.nav-trigger svg { width: 10px; height: 10px; transition: transform .25s var(--ease); opacity: .7; }
+.nav-trigger:hover { background: var(--azure-soft); }
+.nav-trigger[aria-expanded="true"] { color: #fff; }
+.nav-trigger[aria-expanded="true"] svg { transform: rotate(180deg); }
+.nav-trigger[aria-expanded="true"]::after {
+  content: ""; position: absolute; left: 14px; right: 14px; bottom: -15px; height: 3px; background: var(--tenne);
+}
+.profile-link {
+  margin-left: auto; display: flex; align-items: center; gap: 10px;
+  color: var(--on-azure); text-decoration: none; font-weight: 600; font-size: .92rem;
+  padding: 4px; border-radius: 3px;
+}
+.profile-link:visited { color: var(--on-azure); }
+.profile-link:hover .mini-frame { border-color: var(--tenne); }
+.mini-frame { width: 34px; height: 42px; border: 2px solid var(--or); border-radius: 2px; overflow: hidden; background: #ddd; box-shadow: 0 1px 2px rgba(0,0,0,.3); transition: border-color .2s; }
+.mini-frame img { width: 100%; height: 100%; object-fit: cover; }
+.profile-link .who { display: none; }
+.menu-toggle {
+  background: none; border: 1px solid var(--azure-line); color: var(--on-azure); border-radius: 3px;
+  width: 44px; height: 44px; display: grid; place-items: center; cursor: pointer;
+}
+.menu-toggle svg { width: 20px; height: 20px; }
+@media (min-width: 980px) {
+  .primary-nav { display: block; }
+  .menu-toggle { display: none; }
+  .profile-link { margin-left: 0; }
+  .profile-link .who { display: inline; }
+}
+
+/* Mega-panel */
+.mega {
+  position: absolute; left: 0; right: 0; top: 100%;
+  background: var(--azure);
+  color: var(--on-azure);
+  border-top: 1px solid var(--azure-line);
+  box-shadow: 0 30px 60px -20px rgba(8, 19, 42, .55);
+  overflow: hidden;
+}
+.mega::before { /* skråbjelke i panelet */
+  content: ""; position: absolute; inset: 0; pointer-events: none;
+  background: linear-gradient(to top right, transparent calc(50% - 90px), rgba(236,108,0,.07) calc(50% - 90px), rgba(236,108,0,.07) calc(50% + 90px), transparent calc(50% + 90px));
+}
+.mega-inner { position: relative; display: grid; grid-template-columns: 240px 1fr auto; gap: 40px; padding-top: 36px; padding-bottom: 40px; }
+.mega-intro h2 { font-family: var(--font-display); font-weight: 600; font-size: 2.4rem; line-height: 1; margin: 0 0 12px; color: #fff; }
+.mega-intro p { margin: 0; color: var(--on-azure-soft); font-size: .95rem; max-width: 28ch; }
+.mega-intro .legend { margin-top: 22px; font-size: .8rem; display: grid; gap: 4px; }
+.mega-cols { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 32px; align-content: start; }
+.mega-col h3, .mega-admin h3 {
+  font-family: var(--font-display); font-size: 1.15rem; font-weight: 600; font-style: italic;
+  color: var(--or-soft); margin: 0 0 10px; padding-bottom: 8px; border-bottom: 1px solid var(--azure-line);
+}
+.mega ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 2px; }
+.mega-link {
+  display: block; padding: 8px 10px; margin: 0 -10px; border-radius: 3px;
+  color: var(--on-azure); text-decoration: none;
+  border-left: 2px solid transparent;
+  transition: background .15s, border-color .15s;
+}
+.mega-link:visited { color: var(--on-azure); }
+.mega-link:hover, .mega-link:focus-visible { background: var(--azure-soft); border-left-color: var(--tenne); outline-offset: 0; }
+.mega-link strong { font-weight: 600; display: block; }
+.mega-link span.d { display: block; font-size: .86rem; color: var(--on-azure-soft); line-height: 1.4; }
+.mega-admin {
+  width: 290px; padding: 20px 22px 22px; align-self: start;
+  background: var(--azure-deep);
+  border: 1px dashed rgba(198,164,89,.55);
+  border-radius: var(--radius-tile);
+  position: relative;
+}
+.mega-admin h3 { display: flex; align-items: center; gap: 8px; }
+.role-badge {
+  font-family: var(--font-body); font-style: normal; font-size: .72rem; font-weight: 600;
+  color: var(--azure-deep); background: var(--or); padding: 2px 8px; border-radius: 99px; margin-left: auto;
+}
+.mega-admin .mega-link span.d { font-size: .82rem; }
+.mega-empty-admin { display: none; }
+
+/* Mobil fullskjerm-meny */
+.overlay {
+  position: fixed; inset: 0; z-index: 80;
+  background: var(--azure-deep); color: var(--on-azure);
+  overflow-y: auto; -webkit-overflow-scrolling: touch;
+}
+.overlay::before {
+  content: ""; position: fixed; inset: 0; pointer-events: none;
+  background: linear-gradient(to top right, transparent calc(50% - 60px), rgba(236,108,0,.08) calc(50% - 60px), rgba(236,108,0,.08) calc(50% + 60px), transparent calc(50% + 60px));
+}
+.overlay-top { display: flex; align-items: center; justify-content: space-between; height: var(--header-h); position: relative; }
+.overlay-body { position: relative; padding-bottom: 48px; }
+.ov-section { border-bottom: 1px solid var(--azure-line); }
+.ov-trigger {
+  width: 100%; display: flex; align-items: baseline; justify-content: space-between; gap: 12px;
+  background: none; border: 0; color: #fff; cursor: pointer; text-align: left;
+  padding: 18px 0; font-family: var(--font-display); font-size: 2rem; font-weight: 600; line-height: 1.1;
+}
+.ov-trigger small { font-family: var(--font-body); font-size: .85rem; color: var(--on-azure-soft); font-weight: 400; display: block; margin-top: 4px; }
+.ov-trigger svg { width: 14px; height: 14px; flex-shrink: 0; transition: transform .25s var(--ease); color: var(--tenne); }
+.ov-trigger[aria-expanded="true"] svg { transform: rotate(180deg); }
+.ov-panel { padding: 0 0 20px; display: grid; gap: 18px; }
+.ov-panel h3 { font-family: var(--font-display); font-style: italic; font-weight: 600; color: var(--or-soft); font-size: 1.1rem; margin: 0 0 4px; }
+.ov-panel ul { list-style: none; margin: 0; padding: 0; }
+.ov-panel .mega-link { margin: 0; padding: 10px 12px; }
+.ov-admin { border: 1px dashed rgba(198,164,89,.55); border-radius: var(--radius-tile); padding: 14px; background: rgba(14,28,56,.8); }
+.ov-admin h3 { display: flex; align-items: center; gap: 8px; }
+.ov-profile { margin-top: 28px; display: flex; gap: 14px; align-items: center; color: var(--on-azure); text-decoration: none; }
+.ov-profile:visited { color: var(--on-azure); }
+
+/* ============ HERO ============ */
+.hero {
+  position: relative; color: var(--on-azure);
+  background:
+    radial-gradient(1200px 500px at 85% -10%, rgba(198,164,89,.10), transparent 60%),
+    var(--azure);
+  clip-path: polygon(0 0, 100% 0, 100% calc(100% - 48px), 50% 100%, 0 calc(100% - 48px));
+  padding: 48px 0 110px;
+  overflow: hidden;
+}
+.hero::before { /* skråbjelken fra skjoldet */
+  content: ""; position: absolute; inset: -10% -5%; pointer-events: none;
+  background: linear-gradient(to top right,
+    transparent calc(50% - 132px),
+    rgba(198,164,89,.45) calc(50% - 132px), rgba(198,164,89,.45) calc(50% - 130px),
+    transparent calc(50% - 130px),
+    transparent calc(50% - 118px),
+    rgba(236,108,0,.085) calc(50% - 118px), rgba(236,108,0,.085) calc(50% + 118px),
+    transparent calc(50% + 118px),
+    transparent calc(50% + 130px),
+    rgba(198,164,89,.45) calc(50% + 130px), rgba(198,164,89,.45) calc(50% + 132px),
+    transparent calc(50% + 132px));
+}
+.hero::after { /* sparre-kant: gull-linje over nedre spiss */
+  content: ""; position: absolute; left: 0; right: 0; bottom: 10px; height: 60px; pointer-events: none;
+  background: var(--or);
+  clip-path: polygon(0 0, 50% 48px, 100% 0, 100% 2px, 50% 50px, 0 2px);
+  opacity: .8;
+}
+.hero-inner { position: relative; display: grid; gap: 36px; align-items: center; }
+.hero-shield { display: none; }
+.hero-shield img { width: 100%; height: auto; filter: drop-shadow(0 18px 30px rgba(8,19,42,.5)); }
+.hero-text h1 {
+  font-family: var(--font-display); font-weight: 600;
+  font-size: clamp(2.6rem, 6.2vw, 4.6rem); line-height: .98; letter-spacing: -.01em;
+  margin: 0 0 20px; color: #fff; max-width: 13ch;
+}
+.hero-text .lede { font-size: 1.14rem; max-width: 52ch; margin: 0 0 12px; color: var(--on-azure); }
+.hero-text p { max-width: 58ch; color: var(--on-azure-soft); margin: 0 0 12px; }
+.hero-text strong { color: var(--on-azure); font-weight: 600; }
+.hero-actions { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 26px; }
+.btn {
+  display: inline-flex; align-items: center; gap: 8px; justify-content: center;
+  padding: 12px 20px; border-radius: 3px; font-weight: 600; text-decoration: none; cursor: pointer;
+  border: 1px solid transparent; transition: background .18s, color .18s, border-color .18s, transform .18s;
+  font-size: .96rem;
+}
+.btn-tenne { background: var(--tenne); color: var(--ink); }
+.btn-tenne:visited { color: var(--ink); }
+.btn-tenne:hover { background: #ff7f14; }
+.btn-ghost { border-color: rgba(229,211,163,.5); color: var(--or-soft); background: transparent; }
+.btn-ghost:visited { color: var(--or-soft); }
+.btn-ghost:hover { border-color: var(--or); background: rgba(198,164,89,.08); }
+.btn:active { transform: translateY(1px); }
+
+.hero-profile { display: flex; gap: 36px; align-items: flex-start; }
+.portrait { position: relative; margin: 0; flex-shrink: 0; width: 176px; }
+.frame {
+  background: var(--paper); padding: 7px; border-radius: var(--radius-frame);
+  box-shadow: var(--shadow-frame);
+  outline: 1px solid rgba(198,164,89,.9); outline-offset: -4px;
+}
+.frame img { height: 210px; width: 100%; object-fit: cover; border-radius: 1px; }
+.ribbon-wrap { position: relative; margin: -22px -18px 0; z-index: 2; }
+.ribbon-wrap::before, .ribbon-wrap::after {
+  content: ""; position: absolute; top: 8px; width: 26px; height: 34px; background: var(--tenne-deep); z-index: -1;
+}
+.ribbon-wrap::before { left: -10px; clip-path: polygon(0 0, 100% 0, 100% 100%, 0 100%, 10px 50%); }
+.ribbon-wrap::after { right: -10px; clip-path: polygon(0 0, 100% 0, calc(100% - 10px) 50%, 100% 100%, 0 100%); }
+.ribbon {
+  background: var(--tenne); color: var(--ink);
+  font-family: var(--font-motto); font-weight: 700; letter-spacing: .12em; font-size: .95rem;
+  text-align: center; padding: 9px 12px 8px;
+  box-shadow: 0 6px 12px -6px rgba(0,0,0,.4);
+}
+.ribbon small { display: block; font-family: var(--font-body); letter-spacing: 0; font-weight: 600; font-size: .72rem; opacity: .8; margin-top: 1px; }
+.profile-menu { padding-top: 6px; min-width: 0; }
+.profile-menu .name { font-family: var(--font-display); font-size: 1.6rem; font-weight: 600; color: #fff; line-height: 1.05; margin: 0; }
+.profile-menu .voice { color: var(--on-azure-soft); font-size: .9rem; margin: 4px 0 14px; }
+.profile-menu ul { list-style: none; margin: 0; padding: 0; border-top: 1px solid var(--azure-line); }
+.profile-menu li a {
+  display: block; padding: 7px 0; color: var(--on-azure); text-decoration: none; font-size: .93rem;
+  border-bottom: 1px solid var(--azure-line); transition: color .15s, padding .2s var(--ease);
+}
+.profile-menu li a:visited { color: var(--on-azure); }
+.profile-menu li a:hover { color: var(--tenne); padding-left: 6px; }
+.profile-menu li.logout a { color: var(--on-azure-soft); }
+
+@media (min-width: 720px) {
+  .hero { padding: 64px 0 130px; }
+}
+@media (min-width: 1040px) {
+  .hero-inner { grid-template-columns: 200px 1fr auto; gap: 52px; }
+  .hero-shield { display: block; transform: rotate(-3deg); }
+}
+@media (max-width: 460px) {
+  .hero-profile { flex-direction: column; align-items: center; text-align: center; }
+  .profile-menu { width: 100%; }
+}
+
+/* ============ BENTO ============ */
+.map-head { display: flex; flex-wrap: wrap; align-items: end; justify-content: space-between; gap: 12px 32px; margin: 24px 0 26px; }
+.map-head h2 { font-family: var(--font-display); font-weight: 600; font-size: clamp(2rem, 4vw, 2.8rem); margin: 0; line-height: 1; }
+.map-head p { margin: 6px 0 0; color: var(--ink-soft); max-width: 56ch; }
+.legend { display: flex; gap: 18px; font-size: .85rem; color: var(--ink-soft); }
+.legend span { display: inline-flex; align-items: center; gap: 6px; }
+.legend .era { margin-left: 0; }
+
+.bento {
+  display: grid; gap: 14px;
+  grid-template-columns: 1fr;
+  grid-auto-flow: row dense;
+  padding-bottom: 72px;
+}
+@media (min-width: 680px) { .bento { grid-template-columns: repeat(6, 1fr); } }
+@media (min-width: 1040px) { .bento { grid-template-columns: repeat(12, 1fr); gap: 16px; } }
+
+.tile {
+  position: relative; border-radius: var(--radius-tile);
+  background: var(--paper); border: 1px solid var(--rule);
+  padding: 22px 22px 24px; min-width: 0;
+}
+.tile h3 { font-family: var(--font-display); font-weight: 600; font-size: 1.6rem; line-height: 1.05; margin: 0 0 6px; }
+.tile .sub { color: var(--ink-soft); font-size: .92rem; margin: 0 0 14px; }
+.tile-azure { background: var(--azure); color: var(--on-azure); border-color: var(--azure); }
+.tile-azure h3 { color: #fff; }
+.tile-azure .sub { color: var(--on-azure-soft); }
+.tile-tenne { background: var(--tenne); border-color: var(--tenne); color: var(--ink); }
+.tile-tenne .sub { color: rgba(28,26,24,.8); }
+.tile-argent { background: var(--argent-2); }
+/* sparre-hjørne */
+.tile.chev::after {
+  content: ""; position: absolute; top: 0; right: 0; width: 46px; height: 46px; pointer-events: none;
+  background: linear-gradient(225deg, var(--tenne) 0 9px, transparent 9px 15px, var(--or) 15px 17px, transparent 17px);
+  border-top-right-radius: var(--radius-tile);
+}
+.tile-link { font-weight: 600; font-size: .92rem; }
+
+@media (min-width: 680px) {
+  .s-6 { grid-column: span 6; } .s-3 { grid-column: span 3; } .s-4 { grid-column: span 6; } .s-5 { grid-column: span 6; } .s-7 { grid-column: span 6; } .s-8 { grid-column: span 6; }
+  .s-2r { grid-row: span 1; }
+}
+@media (min-width: 1040px) {
+  .s-3 { grid-column: span 3; } .s-4 { grid-column: span 4; } .s-5 { grid-column: span 5; }
+  .s-6 { grid-column: span 6; } .s-7 { grid-column: span 7; } .s-8 { grid-column: span 8; }
+  .s-2r { grid-row: span 2; }
+}
+
+/* Neste øving */
+.next-date { display: flex; gap: 18px; align-items: center; margin: 12px 0 18px; }
+.date-shield {
+  width: 74px; height: 88px; flex-shrink: 0;
+  background: var(--tenne); color: var(--ink);
+  clip-path: polygon(0 0, 100% 0, 100% 62%, 50% 100%, 0 62%);
+  display: grid; place-content: center; text-align: center; padding-bottom: 14px;
+}
+.date-shield b { font-family: var(--font-display); font-size: 2.2rem; line-height: .9; display: block; }
+.date-shield span { font-size: .72rem; font-weight: 700; }
+.next-date .when { font-size: 1.05rem; font-weight: 600; color: #fff; }
+.next-date .what { font-family: var(--font-display); font-style: italic; font-size: 1.35rem; color: var(--or-soft); line-height: 1.1; }
+.songs { list-style: none; margin: 0 0 18px; padding: 0; counter-reset: s; }
+.songs li { padding: 9px 0; border-top: 1px solid var(--azure-line); display: flex; justify-content: space-between; gap: 12px; font-size: .95rem; }
+.songs li:last-child { border-bottom: 1px solid var(--azure-line); }
+.songs li em { font-style: normal; font-size: .8rem; color: var(--on-azure-soft); }
+.tile-azure a { color: var(--tenne); }
+.tile-azure a:visited { color: #f08a3a; }
+
+/* Øvingsstreak */
+.streak-top { display: flex; align-items: baseline; gap: 26px; flex-wrap: wrap; margin: 8px 0 16px; }
+.stat b { font-family: var(--font-display); font-size: 3.2rem; line-height: .9; font-weight: 600; display: block; }
+.stat span { font-size: .85rem; color: var(--ink-soft); }
+.week { display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; align-items: end; height: 84px; margin-bottom: 6px; }
+.week div { background: var(--argent-2); border-radius: 2px 2px 0 0; position: relative; min-height: 4px; transition: height .4s var(--ease); }
+.week div.done { background: var(--azure); }
+.week div.today { background: var(--tenne); }
+.week-labels { display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; font-size: .75rem; color: var(--ink-soft); text-align: center; margin-bottom: 18px; }
+.log-form { display: flex; gap: 8px; flex-wrap: wrap; align-items: end; }
+.log-form label { font-size: .85rem; font-weight: 600; display: grid; gap: 4px; }
+.log-form input {
+  width: 110px; padding: 10px 12px; border: 1px solid var(--rule); border-radius: 3px; background: #fff; color: var(--ink);
+}
+.log-form input:focus-visible { outline: 2px solid var(--tenne); outline-offset: 1px; }
+.log-form .btn-azure { background: var(--azure); color: #fff; }
+.log-form .btn-azure:hover { background: var(--azure-soft); }
+.log-msg { font-size: .88rem; color: var(--tenne-deep); margin: 10px 0 0; min-height: 1.3em; }
+
+/* Repertoar */
+.rep-bar { display: flex; height: 12px; border-radius: 2px; overflow: hidden; margin: 12px 0 10px; }
+.rep-bar i:nth-child(1) { background: var(--azure); }
+.rep-bar i:nth-child(2) { background: var(--or); }
+.rep-bar i:nth-child(3) { background: var(--argent-2); }
+.rep-legend { list-style: none; margin: 0 0 14px; padding: 0; display: grid; gap: 4px; font-size: .9rem; }
+.rep-legend li { display: flex; align-items: center; gap: 8px; }
+.rep-legend li::before { content: ""; width: 10px; height: 10px; border-radius: 1px; }
+.rep-legend li:nth-child(1)::before { background: var(--azure); }
+.rep-legend li:nth-child(2)::before { background: var(--or); }
+.rep-legend li:nth-child(3)::before { background: var(--argent-2); border: 1px solid var(--rule); }
+.rep-legend b { margin-left: auto; }
+
+/* Achievement */
+.seal {
+  width: 84px; height: 84px; border-radius: 50%; margin-bottom: 14px;
+  background: var(--azure); color: var(--or-soft);
+  display: grid; place-content: center; text-align: center;
+  box-shadow: 0 0 0 3px var(--tenne), 0 0 0 5px var(--azure);
+}
+.seal b { font-family: var(--font-display); font-size: 1.5rem; line-height: 1; display: block; }
+.seal span { font-size: .62rem; font-weight: 600; display: block; }
+.tile-tenne a { color: var(--ink); }
+
+/* Dokument */
+.doc { display: flex; gap: 14px; align-items: flex-start; margin-top: 10px; }
+.doc-icon { width: 38px; height: 48px; flex-shrink: 0; background: var(--argent); border: 1px solid var(--rule); position: relative; border-radius: 2px; }
+.doc-icon::before { content: ""; position: absolute; left: 7px; right: 7px; top: 12px; height: 2px; background: var(--rule); box-shadow: 0 6px 0 var(--rule), 0 12px 0 var(--rule), 0 18px 0 var(--or); }
+.doc b { display: block; font-size: 1.02rem; }
+.doc span { font-size: .85rem; color: var(--ink-soft); }
+
+/* Styret */
+.board { list-style: none; margin: 8px 0 0; padding: 0; display: grid; gap: 0; font-size: .9rem; }
+.board li { display: flex; justify-content: space-between; gap: 10px; padding: 6px 0; border-top: 1px solid var(--rule); }
+.board li span:first-child { font-family: var(--font-display); font-style: italic; font-size: 1.05rem; font-weight: 600; }
+
+/* Seksjonskart-fliser */
+.sec-tile h3 { display: flex; align-items: baseline; gap: 12px; font-size: 2rem; }
+.sec-tile .sec-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 0; }
+.sec-list.two { grid-template-columns: 1fr; column-gap: 28px; }
+@media (min-width: 560px) { .sec-list.two { grid-template-columns: 1fr 1fr; } }
+.sec-list li { border-top: 1px solid var(--rule); }
+.sec-list a { display: block; padding: 9px 0; text-decoration: none; color: var(--ink); transition: padding .2s var(--ease); }
+.sec-list a:visited { color: var(--ink); }
+.sec-list a:hover strong { color: var(--tenne-deep); text-decoration: underline; }
+.sec-list strong { font-weight: 600; }
+.sec-list .d { display: block; font-size: .85rem; color: var(--ink-soft); line-height: 1.4; }
+.sec-admin { margin-top: 16px; padding: 12px 14px; border: 1px dashed var(--or); border-radius: 3px; background: rgba(198,164,89,.08); }
+.sec-admin p { margin: 0 0 6px; font-size: .88rem; display: flex; align-items: center; gap: 8px; font-weight: 600; }
+.sec-admin p .role-badge { margin-left: 0; }
+.sec-admin ul { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 6px 14px; font-size: .9rem; }
+.sec-admin a { color: var(--ink); }
+.sec-admin a:visited { color: var(--ink); }
+.tile-azure .sec-list li { border-color: var(--azure-line); }
+.tile-azure .sec-list a, .tile-azure .sec-list a:visited { color: var(--on-azure); }
+.tile-azure .sec-list .d { color: var(--on-azure-soft); }
+.tile-azure .sec-list a:hover strong { color: var(--tenne); }
+
+/* ============ FOOTER ============ */
+.site-footer {
+  background: var(--azure-deep); color: var(--on-azure-soft);
+  clip-path: polygon(0 32px, 50% 0, 100% 32px, 100% 100%, 0 100%);
+  padding: 72px 0 40px; margin-top: -8px; font-size: .9rem;
+}
+.foot { display: grid; gap: 28px; }
+@media (min-width: 780px) { .foot { grid-template-columns: 1.4fr 1fr 1fr 1fr; } }
+.foot-brand { display: flex; gap: 14px; align-items: flex-start; }
+.foot-brand img { width: 48px; height: auto; }
+.foot-brand b { font-family: var(--font-display); font-size: 1.5rem; color: #fff; font-weight: 600; display: block; line-height: 1.1; }
+.site-footer h4 { font-family: var(--font-display); font-style: italic; font-weight: 600; color: var(--or-soft); font-size: 1.1rem; margin: 0 0 8px; }
+.site-footer ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; }
+.site-footer a { color: var(--on-azure); text-decoration: none; }
+.site-footer a:visited { color: var(--on-azure); }
+.site-footer a:hover { color: var(--tenne); text-decoration: underline; }
+.foot-bottom { margin-top: 36px; padding-top: 18px; border-top: 1px solid var(--azure-line); font-size: .8rem; display: flex; flex-wrap: wrap; justify-content: space-between; gap: 8px; }
+
+/* ============ DEMO-KONTROLL ============ */
+.demo {
+  position: fixed; right: 16px; bottom: 16px; z-index: 70;
+  background: #fff; color: var(--ink);
+  border: 2px dashed var(--tenne); border-radius: 6px;
+  box-shadow: 0 10px 30px rgba(8,19,42,.25);
+  font-size: .85rem; width: min(270px, calc(100vw - 32px));
+}
+.demo-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; width: 100%; background: none; border: 0; cursor: pointer; padding: 10px 12px; font-weight: 700; color: var(--ink); }
+.demo-head .tag { background: var(--tenne); color: var(--ink); font-size: .7rem; padding: 2px 7px; border-radius: 3px; letter-spacing: .06em; }
+.demo-body { padding: 0 12px 12px; display: grid; gap: 10px; }
+.demo fieldset { border: 0; padding: 0; margin: 0; }
+.demo legend { font-weight: 600; margin-bottom: 4px; color: var(--ink-soft); font-size: .78rem; }
+.seg { display: flex; border: 1px solid var(--rule); border-radius: 3px; overflow: hidden; }
+.seg label { flex: 1; text-align: center; cursor: pointer; padding: 6px 4px; position: relative; }
+.seg input { position: absolute; opacity: 0; inset: 0; cursor: pointer; }
+.seg label:has(input:checked) { background: var(--azure); color: #fff; }
+.seg label:has(input:focus-visible) { outline: 2px solid var(--tenne); outline-offset: -2px; }
+.checks { display: flex; gap: 14px; }
+.checks label { display: flex; align-items: center; gap: 6px; cursor: pointer; }
+.checks input { accent-color: var(--tenne); width: 16px; height: 16px; }
+
+/* Bevegelse */
+.fade-enter { transition: opacity .2s var(--ease), transform .25s var(--ease); }
+.fade-start { opacity: 0; transform: translateY(-6px); }
+.fade-end { opacity: 1; transform: none; }
+.hero-shield, .hero-text, .hero-profile { animation: rise .8s var(--ease) both; }
+.hero-text { animation-delay: .08s; }
+.hero-profile { animation-delay: .16s; }
+@keyframes rise { from { opacity: 0; transform: translateY(14px); } }
+.hero-shield { animation-name: rise-shield; }
+@keyframes rise-shield { from { opacity: 0; transform: rotate(-3deg) translateY(14px); } to { transform: rotate(-3deg); } }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation: none !important; transition: none !important; scroll-behavior: auto !important; }
+}
+</style>
+<script>
+function app() {
+  return {
+    status: 'aktiv',          // 'aktiv' | 'tidligere'
+    roles: { master: false, notes: false },
+    open: null,               // nøkkel for åpent mega-panel
+    mobileOpen: false,
+    mobileSection: 'noter',
+    demoOpen: window.innerWidth > 720,
+    minutes: 85,
+    logValue: '',
+    logMsg: '',
+    week: [15, 20, 10, 25, 15, 0, 0],
+    todayIndex: 4,
+
+    sections: [
+      { key: 'noter', label: 'Noter', blurb: 'Sangbiblioteket, det vi synger nå og hva vi øver på.', groups: [
+        { title: 'Sanger', items: [
+          { label: 'Sanger', desc: 'Hele sangbiblioteket, rundt 400 sanger', era: 'arkiv' },
+          { label: 'Repertoar', desc: 'Sangene vi synger denne sesongen', era: 'na', activeOnly: true },
+          { label: 'Øvingsplan', desc: 'Hva vi tar for oss på hver øving', era: 'na', activeOnly: true },
+        ]},
+        { title: 'Verktøy', items: [
+          { label: 'Toneangiver', desc: 'Klikk en sang og hør startklippet', href: '/toneangiver', ext: true },
+        ]},
+        { title: 'Note-admin', role: 'notes', items: [
+          { label: 'Sanger', desc: 'Legg inn og rediger sanger og noter' },
+          { label: 'Repertoar', desc: 'Sett sammen sesongens repertoar' },
+          { label: 'Sangkunnskap', desc: 'Se hvem som kan hvilke sanger' },
+          { label: 'Øvingsplan', desc: 'Planlegg innholdet i øvingene' },
+          { label: 'Øvingskonkurranse', desc: 'Styr konkurransen om øvingsminutter' },
+        ]},
+      ]},
+      { key: 'medlemmer', label: 'Medlemmer', blurb: 'Hvem vi er, og hvem som har båret vervene før oss.', groups: [
+        { title: 'Koret', items: [
+          { label: 'Medlemmer', desc: 'Galleri og liste over aktive og ypp.com.', era: 'begge' },
+          { label: 'Styret', desc: 'Nåværende styre og hele historikken', era: 'begge' },
+        ]},
+        { title: 'Admin', role: 'master', items: [
+          { label: 'Medlemmer', desc: 'Legg til, rediger og flytt til ypp.com.' },
+          { label: 'Styret', desc: 'Oppdater verv og styrehistorikk' },
+          { label: 'Opptellinger', desc: 'Tell opp oppmøte og øving' },
+          { label: 'Dokumenter', desc: 'Last opp referater og vedtekter' },
+          { label: 'Resolusjonar', desc: 'Før resolusjonar inn i protokollen' },
+          { label: 'Bakgrunnsbilete', desc: 'Bytt bakgrunnsbiletet i appen' },
+        ]},
+      ]},
+      { key: 'ridderdata', label: 'Ridderdata', blurb: 'Kunnskap, kalender og alt vi har tatt vare på.', groups: [
+        { title: 'Oppslag', items: [
+          { label: 'RidderWiki', desc: 'Korets egen wiki om alt og alle', ext: true },
+          { label: 'Kalender', desc: 'Øvinger, konserter og fester i Google Calendar', era: 'na' },
+        ]},
+        { title: 'Arkiver', items: [
+          { label: 'Dokumenter', desc: 'Referater og vedtekter, nyeste først og søkbare', era: 'arkiv' },
+          { label: 'Videoarkiv', desc: 'Konsertopptak samlet på RidderWiki', era: 'arkiv', ext: true },
+          { label: 'Bildearkiv', desc: 'Bilder fra armeriddere.smugmug.com', era: 'arkiv', ext: true },
+        ]},
+      ]},
+      { key: 'kontakt', label: 'Kontakt', blurb: 'Nå rett person, eller si noe uten navn.', groups: [
+        { title: 'Kanaler', items: [
+          { label: 'Epostlister', desc: 'Rolle-eposter og distribusjonslister' },
+          { label: 'Anonym Forum', desc: 'Varsling, ektesnakk og anonyme innspill' },
+        ]},
+      ]},
+    ],
+
+    profileItems: [
+      { label: 'Registrer øving' },
+      { label: 'Repertoar', note: 'kjent, litt kjent, ikke kjent', activeOnly: true },
+      { label: 'Achievements' },
+      { label: 'MAR Games', ext: true },
+      { label: 'Profilinnstillinger' },
+    ],
+
+    get isActive() { return this.status === 'aktiv'; },
+    hasRole(r) {
+      if (!r) return true;
+      if (r === 'notes') return this.roles.notes || this.roles.master;
+      if (r === 'master') return this.roles.master;
+      return false;
+    },
+    visibleItems(items) { return items.filter(i => !(i.activeOnly && !this.isActive)); },
+    groups(sec, admin) {
+      return sec.groups
+        .filter(g => !!g.role === admin && this.hasRole(g.role))
+        .map(g => ({ ...g, items: this.visibleItems(g.items) }))
+        .filter(g => g.items.length);
+    },
+    flatItems(sec) { return this.groups(sec, false).flatMap(g => g.items); },
+    roleLabel(r) { return r === 'master' ? 'Mester' : 'Note eller Mester'; },
+    eras(e) { return e === 'begge' ? ['na', 'arkiv'] : (e ? [e] : []); },
+    eraTitle(e) { return e === 'na' ? 'Gjelder nå' : e === 'arkiv' ? 'Arkiv' : 'Nå og arkiv'; },
+
+    openMenu(key, focusFirst) {
+      this.open = key;
+      if (focusFirst) this.$nextTick(() => {
+        const a = document.querySelector('#mega-' + key + ' a');
+        if (a) a.focus();
+      });
+    },
+    toggleMenu(key) { this.open === key ? this.open = null : this.openMenu(key, false); },
+    closeMenu(returnFocus) {
+      const k = this.open;
+      this.open = null;
+      if (returnFocus && k) this.$nextTick(() => document.getElementById('trigger-' + k)?.focus());
+    },
+    navKeys(e, idx) {
+      const btns = [...document.querySelectorAll('.nav-trigger')];
+      if (e.key === 'ArrowRight' || e.key === 'ArrowLeft') {
+        e.preventDefault();
+        const n = (idx + (e.key === 'ArrowRight' ? 1 : -1) + btns.length) % btns.length;
+        btns[n].focus();
+        if (this.open) this.openMenu(this.sections[n].key, false);
+      }
+      if (e.key === 'ArrowDown') { e.preventDefault(); this.openMenu(this.sections[idx].key, true); }
+    },
+    panelKeys(e) {
+      const links = [...e.currentTarget.querySelectorAll('a')];
+      const i = links.indexOf(document.activeElement);
+      if (e.key === 'ArrowDown') { e.preventDefault(); links[Math.min(i + 1, links.length - 1)]?.focus(); }
+      if (e.key === 'ArrowUp') {
+        e.preventDefault();
+        if (i <= 0) this.closeMenu(true); else links[i - 1].focus();
+      }
+    },
+    setMobile(v) {
+      this.mobileOpen = v;
+      document.body.classList.toggle('locked', v);
+      this.$nextTick(() => {
+        if (v) document.getElementById('overlay-close')?.focus();
+        else document.getElementById('menu-toggle')?.focus();
+      });
+    },
+
+    get weekMax() { return Math.max(40, ...this.week); },
+    logPractice() {
+      const n = parseInt(this.logValue, 10);
+      if (!n || n < 1 || n > 600) { this.logMsg = 'Skriv inn antall minutter mellom 1 og 600.'; return; }
+      this.minutes += n;
+      this.week[this.todayIndex] += n;
+      this.logMsg = 'Registrert: ' + n + ' min. Du har øvd ' + this.minutes + ' min denne uka.';
+      this.logValue = '';
+    },
+  };
+}
+</script>
+</head>
+<body x-data="app()" @keydown.escape.window="mobileOpen ? setMobile(false) : null">
+
+<!-- ============ HEADER ============ -->
+<header class="site-header"
+        @click.outside="open = null"
+        @keydown.escape="closeMenu(true)"
+        @focusout="if (!$el.contains($event.relatedTarget)) open = null">
+  <div class="wrap bar">
+    <a class="brand" href="#" aria-label="Armé Riddere, til hovedsiden">
+      <img src="../logo.png" alt="">
+      <span>Armé Riddere</span>
+    </a>
+
+    <nav class="primary-nav" aria-label="Hovedmeny">
+      <ul>
+        <template x-for="(sec, idx) in sections" :key="sec.key">
+          <li>
+            <button class="nav-trigger" type="button"
+                    :id="'trigger-' + sec.key"
+                    :aria-expanded="open === sec.key"
+                    :aria-controls="'mega-' + sec.key"
+                    @click="toggleMenu(sec.key)"
+                    @keydown="navKeys($event, idx)">
+              <span x-text="sec.label"></span>
+              <svg viewBox="0 0 10 10" aria-hidden="true"><path d="M1 3l4 4 4-4" fill="none" stroke="currentColor" stroke-width="1.6"/></svg>
+            </button>
+          </li>
+        </template>
+      </ul>
+    </nav>
+
+    <a class="profile-link" href="#" aria-label="Din profil: Ola Nordmann">
+      <span class="who">Ola Nordmann</span>
+      <span class="mini-frame"><img src="../portrett.png" alt=""></span>
+    </a>
+    <button class="menu-toggle" id="menu-toggle" type="button" aria-label="Åpne meny" :aria-expanded="mobileOpen" aria-controls="overlay" @click="setMobile(true)">
+      <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M2 5h16M2 10h16M2 15h16" stroke="currentColor" stroke-width="1.8"/></svg>
+    </button>
+  </div>
+
+  <!-- Mega-paneler -->
+  <template x-for="sec in sections" :key="'p-' + sec.key">
+    <div class="mega" :id="'mega-' + sec.key" x-show="open === sec.key" x-cloak
+         role="region" :aria-labelledby="'trigger-' + sec.key"
+         @keydown="panelKeys($event)"
+         x-transition:enter="fade-enter" x-transition:enter-start="fade-start" x-transition:enter-end="fade-end">
+      <div class="wrap mega-inner">
+        <div class="mega-intro">
+          <h2 x-text="sec.label"></h2>
+          <p x-text="sec.blurb"></p>
+          <div class="legend" aria-hidden="true" style="flex-direction:column;color:var(--on-azure-soft)">
+            <span><span class="era"><i class="na"></i></span>Gjelder nå</span>
+            <span><span class="era"><i class="arkiv"></i></span>Arkiv</span>
+          </div>
+        </div>
+        <div class="mega-cols">
+          <template x-for="g in groups(sec, false)" :key="g.title">
+            <div class="mega-col">
+              <h3 x-text="g.title"></h3>
+              <ul>
+                <template x-for="it in g.items" :key="it.label">
+                  <li>
+                    <a class="mega-link" :href="it.href || '#'" :target="it.ext ? '_blank' : null" :rel="it.ext ? 'noopener' : null">
+                      <strong>
+                        <span x-text="it.label"></span><span class="ext" x-show="it.ext" aria-label="(ekstern lenke)">↗</span><span class="era" x-show="it.era" :title="eraTitle(it.era)"><template x-for="e in eras(it.era)"><i :class="e"></i></template></span>
+                      </strong>
+                      <span class="d" x-text="it.desc"></span>
+                    </a>
+                  </li>
+                </template>
+              </ul>
+            </div>
+          </template>
+        </div>
+        <template x-for="g in groups(sec, true)" :key="'a-' + g.title">
+          <div class="mega-admin">
+            <h3><span x-text="g.title"></span><span class="role-badge" x-text="roleLabel(g.role)"></span></h3>
+            <ul>
+              <template x-for="it in g.items" :key="it.label">
+                <li><a class="mega-link" href="#"><strong x-text="it.label"></strong><span class="d" x-text="it.desc"></span></a></li>
+              </template>
+            </ul>
+          </div>
+        </template>
+      </div>
+    </div>
+  </template>
+</header>
+
+<!-- Mobil fullskjermmeny -->
+<div class="overlay" id="overlay" x-show="mobileOpen" x-cloak role="dialog" aria-modal="true" aria-label="Meny"
+     x-transition:enter="fade-enter" x-transition:enter-start="fade-start" x-transition:enter-end="fade-end">
+  <div class="wrap">
+    <div class="overlay-top">
+      <a class="brand" href="#" aria-label="Armé Riddere, til hovedsiden" @click="setMobile(false)">
+        <img src="../logo.png" alt=""><span>Armé Riddere</span>
+      </a>
+      <button class="menu-toggle" id="overlay-close" type="button" aria-label="Lukk meny" @click="setMobile(false)">
+        <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M4 4l12 12M16 4L4 16" stroke="currentColor" stroke-width="1.8"/></svg>
+      </button>
+    </div>
+    <nav class="overlay-body" aria-label="Hovedmeny">
+      <template x-for="sec in sections" :key="'m-' + sec.key">
+        <div class="ov-section">
+          <button class="ov-trigger" type="button" :aria-expanded="mobileSection === sec.key" @click="mobileSection = mobileSection === sec.key ? null : sec.key">
+            <span><span x-text="sec.label"></span><small x-text="sec.blurb"></small></span>
+            <svg viewBox="0 0 10 10" aria-hidden="true"><path d="M1 3l4 4 4-4" fill="none" stroke="currentColor" stroke-width="1.6"/></svg>
+          </button>
+          <div class="ov-panel" x-show="mobileSection === sec.key">
+            <template x-for="g in groups(sec, false)" :key="g.title">
+              <div>
+                <h3 x-text="g.title"></h3>
+                <ul>
+                  <template x-for="it in g.items" :key="it.label">
+                    <li><a class="mega-link" :href="it.href || '#'">
+                      <strong><span x-text="it.label"></span><span class="ext" x-show="it.ext" aria-label="(ekstern lenke)">↗</span><span class="era" x-show="it.era"><template x-for="e in eras(it.era)"><i :class="e"></i></template></span></strong>
+                      <span class="d" x-text="it.desc"></span>
+                    </a></li>
+                  </template>
+                </ul>
+              </div>
+            </template>
+            <template x-for="g in groups(sec, true)" :key="'ma-' + g.title">
+              <div class="ov-admin">
+                <h3><span x-text="g.title"></span><span class="role-badge" x-text="roleLabel(g.role)"></span></h3>
+                <ul>
+                  <template x-for="it in g.items" :key="it.label">
+                    <li><a class="mega-link" href="#"><strong x-text="it.label"></strong><span class="d" x-text="it.desc"></span></a></li>
+                  </template>
+                </ul>
+              </div>
+            </template>
+          </div>
+        </div>
+      </template>
+      <a class="ov-profile" href="#">
+        <span class="mini-frame" style="width:44px;height:55px"><img src="../portrett.png" alt=""></span>
+        <span><strong style="display:block;color:#fff">Ola Nordmann</strong><span style="color:var(--on-azure-soft);font-size:.9rem">Din profil, øving og innstillinger</span></span>
+      </a>
+    </nav>
+  </div>
+</div>
+
+<main>
+  <!-- ============ HERO ============ -->
+  <section class="hero" aria-labelledby="welcome">
+    <div class="wrap hero-inner">
+      <div class="hero-shield"><img src="../logo.png" alt="Armé Riddere sitt skjold, MCMXCVI"></div>
+
+      <div class="hero-text">
+        <h1 id="welcome" x-text="isActive ? 'Velkommen inn i borgen, Ola.' : 'Velkommen tilbake, Ola.'">Velkommen inn i borgen, Ola.</h1>
+        <p class="lede">Internsidene og appen er nå samlet på ett sted. Noter, medlemmer, arkiver og din egen øving finner du her.</p>
+        <p>Menyen øverst har fire områder: <strong>Noter</strong>, <strong>Medlemmer</strong>, <strong>Ridderdata</strong> og <strong>Kontakt</strong>. Åpne et av dem for å se alle sidene med en kort forklaring. Bildet ditt oppe til høyre tar deg til profilen.</p>
+        <p x-show="!isActive" x-cloak>Som ypp.com. ser du ikke repertoar og øvingsplan, men hele arkivet står åpent for deg.</p>
+        <div class="hero-actions">
+          <a class="btn btn-tenne" href="#kart">Se oversikten over appen</a>
+          <a class="btn btn-ghost" href="#ovingslogg">Registrer øving</a>
+        </div>
+      </div>
+
+      <aside class="hero-profile" aria-label="Din profil">
+        <figure class="portrait">
+          <div class="frame"><img src="../portrett.png" alt="Profilbilde av Ola Nordmann"></div>
+          <figcaption class="ribbon-wrap">
+            <div class="ribbon">Ridder<small x-text="isActive ? '2. tenor' : 'ypp.com.'">2. tenor</small></div>
+          </figcaption>
+        </figure>
+        <div class="profile-menu">
+          <p class="name">Ola Nordmann</p>
+          <p class="voice">2. tenor (T2), rang Ridder</p>
+          <ul>
+            <template x-for="p in visibleItems(profileItems)" :key="p.label">
+              <li><a href="#"><span x-text="p.label"></span><span class="ext" x-show="p.ext" aria-label="(ekstern lenke)">↗</span></a></li>
+            </template>
+            <li class="logout"><a href="#">Logg ut</a></li>
+          </ul>
+        </div>
+      </aside>
+    </div>
+  </section>
+
+  <!-- ============ BENTO ============ -->
+  <section class="wrap" id="kart" aria-labelledby="map-title">
+    <div class="map-head">
+      <div>
+        <h2 id="map-title">Hele appen, og det som gjelder deg nå</h2>
+        <p>Dine egne tall og neste øving, blandet med kartet over alle sidene.</p>
+      </div>
+      <div class="legend">
+        <span><span class="era"><i class="na"></i></span>Gjelder nå</span>
+        <span><span class="era"><i class="arkiv"></i></span>Arkiv og historikk</span>
+      </div>
+    </div>
+
+    <div class="bento">
+      <!-- Neste øving -->
+      <article class="tile tile-azure s-5 s-2r chev" x-show="isActive">
+        <h3>Neste øving</h3>
+        <p class="sub">Fra øvingsplanen</p>
+        <div class="next-date">
+          <div class="date-shield" aria-hidden="true"><div><b>2</b><span>okt</span></div></div>
+          <div>
+            <div class="when">Torsdag 2. okt kl. 19:00</div>
+            <div class="what">Julekonsert-innspurt</div>
+          </div>
+        </div>
+        <ul class="songs">
+          <li>Stille Natt <em>Kjent</em></li>
+          <li>Deilig er jorden <em>Litt kjent</em></li>
+          <li>Glade jul <em>Ikke kjent</em></li>
+        </ul>
+        <a href="#">Åpne øvingsplanen</a>
+      </article>
+
+      <!-- Tidligere: kalender i stedet -->
+      <article class="tile tile-azure s-5 chev" x-show="!isActive" x-cloak>
+        <h3>Kommer du på julekonserten?</h3>
+        <p class="sub">Konserter og fester står i kalenderen, også for ypp.com.</p>
+        <a href="#">Åpne kalenderen</a>
+      </article>
+
+      <!-- Øving denne uka -->
+      <article class="tile s-4 s-2r" id="ovingslogg">
+        <h3>Øving denne uka</h3>
+        <div class="streak-top">
+          <div class="stat"><b>6</b><span>dager på rad</span></div>
+          <div class="stat"><b x-text="minutes">85</b><span>minutter denne uka</span></div>
+        </div>
+        <div class="week" aria-hidden="true">
+          <template x-for="(m, i) in week" :key="i">
+            <div :class="{ done: m > 0 && i !== todayIndex, today: i === todayIndex }" :style="'height:' + Math.max(4, (m / weekMax) * 100) + '%'"></div>
+          </template>
+        </div>
+        <div class="week-labels" aria-hidden="true"><span>Man</span><span>Tir</span><span>Ons</span><span>Tor</span><span>Fre</span><span>Lør</span><span>Søn</span></div>
+        <form class="log-form" @submit.prevent="logPractice()">
+          <label>Minutter i dag
+            <input type="number" inputmode="numeric" min="1" max="600" placeholder="20" x-model="logValue">
+          </label>
+          <button class="btn btn-azure" type="submit">Registrer øving</button>
+        </form>
+        <p class="log-msg" aria-live="polite" x-text="logMsg"></p>
+      </article>
+
+      <!-- Achievement -->
+      <article class="tile tile-tenne s-3">
+        <div class="seal" aria-hidden="true"><div><b>1440</b><span>minutter</span></div></div>
+        <h3>Øvd totalt en dag</h3>
+        <p class="sub">Nyeste achievement. Du har øvd 1440 minutter til sammen.</p>
+        <a class="tile-link" href="#">Alle achievements</a>
+      </article>
+
+      <!-- Siste dokument -->
+      <article class="tile tile-argent s-3">
+        <h3>Siste dokument</h3>
+        <div class="doc">
+          <div class="doc-icon" aria-hidden="true"></div>
+          <div><b><a href="#">Styrereferat 18.09.2026</a></b><span>Lagt ut av Paragrafrytter</span></div>
+        </div>
+      </article>
+
+      <!-- Seksjon: Noter -->
+      <template x-for="sec in sections.filter(s => s.key === 'noter')" :key="'t-' + sec.key">
+        <article class="tile sec-tile s-4 chev">
+          <h3 x-text="sec.label"></h3>
+          <p class="sub" x-text="sec.blurb"></p>
+          <ul class="sec-list">
+            <template x-for="it in flatItems(sec)" :key="it.label">
+                <li><a :href="it.href || '#'"><strong x-text="it.label"></strong><span class="ext" x-show="it.ext" aria-label="(ekstern lenke)">↗</span><span class="era" x-show="it.era"><template x-for="e in eras(it.era)"><i :class="e"></i></template></span><span class="d" x-text="it.desc"></span></a></li>
+              </template>
+          </ul>
+          <template x-for="g in groups(sec, true)" :key="'ta-' + g.title">
+            <div class="sec-admin">
+              <p><span x-text="g.title"></span><span class="role-badge" x-text="roleLabel(g.role)"></span></p>
+              <ul><template x-for="it in g.items" :key="it.label"><li><a href="#" x-text="it.label"></a></li></template></ul>
+            </div>
+          </template>
+        </article>
+      </template>
+
+      <!-- Repertoar -->
+      <article class="tile s-4" x-show="isActive">
+        <h3>Julekonsert 2026</h3>
+        <p class="sub">Nåværende repertoar, 14 sanger. Slik står du:</p>
+        <div class="rep-bar" aria-hidden="true"><i style="width:57%"></i><i style="width:29%"></i><i style="width:14%"></i></div>
+        <ul class="rep-legend">
+          <li>Kjent <b>8</b></li>
+          <li>Litt kjent <b>4</b></li>
+          <li>Ikke kjent <b>2</b></li>
+        </ul>
+        <a class="tile-link" href="#">Oppdater hva du kan</a>
+      </article>
+
+      <!-- Seksjon: Medlemmer -->
+      <template x-for="sec in sections.filter(s => s.key === 'medlemmer')" :key="'t-' + sec.key">
+        <article class="tile sec-tile s-4">
+          <h3 x-text="sec.label"></h3>
+          <p class="sub" x-text="sec.blurb"></p>
+          <ul class="sec-list">
+            <template x-for="it in flatItems(sec)" :key="it.label">
+                <li><a href="#"><strong x-text="it.label"></strong><span class="era" x-show="it.era"><template x-for="e in eras(it.era)"><i :class="e"></i></template></span><span class="d" x-text="it.desc"></span></a></li>
+              </template>
+          </ul>
+          <template x-for="g in groups(sec, true)" :key="'ta-' + g.title">
+            <div class="sec-admin">
+              <p><span x-text="g.title"></span><span class="role-badge" x-text="roleLabel(g.role)"></span></p>
+              <ul><template x-for="it in g.items" :key="it.label"><li><a href="#" x-text="it.label"></a></li></template></ul>
+            </div>
+          </template>
+        </article>
+      </template>
+
+      <!-- Styret -->
+      <article class="tile tile-argent s-3">
+        <h3>Nåværende styre</h3>
+        <p class="sub">Rittmester nr. 31 og hans menn</p>
+        <ul class="board">
+          <li><span>Rittmester</span><span>Henrik Aas</span></li>
+          <li><span>Paragrafrytter</span><span>Jonas Berg</span></li>
+          <li><span>Finansridder</span><span>Erik Lund</span></li>
+          <li><span>Noteridder</span><span>Magnus Dahl</span></li>
+          <li><span>Lagersjef</span><span>Sindre Moe</span></li>
+          <li><span>Dirigent</span><span>Kari Holm</span></li>
+        </ul>
+      </article>
+
+      <!-- Seksjon: Ridderdata -->
+      <template x-for="sec in sections.filter(s => s.key === 'ridderdata')" :key="'t-' + sec.key">
+        <article class="tile tile-azure sec-tile s-6">
+          <h3 x-text="sec.label"></h3>
+          <p class="sub" x-text="sec.blurb"></p>
+          <ul class="sec-list two">
+            <template x-for="it in flatItems(sec)" :key="it.label">
+                <li><a href="#" :target="it.ext ? '_blank' : null" :rel="it.ext ? 'noopener' : null"><strong x-text="it.label"></strong><span class="ext" x-show="it.ext" aria-label="(ekstern lenke)">↗</span><span class="era" x-show="it.era"><template x-for="e in eras(it.era)"><i :class="e"></i></template></span><span class="d" x-text="it.desc"></span></a></li>
+              </template>
+          </ul>
+        </article>
+      </template>
+
+      <!-- Seksjon: Kontakt -->
+      <template x-for="sec in sections.filter(s => s.key === 'kontakt')" :key="'t-' + sec.key">
+        <article class="tile sec-tile s-3 chev">
+          <h3 x-text="sec.label"></h3>
+          <p class="sub" x-text="sec.blurb"></p>
+          <ul class="sec-list">
+            <template x-for="it in flatItems(sec)" :key="it.label">
+                <li><a href="#"><strong x-text="it.label"></strong><span class="d" x-text="it.desc"></span></a></li>
+              </template>
+          </ul>
+        </article>
+      </template>
+    </div>
+  </section>
+</main>
+
+<!-- ============ FOOTER ============ -->
+<footer class="site-footer">
+  <div class="wrap">
+    <div class="foot">
+      <div class="foot-brand">
+        <img src="../logo.png" alt="">
+        <div>
+          <b>Armé Riddere</b>
+          <span>Mannskor ved Universitetet i Bergen, stiftet MCMXCVI.</span>
+        </div>
+      </div>
+      <div>
+        <h4>Hjelp</h4>
+        <ul><li><a href="#">Slik bruker du appen</a></li><li><a href="#">Meld fra om feil</a></li></ul>
+      </div>
+      <div>
+        <h4>Utenfor appen</h4>
+        <ul><li><a href="#">RidderWiki <span class="ext">↗</span></a></li><li><a href="#">Bildearkiv <span class="ext">↗</span></a></li><li><a href="#">MAR Games <span class="ext">↗</span></a></li></ul>
+      </div>
+      <div>
+        <h4>Kontakt</h4>
+        <ul><li><a href="#">Epostlister</a></li><li><a href="#">Anonym Forum</a></li></ul>
+      </div>
+    </div>
+    <div class="foot-bottom">
+      <span>Internsidene og appen, samlet siden høsten 2026.</span>
+      <span>Kun for medlemmer og ypp.com.</span>
+    </div>
+  </div>
+</footer>
+
+<!-- ============ DEMO ============ -->
+<aside class="demo" aria-label="Demokontroll">
+  <button class="demo-head" type="button" @click="demoOpen = !demoOpen" :aria-expanded="demoOpen">
+    <span>Bytt visning</span><span class="tag">DEMO</span>
+  </button>
+  <div class="demo-body" x-show="demoOpen">
+    <fieldset>
+      <legend>Status</legend>
+      <div class="seg">
+        <label><input type="radio" name="status" value="aktiv" x-model="status">Aktiv</label>
+        <label><input type="radio" name="status" value="tidligere" x-model="status">Tidligere</label>
+      </div>
+    </fieldset>
+    <fieldset>
+      <legend>Roller</legend>
+      <div class="checks">
+        <label><input type="checkbox" x-model="roles.master">Mester</label>
+        <label><input type="checkbox" x-model="roles.notes">Note</label>
+      </div>
+    </fieldset>
+  </div>
+</aside>
+
+</body>
+</html>

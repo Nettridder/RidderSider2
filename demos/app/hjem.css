@@ -1,0 +1,97 @@
+/* hjem.css — only the Hjem page (index.html) */
+.hello{max-width:40rem;margin-bottom:clamp(2rem,5vh,3rem)}
+.hello h1{margin:0;font-family:var(--serif);font-weight:350;font-size:clamp(1.9rem,3.6vw,2.7rem);line-height:1.08;letter-spacing:-.015em;color:var(--dim)}
+.hello p{margin:.8rem 0 0;color:var(--dim);font-family:var(--serif);font-size:1.12rem;line-height:1.55;max-width:36rem}
+.home{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1fr);gap:1.75rem clamp(2rem,4.5vw,3.5rem);align-items:start}
+.col{display:flex;flex-direction:column;gap:1.75rem;min-width:0}
+
+/* Registrer øving */
+.reg{border-color:var(--line)}
+.reg-top{display:flex;align-items:center;justify-content:space-between;gap:1rem}
+.reg-top h2{margin:0;font-family:var(--serif);font-weight:450;font-size:1.35rem;letter-spacing:-.01em}
+.reg-day{margin:.2rem 0 0;font-size:.85rem;color:var(--faint)}
+.streak{display:inline-flex;align-items:center;gap:.4rem;font-size:.9rem;color:var(--dim);white-space:nowrap}
+.streak svg{width:.85rem;height:1rem;color:var(--ember)}
+.streak b{color:var(--ink);font-weight:600;font-variant-numeric:tabular-nums;display:inline-block}
+.streak b.bump{animation:bump .6s var(--ease)}
+@keyframes bump{30%{transform:translateY(-3px);color:var(--ember-hot)}}
+.reg-row{display:flex;flex-wrap:wrap;align-items:stretch;gap:.75rem;margin-top:1.1rem}
+.reg-row .btn{flex:1 1 10rem}
+.step{display:inline-flex;align-items:stretch;background:var(--bg);border:1px solid var(--line);border-radius:var(--r-s);overflow:hidden}
+.step button{background:none;border:0;padding:0 .95rem;min-height:2.75rem;cursor:pointer;color:var(--dim);font-weight:500;font-variant-numeric:tabular-nums;transition:color .15s,background .15s}
+.step button:hover{color:var(--ink);background:var(--bg-3)}
+.step button:disabled{color:var(--line);cursor:not-allowed;background:none}
+.step button:focus-visible{outline-offset:-2px}
+.step .val{display:flex;gap:.25rem;padding:0 .5rem;border-left:1px solid var(--line);border-right:1px solid var(--line);align-items:center}
+.step input{width:3.2ch;background:none;border:0;padding:0;text-align:right;font-family:var(--serif);font-size:1.45rem;font-weight:450;color:var(--ink);font-variant-numeric:tabular-nums;-moz-appearance:textfield}
+.step input::-webkit-outer-spin-button,.step input::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
+.step input:focus{outline:none}
+.step .val:focus-within{box-shadow:inset 0 -2px 0 var(--ember)}
+.step .unit{color:var(--faint);font-size:.9rem}
+.week{margin-top:1.25rem;padding-top:1rem;border-top:1px solid var(--line-soft)}
+.week-t{display:flex;justify-content:space-between;gap:1rem;font-size:.88rem;color:var(--faint)}
+.week-t b{color:var(--ink);font-weight:500;font-variant-numeric:tabular-nums}
+.week-t .gl{display:inline-flex;align-items:center;gap:.35rem}
+.week-t .gl svg{width:.9rem;height:.9rem}
+.week.done .week-t .gl{color:var(--k-ok)}
+.bar{height:4px;border-radius:4px;background:var(--bg-3);margin-top:.5rem;overflow:hidden}
+.bar i{display:block;height:100%;background:var(--ember);border-radius:4px;transition:width .5s var(--ease),background .3s}
+.week.done .bar i{background:var(--k-ok)}
+.reg-note{margin:.85rem 0 0;font-size:.9rem;color:var(--ink)}
+.reg-note:empty{display:none}
+.reg-note::before{content:"";display:inline-block;width:.42rem;height:.42rem;border-radius:50%;background:var(--ember);margin-right:.55rem;vertical-align:.12em}
+.tid{margin:0;color:var(--dim);max-width:30rem;font-family:var(--serif);font-size:1.12rem}
+
+/* Toppliste: quiet, no fill */
+.lb{padding:1.1rem 0 0;border-top:1px solid var(--line)}
+.lb dl{margin:.7rem 0 0;display:grid;gap:.45rem}
+.lb-row{display:grid;grid-template-columns:9.5rem minmax(0,1fr) auto;gap:.2rem 1rem;align-items:baseline;font-size:.93rem}
+.lb dt{color:var(--faint)}
+.lb dd{margin:0}
+.lb .lb-n{color:var(--ink);min-width:0}
+.lb .lb-v{color:var(--dim);font-variant-numeric:tabular-nums;text-align:right;white-space:nowrap}
+.lb-me{margin:.75rem 0 0;font-size:.85rem;color:var(--faint)}
+
+/* Snart */
+.soon{padding-bottom:1.1rem}
+.soon .panel-h{margin-bottom:1.1rem}
+.soon .textlink{margin-top:.7rem}
+.next{display:block;padding-bottom:1.25rem;border-bottom:1px solid var(--line)}
+.next .kind{display:block;font-size:.85rem;color:var(--ember-hot);margin-bottom:.35rem}
+.next .date{display:block;font-family:var(--serif);font-size:clamp(1.5rem,2.6vw,1.85rem);font-weight:450;line-height:1.1;letter-spacing:-.01em}
+.next .date .tm{color:var(--dim);font-weight:350}
+.next .title{display:block;margin-top:.4rem;font-weight:600;font-size:1.05rem}
+.next:hover .title{text-decoration:underline;text-decoration-color:var(--ember);text-underline-offset:4px}
+.later{list-style:none;margin:0;padding:.4rem 0 0}
+.later a{display:grid;grid-template-columns:5.2rem minmax(0,1fr) auto;gap:.75rem;align-items:baseline;padding:.6rem .5rem;margin:0 -.5rem;border-radius:var(--r-s);font-size:.93rem}
+.later a:hover{background:var(--bg-3)}
+.later .d{color:var(--faint)}
+.later .w{color:var(--ink);min-width:0;overflow-wrap:anywhere}
+.later .w small{display:block;color:var(--faint);font-size:.85rem}
+.later .t{color:var(--dim);font-variant-numeric:tabular-nums}
+
+/* Nytt dokument */
+.doc{border:1px solid var(--line);border-radius:var(--r-m);padding:1.2rem 1.25rem}
+.doc-top{display:flex;align-items:center;gap:.6rem}
+.doc-grid{display:flex;align-items:center;justify-content:space-between;gap:1rem;margin-top:.6rem}
+.doc-name{margin:0;font-family:var(--serif);font-size:1.3rem;font-weight:450;line-height:1.2;letter-spacing:-.005em}
+.doc-by{margin:.2rem 0 0;color:var(--faint);font-size:.9rem}
+.doc .btn{padding:.6rem 1.15rem;flex:none}
+.doc .textlink{margin-top:1rem}
+
+@media (max-width:760px){
+  .home{grid-template-columns:minmax(0,1fr);gap:1.5rem}
+  .col{display:contents}
+  .a-reg{order:1}.a-soon{order:2}.a-lb{order:3}.a-doc{order:4}
+}
+@media (max-width:720px){
+  .hello p{font-size:1.04rem}
+  .reg-row{gap:.6rem}
+  .step{flex:1 1 100%;justify-content:space-between}
+  .step .val{flex:1;justify-content:center}
+  .reg-row .btn{flex:1 1 100%}
+  .later a{grid-template-columns:4.6rem minmax(0,1fr) auto}
+  .lb-row{grid-template-columns:minmax(0,1fr) auto}
+  .lb dt{grid-column:1 / -1;font-size:.84rem}
+  .doc-grid{align-items:flex-end}
+}

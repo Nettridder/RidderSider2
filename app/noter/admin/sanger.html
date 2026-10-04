@@ -1,0 +1,190 @@
+<!doctype html>
+<html lang="nb">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Note-admin: Sanger – Mannskoret Arme Riddere</title>
+<link rel="stylesheet" href="../../css/global.css">
+<link rel="stylesheet" href="../../css/songs.css">
+<script defer src="../../js/global.js"></script>
+<script defer src="../../js/songs.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3/dist/cdn.min.js"></script>
+</head>
+<body data-page="noter/admin/sanger">
+
+<main>
+  <div class="content content--wide" x-data="adminSongsPage()">
+    <div class="page-header">
+      <div>
+        <h1 class="page-header__title" tabindex="-1">Administrer sanger</h1>
+        <p class="page-header__intro">Legg til sanger med tekst, noter og lydfiler, og rediger det som finnes.</p>
+      </div>
+    </div>
+
+    <form class="admin-form" @submit.prevent="addSong()" novalidate aria-labelledby="add-song-title">
+      <h2 id="add-song-title" class="section-title">Legg til sang</h2>
+      <div data-form-template="template-song:newSong:new-song"></div>
+      <div class="admin-form__actions">
+        <button class="button" type="submit">Legg til sang</button>
+        <button class="button button--secondary" type="button" @click="newSong = emptySongForm()">Tøm skjemaet</button>
+      </div>
+    </form>
+
+    <div class="admin-list-header">
+      <div>
+        <h2 class="section-title">Alle sanger</h2>
+        <p class="hint" x-text="db.songs.length + ' sanger, ' + db.songs.filter(song => song.is_secret).length + ' hemmelige'"></p>
+      </div>
+      <input class="search-field" type="search" placeholder="Søk etter sang eller sjanger" aria-label="Søk i alle sanger" x-model="search">
+    </div>
+    <ul class="admin-list song-admin-list">
+      <li class="admin-list__row admin-list__head" aria-hidden="true"><span>Navn</span><span>Sjangere</span><span>Filer</span><span></span></li>
+      <template x-for="song in filteredSongs" :key="song.id">
+        <li class="admin-list__row">
+          <span class="admin-list__name">
+            <span x-text="song.name"></span>
+            <span class="badge badge--muted" x-show="song.is_secret">Hemmelig</span>
+            <small class="admin-list__narrow-summary" x-text="(app.songGenreNames(song.id) || 'Ingen sjanger') + ' · ' + fileSummary(song.id)"></small>
+          </span>
+          <span class="admin-list__cell admin-list__wide-only" x-text="app.songGenreNames(song.id) || '–'"></span>
+          <span class="admin-list__cell admin-list__wide-only" x-text="fileSummary(song.id)"></span>
+          <span class="admin-list__actions">
+            <button class="button button--secondary button--small" type="button" @click="editSong(song, $event)" :aria-label="'Rediger ' + song.name">Rediger</button>
+          </span>
+        </li>
+      </template>
+    </ul>
+    <p class="empty-state" x-show="!filteredSongs.length">Ingen sanger passer søket.</p>
+
+    <section class="genre-section" aria-labelledby="genres-title">
+      <div class="admin-list-header">
+        <div>
+          <h2 id="genres-title" class="section-title">Sjangere</h2>
+          <p class="hint">Sjangerne brukes til å sortere og filtrere sangbiblioteket.</p>
+        </div>
+      </div>
+      <form class="genre-add" @submit.prevent="addGenre()" novalidate>
+        <label class="visually-hidden" for="new-genre-name">Ny sjanger</label>
+        <input id="new-genre-name" class="input" type="text" placeholder="Ny sjanger, for eksempel Gospel" x-model="newGenreName" :aria-invalid="genreError ? 'true' : null">
+        <button class="button button--secondary" type="submit">Legg til sjanger</button>
+      </form>
+      <p class="field-error genre-add__error" x-show="genreError" x-text="genreError"></p>
+      <ul class="admin-list genre-admin-list">
+        <template x-for="genre in sortedGenres" :key="genre.id">
+          <li class="admin-list__row">
+            <template x-if="renamingGenreId !== genre.id">
+              <span class="admin-list__name"><span x-text="genre.name"></span><small class="admin-list__narrow-summary" x-text="songCountForGenre(genre.id) + (songCountForGenre(genre.id) === 1 ? ' sang' : ' sanger')"></small></span>
+            </template>
+            <template x-if="renamingGenreId === genre.id">
+              <form class="genre-rename" @submit.prevent="saveGenreName(genre)" novalidate>
+                <label class="visually-hidden" :for="'genre-name-' + genre.id">Nytt navn</label>
+                <input class="input" :id="'genre-name-' + genre.id" type="text" x-model="renamingGenreName" x-init="$nextTick(() => $el.focus())" :aria-invalid="renameError ? 'true' : null">
+                <button class="button button--small" type="submit">Lagre</button>
+                <button class="button button--secondary button--small" type="button" @click="renamingGenreId = null">Avbryt</button>
+                <span class="field-error" x-show="renameError" x-text="renameError"></span>
+              </form>
+            </template>
+            <span class="admin-list__cell admin-list__wide-only" x-text="songCountForGenre(genre.id) + (songCountForGenre(genre.id) === 1 ? ' sang' : ' sanger')"></span>
+            <span class="admin-list__actions" x-show="confirmingDeleteId !== 'genre-' + genre.id && renamingGenreId !== genre.id">
+              <button class="button button--secondary button--small" type="button" @click="startRenamingGenre(genre)" :aria-label="'Endre navn på ' + genre.name">Endre navn</button>
+              <button class="button button--danger button--small" type="button" @click="confirmingDeleteId = 'genre-' + genre.id" :aria-label="'Slett ' + genre.name">Slett</button>
+            </span>
+            <span class="admin-list__confirm" x-show="confirmingDeleteId === 'genre-' + genre.id">
+              <span x-text="'Slette «' + genre.name + '»?' + (songCountForGenre(genre.id) ? ' Sangene beholdes.' : '')"></span>
+              <button class="button button--danger-filled button--small" type="button" @click="deleteGenre(genre)">Ja, slett</button>
+              <button class="button button--secondary button--small" type="button" @click="confirmingDeleteId = null">Avbryt</button>
+            </span>
+          </li>
+        </template>
+      </ul>
+    </section>
+
+    <div data-edit-drawer>
+      <form @submit.prevent="saveSong()" novalidate>
+        <div class="drawer__body"><div data-form-template="template-song:editedSong:edited-song"></div></div>
+        <div class="drawer__footer">
+          <div class="drawer__footer-group" x-show="!confirmingDelete">
+            <button class="button" type="submit">Lagre endringer</button>
+            <button class="button button--secondary" type="button" @click="closeDrawer()">Avbryt</button>
+          </div>
+          <button class="button button--danger" type="button" x-show="!confirmingDelete" @click="confirmingDelete = true">Slett sang</button>
+          <div class="drawer__footer-group" x-show="confirmingDelete">
+            <span class="drawer__question" x-text="'Slette «' + editedSong.name + '» med alle filene?'"></span>
+            <button class="button button--danger-filled button--small" type="button" @click="deleteSong()">Ja, slett sangen</button>
+            <button class="button button--secondary button--small" type="button" @click="confirmingDelete = false">Avbryt</button>
+          </div>
+        </div>
+      </form>
+    </div>
+  </div>
+</main>
+
+<template id="template-song">
+  <div class="form-grid">
+    <label class="field form-grid__full" for="ID-name">Navn
+      <input id="ID-name" class="input" type="text" x-model="FORM.name" placeholder="For eksempel Nidelven" :aria-invalid="FORM.showErrors && !FORM.name.trim() ? 'true' : null">
+      <span class="field-error" x-show="FORM.showErrors && !FORM.name.trim()">Skriv inn navnet på sangen.</span>
+    </label>
+    <fieldset class="field form-grid__full">
+      <legend>Sjangere</legend>
+      <div class="chip-options">
+        <template x-for="genre in sortedGenres" :key="genre.id">
+          <button type="button" class="chip-option" :aria-pressed="FORM.genreIds.includes(genre.id)" @click="toggleInList(FORM.genreIds, genre.id)">
+            <svg aria-hidden="true"><use href="#icon-check"/></svg><span x-text="genre.name"></span>
+          </button>
+        </template>
+      </div>
+    </fieldset>
+    <div class="field form-grid__full">
+      <label class="switch"><input type="checkbox" x-model="FORM.isSecret"><span class="switch__track" aria-hidden="true"></span>Hemmelig</label>
+      <p class="hint">Hemmelige sanger vises bare for aktive medlemmer, og bare når de ligger i et synlig repertoar.</p>
+    </div>
+    <label class="field form-grid__full" for="ID-lyrics">Tekst
+      <textarea id="ID-lyrics" class="input" rows="4" x-model="FORM.lyrics" placeholder="Lim inn sangteksten"></textarea>
+    </label>
+    <label class="field form-grid__full" for="ID-choreography">Koreografilenke
+      <input id="ID-choreography" class="input" type="text" inputmode="url" x-model="FORM.choreographyUrl" placeholder="https://youtube.com/watch?v=… eller video/filnavn.mp4">
+    </label>
+    <fieldset class="field form-grid__full">
+      <legend>Filer</legend>
+      <div class="repeatable-rows">
+        <template x-for="(fileRow, index) in FORM.files" :key="fileRow.rowKey">
+          <div class="repeatable-row song-file-row">
+            <label class="field song-file-row__name" :for="'ID-file-name-' + fileRow.rowKey">Visningsnavn
+              <input :id="'ID-file-name-' + fileRow.rowKey" class="input" type="text" x-model="fileRow.name" placeholder="1. tenor">
+            </label>
+            <label class="field" :for="'ID-file-voice-' + fileRow.rowKey">Stemme
+              <select :id="'ID-file-voice-' + fileRow.rowKey" class="input" x-model="fileRow.voice">
+                <option value="">Tutti</option>
+                <template x-for="voice in LABELS.songVoices" :key="voice"><option :value="voice" x-text="voice" :selected="fileRow.voice === voice"></option></template>
+              </select>
+            </label>
+            <label class="field" :for="'ID-file-type-' + fileRow.rowKey">Type
+              <select :id="'ID-file-type-' + fileRow.rowKey" class="input" x-model="fileRow.type">
+                <option value="audio">Lyd</option><option value="sheet">Noter</option><option value="pitch">Toneangiver</option>
+              </select>
+            </label>
+            <label class="field song-file-row__note" :for="'ID-file-note-' + fileRow.rowKey" x-show="fileRow.type === 'pitch'">Starttone
+              <input :id="'ID-file-note-' + fileRow.rowKey" class="input" type="text" x-model="fileRow.startNote" placeholder="E4 eller B♭3">
+            </label>
+            <div class="field song-file-row__file"><span>Fil</span>
+              <div class="file-picker">
+                <label class="file-picker__button">
+                  <input type="file" class="visually-hidden" :accept="fileRow.type === 'sheet' ? '.pdf' : 'audio/*'" @change="fileRow.file = $event.target.files[0] ? $event.target.files[0].name : fileRow.file">
+                  <span x-text="fileRow.file ? 'Bytt fil' : 'Velg fil'"></span>
+                </label>
+                <span class="file-picker__name" x-text="fileRow.file ? fileRow.file.split('/').pop() : (fileRow.type === 'pitch' ? 'Ingen fil, spilles som tone' : 'Ingen fil valgt')"></span>
+              </div>
+            </div>
+            <button type="button" class="icon-button song-file-row__remove" @click="FORM.files.splice(index, 1)" :aria-label="'Fjern filen ' + (fileRow.name || (index + 1))"><svg aria-hidden="true"><use href="#icon-close"/></svg></button>
+          </div>
+        </template>
+        <p class="hint" x-show="!FORM.files.length">Ingen filer ennå. Legg til noter, lydfiler per stemme eller starttoner.</p>
+        <div><button class="button button--secondary button--small" type="button" @click="addFileRow(FORM)">Legg til fil</button></div>
+      </div>
+    </fieldset>
+  </div>
+</template>
+
+</body>
+</html>

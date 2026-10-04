@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="nb">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Dokumenter – Mannskoret Arme Riddere</title>
+<link rel="stylesheet" href="../felles/global.css">
+<link rel="stylesheet" href="../felles/leser.css">
+<style>
+  .doclist button.nm{background:none;border:0;padding:0;text-align:left;cursor:pointer;color:var(--ink)}
+  .doclist .nm:hover .t{text-decoration:underline;text-decoration-color:var(--ember);text-underline-offset:4px}
+  .doclist .tag{margin-left:.5rem}
+</style>
+<script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3/dist/cdn.min.js"></script>
+</head>
+<body data-page="ridderdata/dokumenter">
+
+<main class="page" x-data>
+  <div class="inner body">
+    <div class="body-h"><div><h1 tabindex="-1">Dokumenter</h1></div></div>
+    <ul class="rows doclist">
+      <li>
+        <button class="nm" type="button" @click="$dispatch('open-doc')"><span class="t">Styrereferat 18.09.2026</span><span class="tag" x-show="!$store.app.docRead">Ny</span><small>Lagt ut av Paragrafrytteren</small></button>
+        <span class="aside">Sep 2026</span>
+      </li>
+      <template x-for="d in RD.DOCS" :key="d.t">
+        <li><a class="nm" href="/app/dokumenter"><span class="t" x-text="d.t"></span></a><span class="aside" x-text="d.d"></span></li>
+      </template>
+    </ul>
+  </div>
+</main>
+
+<script src="../felles/data.js"></script>
+<script src="../felles/meny.js"></script>
+<script src="../felles/leser.js"></script>
+</body>
+</html>

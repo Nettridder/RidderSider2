@@ -1,0 +1,201 @@
+<!doctype html>
+<html lang="nb">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Kalender – Mannskoret Arme Riddere</title>
+<link rel="stylesheet" href="../css/global.css">
+<style>
+.calendar-source { display: inline-flex; align-items: center; gap: 0.4rem; margin: 0.45rem 0 0; color: var(--color-text-faint); font-size: 0.88rem; }
+.calendar-source svg { width: 0.9rem; height: 0.9rem; }
+
+.calendar-week + .calendar-week { margin-top: 2rem; }
+.calendar-week__header { display: flex; align-items: baseline; gap: 0.75rem; margin-bottom: 0.4rem; }
+.calendar-week__title { margin: 0; font-family: var(--font-heading); font-weight: 450; font-size: 1.2rem; color: var(--color-text-dim); }
+.calendar-week__range { color: var(--color-text-faint); font-size: 0.88rem; }
+.calendar-event { grid-template-columns: 5.5rem minmax(0, 1fr) auto; align-items: baseline; }
+.calendar-event__date { color: var(--color-text-faint); font-size: 0.92rem; }
+.calendar-event__badge { margin-left: 0.5rem; vertical-align: 0.1em; }
+
+.month-header { display: flex; align-items: center; justify-content: space-between; gap: 1rem; margin-bottom: 0.85rem; }
+.month-header__title { margin: 0; font-family: var(--font-heading); font-weight: 450; font-size: 1.45rem; letter-spacing: -0.01em; }
+.month-header__buttons { display: flex; gap: 0.4rem; }
+.month-header__buttons .icon-button { width: 2.4rem; height: 2.4rem; }
+.month-grid { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); border-top: 1px solid var(--color-border-soft); border-left: 1px solid var(--color-border-soft); }
+.month-grid__weekday { padding: 0.45rem 0.5rem; font-size: 0.8rem; color: var(--color-text-faint); border-right: 1px solid var(--color-border-soft); border-bottom: 1px solid var(--color-border-soft); background: var(--color-surface); }
+.month-day {
+  min-height: 6rem; min-width: 0; display: flex; flex-direction: column; align-items: stretch; gap: 0.2rem; text-align: left;
+  padding: 0.4rem 0.45rem 0.5rem; background: none; border: 0; border-right: 1px solid var(--color-border-soft); border-bottom: 1px solid var(--color-border-soft); cursor: pointer;
+}
+.month-day:hover { background: var(--color-surface); }
+.month-day:focus-visible { outline-offset: -3px; border-radius: 0; }
+.month-day__number { font-size: 0.85rem; font-variant-numeric: tabular-nums; color: var(--color-text-dim); width: 1.6rem; height: 1.6rem; display: grid; place-items: center; border-radius: 50%; margin: -0.1rem 0 0 -0.15rem; }
+.month-day--outside { cursor: default; background: repeating-linear-gradient(135deg, transparent 0 6px, rgba(255, 255, 255, 0.012) 6px 7px); }
+.month-day--outside:hover { background: repeating-linear-gradient(135deg, transparent 0 6px, rgba(255, 255, 255, 0.012) 6px 7px); }
+.month-day--outside .month-day__number { color: var(--color-border); }
+.month-day--past .month-day__number { color: var(--color-text-faint); }
+.month-day--today .month-day__number { background: var(--color-text); color: var(--color-background); font-weight: 600; }
+.month-day--selected { box-shadow: inset 0 0 0 2px var(--color-accent); background: var(--color-surface); }
+.month-day__event { display: block; font-size: 0.74rem; line-height: 1.3; padding: 0.08rem 0.35rem; border-radius: 3px; background: var(--color-surface-raised); color: var(--color-text-dim); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.month-day__event.is-public { background: var(--color-accent-soft); color: var(--color-accent-bright); }
+.month-day__event.is-other { color: var(--color-text); }
+.month-day__dots { display: none; gap: 3px; margin-top: auto; }
+.month-day__dots i { width: 5px; height: 5px; border-radius: 50%; background: var(--color-text-dim); }
+.month-day__dots i.is-public { background: var(--color-accent-bright); }
+.month-day__dots i.is-other { background: var(--color-text); }
+.selected-day { margin-top: 1.5rem; }
+.selected-day__title { margin: 0 0 0.6rem; font-family: var(--font-heading); font-weight: 450; font-size: 1.25rem; }
+.selected-day .empty-state { padding-top: 0.25rem; }
+
+@media (max-width: 720px) {
+  .calendar-event { grid-template-columns: 4.6rem minmax(0, 1fr) auto; gap: 0.5rem 0.75rem; }
+  .month-day { min-height: 3.4rem; padding: 0.3rem 0.2rem 0.35rem; align-items: center; }
+  .month-day__number { margin: 0; }
+  .month-day__event { display: none; }
+  .month-day__dots { display: flex; }
+  .month-grid__weekday { padding: 0.4rem 0.2rem; text-align: center; font-size: 0.72rem; }
+}
+</style>
+<script defer src="../js/global.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3/dist/cdn.min.js"></script>
+</head>
+<body data-page="ridderdata/kalender">
+
+<main>
+  <div class="content" x-data="calendarPage()">
+    <div class="page-header">
+      <div>
+        <h1 class="page-header__title" tabindex="-1">Kalender</h1>
+        <p class="calendar-source"><svg aria-hidden="true"><use href="#icon-calendar"/></svg>Fra Google Kalender</p>
+      </div>
+      <div class="segmented" role="group" aria-label="Visning">
+        <button type="button" :aria-pressed="view === 'list'" @click="view = 'list'">Liste</button>
+        <button type="button" :aria-pressed="view === 'month'" @click="view = 'month'">Måned</button>
+      </div>
+    </div>
+
+    <div x-show="view === 'list'">
+      <template x-for="week in upcomingWeeks" :key="week.number">
+        <section class="calendar-week">
+          <div class="calendar-week__header">
+            <h2 class="calendar-week__title" x-text="week.relativeName || 'Uke ' + week.number"></h2>
+            <span class="calendar-week__range" x-text="(week.relativeName ? 'Uke ' + week.number + ', ' : '') + week.range"></span>
+          </div>
+          <ul class="list">
+            <template x-for="event in week.events" :key="event.id">
+              <li class="list__row calendar-event">
+                <span class="calendar-event__date" x-text="format.shortDate(event.date)"></span>
+                <span class="list__title"><span x-text="event.summary"></span><span class="badge calendar-event__badge" x-show="event.isPublic && app.isActiveMember">Åpen</span><span class="list__meta" x-show="event.location || event.description" x-text="[event.location, event.description].filter(Boolean).join(' · ')"></span></span>
+                <span class="list__aside" x-text="event.time || 'Hele dagen'"></span>
+              </li>
+            </template>
+          </ul>
+        </section>
+      </template>
+      <p class="empty-state" x-show="!upcomingWeeks.length">Ingenting i kalenderen fremover.</p>
+    </div>
+
+    <div x-show="view === 'month'">
+      <div class="month-header">
+        <h2 class="month-header__title" aria-live="polite" x-text="format.monthYear(monthStart)"></h2>
+        <div class="month-header__buttons">
+          <button class="icon-button" type="button" @click="changeMonth(-1)" :disabled="!canGoBack" aria-label="Forrige måned"><svg aria-hidden="true"><use href="#icon-left"/></svg></button>
+          <button class="icon-button" type="button" @click="changeMonth(1)" :disabled="!canGoForward" aria-label="Neste måned"><svg aria-hidden="true"><use href="#icon-right"/></svg></button>
+        </div>
+      </div>
+      <div class="month-grid" role="grid" :aria-label="format.monthYear(monthStart)">
+        <template x-for="dayName in ['Man', 'Tir', 'Ons', 'Tor', 'Fre', 'Lør', 'Søn']" :key="dayName">
+          <div class="month-grid__weekday" role="columnheader" x-text="dayName"></div>
+        </template>
+        <template x-for="day in monthDays" :key="day.dateKey">
+          <button type="button" class="month-day" role="gridcell" :disabled="!day.isInMonth"
+                  :class="{ 'month-day--outside': !day.isInMonth, 'month-day--past': day.isPast, 'month-day--today': day.isToday, 'month-day--selected': day.dateKey === selectedDateKey }"
+                  @click="selectedDateKey = day.dateKey" :aria-pressed="day.dateKey === selectedDateKey" :aria-label="dayLabel(day)">
+            <span class="month-day__number" x-text="day.date.getDate()"></span>
+            <template x-for="event in day.events.slice(0, 2)" :key="event.id">
+              <span class="month-day__event" :class="eventKindClass(event)" x-text="(event.time ? event.time + ' ' : '') + event.summary"></span>
+            </template>
+            <span class="month-day__event" x-show="day.events.length > 2" x-text="'+' + (day.events.length - 2) + ' til'"></span>
+            <span class="month-day__dots" x-show="day.events.length">
+              <template x-for="event in day.events" :key="event.id"><i :class="eventKindClass(event)"></i></template>
+            </span>
+          </button>
+        </template>
+      </div>
+      <section class="selected-day" aria-live="polite">
+        <h3 class="selected-day__title" x-text="format.longDate(selectedDate)"></h3>
+        <ul class="list" x-show="selectedDayEvents.length">
+          <template x-for="event in selectedDayEvents" :key="event.id">
+            <li class="list__row calendar-event">
+              <span class="calendar-event__date" x-text="event.time || 'Hele dagen'"></span>
+              <span class="list__title"><span x-text="event.summary"></span><span class="badge calendar-event__badge" x-show="event.isPublic && app.isActiveMember">Åpen</span><span class="list__meta" x-show="event.location || event.description" x-text="[event.location, event.description].filter(Boolean).join(' · ')"></span></span>
+              <span></span>
+            </li>
+          </template>
+        </ul>
+        <p class="empty-state" x-show="!selectedDayEvents.length">Ingenting i kalenderen denne dagen.</p>
+      </section>
+    </div>
+  </div>
+</main>
+
+<script>
+function calendarPage() {
+  const FIRST_MONTH = new Date(2026, 8, 1), LAST_MONTH = new Date(2026, 11, 1);
+  return {
+    view: 'list',
+    monthStart: new Date(2026, 9, 1),
+    selectedDateKey: '2026-10-01',
+    get app() { return this.$store.app },
+    get events() { return this.app.calendarEvents },
+    get upcomingWeeks() {
+      const weeks = [], weekByNumber = {};
+      const currentWeek = isoWeekNumber(this.app.today);
+      this.app.upcomingEvents.forEach(event => {
+        const number = isoWeekNumber(event.date);
+        if (!weekByNumber[number]) {
+          const monday = startOfWeek(event.date), sunday = addDays(monday, 6);
+          weekByNumber[number] = {
+            number, events: [],
+            range: `${format.dayMonth(monday)}–${format.dayMonth(sunday)}`,
+            relativeName: number === currentWeek ? 'Denne uka' : number === currentWeek + 1 ? 'Neste uke' : '',
+          };
+          weeks.push(weekByNumber[number]);
+        }
+        weekByNumber[number].events.push(event);
+      });
+      return weeks;
+    },
+    get monthDays() {
+      const firstDay = this.monthStart, month = firstDay.getMonth();
+      const offset = (firstDay.getDay() + 6) % 7;
+      const daysInMonth = new Date(firstDay.getFullYear(), month + 1, 0).getDate();
+      const todayKey = format.dateKey(this.app.today);
+      return Array.from({ length: Math.ceil((offset + daysInMonth) / 7) * 7 }, (_, index) => {
+        const date = addDays(firstDay, index - offset), dateKey = format.dateKey(date), isInMonth = date.getMonth() === month;
+        return { date, dateKey, isInMonth, isToday: dateKey === todayKey, isPast: dateKey < todayKey, events: isInMonth ? this.events.filter(event => event.dateKey === dateKey) : [] };
+      });
+    },
+    get selectedDate() { return format.parseDate(this.selectedDateKey) },
+    get selectedDayEvents() { return this.events.filter(event => event.dateKey === this.selectedDateKey) },
+    get canGoBack() { return this.monthStart > FIRST_MONTH },
+    get canGoForward() { return this.monthStart < LAST_MONTH },
+    changeMonth(step) {
+      const next = new Date(this.monthStart.getFullYear(), this.monthStart.getMonth() + step, 1);
+      if (next < FIRST_MONTH || next > LAST_MONTH) return;
+      this.monthStart = next;
+      const todayKey = format.dateKey(this.app.today);
+      const inMonth = this.events.filter(event => event.date.getMonth() === next.getMonth() && event.date.getFullYear() === next.getFullYear());
+      const firstEvent = inMonth.find(event => event.dateKey >= todayKey) || inMonth[0];
+      this.selectedDateKey = firstEvent ? firstEvent.dateKey : format.dateKey(next);
+    },
+    eventKindClass(event) { return event.isPublic ? 'is-public' : event.summary === 'Øving' ? 'is-rehearsal' : 'is-other' },
+    dayLabel(day) {
+      const count = day.events.length;
+      return format.longDate(day.date) + (count ? `, ${count} ${count === 1 ? 'hendelse' : 'hendelser'}` : '');
+    },
+  };
+}
+</script>
+</body>
+</html>

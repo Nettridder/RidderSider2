@@ -1,0 +1,92 @@
+<!doctype html>
+<html lang="nb">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Admin: Opptellinger – Mannskoret Arme Riddere</title>
+<link rel="stylesheet" href="../css/global.css">
+<link rel="stylesheet" href="../css/members.css">
+<script defer src="../js/global.js"></script>
+<script defer src="../js/members.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3/dist/cdn.min.js"></script>
+</head>
+<body data-page="admin/opptellinger">
+
+<main>
+  <div class="content content--wide" x-data="adminAttendancePage()">
+    <div class="page-header">
+      <div>
+        <h1 class="page-header__title" tabindex="-1">Opptellinger</h1>
+        <p class="page-header__intro">Én opptelling per øving. Kryss av for alle som er til stede, og send inn hele lista på én gang.</p>
+      </div>
+    </div>
+
+    <form class="admin-form attendance-form" @submit.prevent="submitAttendance()" novalidate aria-labelledby="attendance-title" x-ref="attendanceForm">
+      <div class="attendance-form__top">
+        <div>
+          <h2 id="attendance-title" class="section-title" x-text="format.longDate(format.parseDate(rehearsalDate)) + ' ' + format.parseDate(rehearsalDate).getFullYear()"></h2>
+          <p class="hint" x-text="existingRow ? 'Registrert. Sist sendt inn av ' + app.memberName(app.member(existingRow.updated_by || existingRow.created_by)) + '.' : 'Ny opptelling. Ingen har sendt inn for denne øvingen ennå.'"></p>
+        </div>
+        <label class="field attendance-form__date" for="rehearsal-date">Øving
+          <input id="rehearsal-date" class="input" type="date" x-model="rehearsalDate" @change="loadDate(rehearsalDate)" :max="format.dateKey(app.today)">
+        </label>
+      </div>
+
+      <div class="attendance-form__toolbar">
+        <p class="attendance-form__count" aria-live="polite"><b x-text="presentIds.length"></b> av <span x-text="app.activeMembers.length"></span> til stede</p>
+        <div class="button-row">
+          <button class="text-link" type="button" @click="presentIds = app.activeMembers.map(member => member.id)">Merk alle</button>
+          <button class="text-link" type="button" @click="presentIds = []">Fjern alle</button>
+        </div>
+      </div>
+
+      <div class="attendance-groups">
+        <template x-for="voice in LABELS.voiceGroups" :key="voice">
+          <fieldset class="attendance-group">
+            <legend class="label" x-text="LABELS.voices[voice] + ' (' + membersIn(voice).filter(member => presentIds.includes(member.id)).length + '/' + membersIn(voice).length + ')'"></legend>
+            <div class="attendance-group__members">
+              <template x-for="member in membersIn(voice)" :key="member.id">
+                <button type="button" class="attendance-member" :aria-pressed="presentIds.includes(member.id)" @click="toggleInList(presentIds, member.id)">
+                  <span class="portrait portrait--small"><img :src="app.memberImage(member)" alt=""></span>
+                  <span class="attendance-member__name" x-text="app.memberName(member)"></span>
+                  <span class="attendance-member__check" aria-hidden="true"><svg><use href="#icon-check"/></svg></span>
+                </button>
+              </template>
+            </div>
+          </fieldset>
+        </template>
+      </div>
+
+      <div class="admin-form__actions">
+        <button class="button" type="submit" x-text="existingRow ? 'Send inn på nytt' : 'Send inn'"></button>
+        <p class="hint" x-show="existingRow">Den nye lista erstatter den som ble sendt inn tidligere.</p>
+      </div>
+    </form>
+
+    <div class="admin-list-header">
+      <div>
+        <h2 class="section-title">Tidligere opptellinger</h2>
+        <p class="hint" x-text="db.attendance.length + ' øvinger registrert'"></p>
+      </div>
+    </div>
+    <ul class="admin-list attendance-history">
+      <li class="admin-list__row admin-list__head" aria-hidden="true"><span>Øving</span><span>Til stede</span><span>Sendt inn av</span><span></span></li>
+      <template x-for="row in historyRows" :key="row.id">
+        <li class="admin-list__row" :class="row.rehearsal_date === rehearsalDate && 'attendance-history__row--open'">
+          <span class="admin-list__name">
+            <span x-text="format.longDate(format.parseDate(row.rehearsal_date)) + ' ' + format.parseDate(row.rehearsal_date).getFullYear()"></span>
+            <small class="admin-list__narrow-summary" x-text="presentCount(row) + ' til stede, sendt inn av ' + app.memberName(app.member(row.updated_by || row.created_by))"></small>
+          </span>
+          <span class="admin-list__cell admin-list__wide-only" x-text="presentCount(row) + ' av ' + app.activeMembers.length"></span>
+          <span class="admin-list__cell admin-list__wide-only" x-text="app.memberName(app.member(row.updated_by || row.created_by))"></span>
+          <span class="admin-list__actions">
+            <button class="button button--secondary button--small" type="button" @click="openRow(row)" x-text="row.rehearsal_date === rehearsalDate ? 'Åpen' : 'Åpne'" :disabled="row.rehearsal_date === rehearsalDate"></button>
+          </span>
+        </li>
+      </template>
+    </ul>
+  </div>
+</main>
+
+</body>
+</html>

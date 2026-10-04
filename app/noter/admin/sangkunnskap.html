@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="nb">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Note-admin: Sangkunnskap – Mannskoret Arme Riddere</title>
+<link rel="stylesheet" href="../../css/global.css">
+<link rel="stylesheet" href="../../css/songs.css">
+<script defer src="../../js/global.js"></script>
+<script defer src="../../js/songs.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3/dist/cdn.min.js"></script>
+</head>
+<body data-page="noter/admin/sangkunnskap">
+
+<main>
+  <div class="content content--wide" x-data="songKnowledgePage()">
+    <div class="page-header">
+      <div>
+        <h1 class="page-header__title" tabindex="-1">Sangkunnskap</h1>
+        <p class="page-header__intro">Se hvor godt de aktive medlemmene kan en sang, sortert på stemme. Hver ridder markerer selv hvor godt han kan sangene.</p>
+      </div>
+    </div>
+
+    <div class="song-picker">
+      <label class="field song-picker__search" for="song-search">Søk
+        <input id="song-search" class="search-field" type="search" placeholder="Søk etter sang" x-model="search">
+      </label>
+      <label class="field song-picker__select" for="selected-song">Sang
+        <select id="selected-song" class="input" x-model.number="selectedSongId">
+          <template x-for="song in matchingSongs" :key="song.id">
+            <option :value="song.id" x-text="song.name + (song.is_secret ? ' (hemmelig)' : '')" :selected="song.id === selectedSongId"></option>
+          </template>
+        </select>
+      </label>
+    </div>
+    <p class="empty-state" x-show="!matchingSongs.length">Ingen sanger passer søket.</p>
+
+    <template x-if="selectedSong">
+      <div>
+        <div class="knowledge-summary">
+          <h2 class="section-title knowledge-summary__title" x-text="selectedSong.name"></h2>
+          <ul class="knowledge-summary__counts" aria-label="Antall medlemmer per nivå">
+            <template x-for="level in KNOWLEDGE_LEVELS" :key="level.value">
+              <li :title="level.label"><span class="knowledge-dot" :class="'knowledge-dot--' + level.key" aria-hidden="true"></span><span class="visually-hidden" x-text="level.label + ':'"></span><span x-text="countFor(level.value)"></span></li>
+            </template>
+          </ul>
+        </div>
+
+        <div class="voice-groups">
+          <template x-for="voice in LABELS.voiceGroups" :key="voice">
+            <section class="voice-group" :aria-label="LABELS.voices[voice]">
+              <h3 class="label voice-group__title"><span x-text="LABELS.voices[voice]"></span> <span class="voice-group__count" x-text="membersInVoice(voice).length"></span></h3>
+              <ul class="voice-group__members">
+                <template x-for="member in membersInVoice(voice)" :key="member.id">
+                  <li class="voice-group__member">
+                    <span class="person">
+                      <span class="portrait portrait--small"><img :src="app.memberImage(member)" alt="" loading="lazy"></span>
+                      <span x-text="app.memberName(member)"></span>
+                    </span>
+                    <span class="knowledge-dot" :class="'knowledge-dot--' + knowledgeLevel(app.knowledgeOf(selectedSong.id, member.id)).key"
+                          role="img" :aria-label="knowledgeLevel(app.knowledgeOf(selectedSong.id, member.id)).label" :title="knowledgeLevel(app.knowledgeOf(selectedSong.id, member.id)).label"></span>
+                  </li>
+                </template>
+              </ul>
+            </section>
+          </template>
+        </div>
+      </div>
+    </template>
+  </div>
+</main>
+
+</body>
+</html>

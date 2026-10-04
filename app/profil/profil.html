@@ -1,0 +1,99 @@
+<!doctype html>
+<html lang="nb">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Profil – Mannskoret Arme Riddere</title>
+<link rel="stylesheet" href="../css/global.css">
+<link rel="stylesheet" href="../css/members.css">
+<script defer src="../js/global.js"></script>
+<script defer src="../js/members.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3/dist/cdn.min.js"></script>
+</head>
+<body data-page="profil/profil">
+
+<main>
+  <div class="content" x-data="profilePage()">
+    <template x-if="!member">
+      <div>
+        <h1 class="page-header__title" tabindex="-1">Fant ikke medlemmet</h1>
+        <p class="hint profile-missing">Medlemmet finnes ikke lenger. <a class="text-link" :href="pageHref('medlemmer/medlemmer')">Til medlemslisten</a></p>
+      </div>
+    </template>
+
+    <template x-if="member">
+      <div>
+        <a class="back-link" x-show="!isOwnProfile" :href="pageHref('medlemmer/medlemmer')"><svg aria-hidden="true"><use href="#icon-left"/></svg>Medlemmer</a>
+
+        <section class="profile-card">
+          <span class="portrait portrait--large"><img :src="app.memberImage(member)" alt=""></span>
+          <div class="profile-card__details">
+            <h1 class="page-header__title profile-card__name" tabindex="-1" x-text="app.memberName(member)"></h1>
+            <p class="profile-card__summary" x-text="app.memberSummary(member)"></p>
+            <p class="profile-card__status">
+              <span class="badge" :class="member.status === 'active' ? 'badge--success' : 'badge--muted'" x-text="LABELS.statuses[member.status]"></span>
+              <span x-text="membershipPeriod"></span>
+            </p>
+            <p class="profile-card__roles" x-show="member.roles.length">
+              <template x-for="role in member.roles" :key="role"><span class="badge" x-text="LABELS.roles[role]"></span></template>
+            </p>
+          </div>
+        </section>
+
+        <dl class="profile-stats" x-show="isOwnProfile">
+          <div class="profile-stats__item"><dt>Dager på rad</dt><dd x-text="app.currentStreak(member.id)"></dd></div>
+          <div class="profile-stats__item"><dt>Øvd totalt</dt><dd x-text="format.number(app.totalMinutes(member.id)) + ' min'"></dd></div>
+          <div class="profile-stats__item"><dt>Sanger du kan</dt><dd x-text="app.knownSongCount(member.id)"></dd></div>
+          <div class="profile-stats__item"><dt>Achievements</dt><dd x-text="app.earnedAchievementCount(member.id) + ' av ' + app.db.achievements.length"></dd></div>
+        </dl>
+
+        <div class="profile-sections">
+          <section class="profile-section" x-show="boardPositions.length" aria-labelledby="board-positions-title">
+            <h2 id="board-positions-title" class="section-title">Styreverv</h2>
+            <ul class="list">
+              <template x-for="position in boardPositions" :key="position.key">
+                <li class="list__row"><span class="list__title" x-text="position.title"></span><span class="list__aside" x-text="position.semester"></span></li>
+              </template>
+            </ul>
+          </section>
+
+          <section class="profile-section" x-show="isOwnProfile" aria-labelledby="recent-practice-title">
+            <h2 id="recent-practice-title" class="section-title">Siste øving</h2>
+            <ul class="list" x-show="recentPractice.length">
+              <template x-for="log in recentPractice" :key="log.id">
+                <li class="list__row"><span class="list__title" x-text="format.longDate(format.parseDate(log.date))"></span><span class="list__aside" x-text="log.minutes + ' min'"></span></li>
+              </template>
+            </ul>
+            <p class="empty-state" x-show="!recentPractice.length">Ingen øving registrert ennå.</p>
+          </section>
+
+          <section class="profile-section" x-show="isOwnProfile" aria-labelledby="contact-form-title">
+            <h2 id="contact-form-title" class="section-title">Kontakt nettridder</h2>
+            <form @submit.prevent="sendEmailToNettridder()" class="contact-form">
+              <label for="message">Melding</label>
+              <textarea id="message" x-model="contactMessage" rows="4" class="input" required></textarea>
+              <input type="hidden" x-model="contactSubject">
+              <button type="submit" class="button">Send email</button>
+            </form>
+          </section>
+
+          <section class="profile-section" x-show="!isOwnProfile" aria-labelledby="member-achievements-title">
+            <h2 id="member-achievements-title" class="section-title">Achievements</h2>
+            <ul class="list" x-show="earnedAchievements.length">
+              <template x-for="achievement in earnedAchievements" :key="achievement.id">
+                <li class="list__row">
+                  <span class="profile-achievement"><svg class="profile-achievement__icon" aria-hidden="true"><use href="#icon-medal"/></svg><span class="list__title" x-text="achievement.title"></span></span>
+                  <span class="list__aside" x-text="format.fullDate(achievement.earnedAt)"></span>
+                </li>
+              </template>
+            </ul>
+            <p class="empty-state" x-show="!earnedAchievements.length">Ingen achievements ennå.</p>
+          </section>
+        </div>
+      </div>
+    </template>
+  </div>
+</main>
+
+</body>
+</html>

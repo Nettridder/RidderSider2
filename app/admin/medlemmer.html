@@ -1,0 +1,178 @@
+<!doctype html>
+<html lang="nb">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Admin: Medlemmer – Mannskoret Arme Riddere</title>
+<link rel="stylesheet" href="../css/global.css">
+<link rel="stylesheet" href="../css/members.css">
+<script defer src="../js/global.js"></script>
+<script defer src="../js/members.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3/dist/cdn.min.js"></script>
+</head>
+<body data-page="admin/medlemmer">
+
+<main>
+  <div class="content content--wide" x-data="adminMembersPage()">
+    <div class="page-header">
+      <div>
+        <h1 class="page-header__title" tabindex="-1">Administrer medlemmer</h1>
+        <p class="page-header__intro">Legg til nye riddere, og endre stemme, rang, status og tilgangsroller.</p>
+      </div>
+    </div>
+
+    <form class="admin-form" @submit.prevent="addMember()" novalidate aria-labelledby="add-member-title">
+      <h2 id="add-member-title" class="section-title">Legg til medlem</h2>
+      <div data-form-template="template-member:newMember:new"></div>
+      <p class="hint member-form__invite-hint">Medlemmet får en invitasjon på e-post og velger passord selv. Lenken gjelder i 7 dager.</p>
+      <div class="admin-form__actions">
+        <button class="button" type="submit">Legg til og send invitasjon</button>
+        <button class="button button--secondary" type="button" @click="newMember = emptyMember()">Tøm skjemaet</button>
+      </div>
+    </form>
+
+    <div class="admin-list-header">
+      <div>
+        <h2 class="section-title">Alle medlemmer</h2>
+        <p class="hint" x-text="app.activeMembers.length + ' aktive, ' + app.formerMembers.length + ' ypp.com.'"></p>
+      </div>
+      <div class="member-list-tools">
+        <div class="segmented" role="group" aria-label="Vis medlemmer">
+          <button type="button" :aria-pressed="statusFilter === 'active'" @click="statusFilter = 'active'">Aktive</button>
+          <button type="button" :aria-pressed="statusFilter === 'former'" @click="statusFilter = 'former'">ypp.com.</button>
+          <button type="button" :aria-pressed="statusFilter === 'all'" @click="statusFilter = 'all'">Alle</button>
+        </div>
+        <input class="search-field" type="search" placeholder="Søk etter navn eller e-post" aria-label="Søk i medlemmer" x-model="search">
+      </div>
+    </div>
+
+    <ul class="admin-list members-admin-list">
+      <li class="admin-list__row admin-list__head" aria-hidden="true"><span></span><span>Navn</span><span>Stemme</span><span>Rang</span><span>Status</span><span>Roller</span><span></span></li>
+      <template x-for="member in listedMembers" :key="member.id">
+        <li class="admin-list__row">
+          <span class="portrait portrait--small"><img :src="app.memberImage(member)" alt=""></span>
+          <span class="admin-list__name">
+            <span x-text="app.memberName(member)"></span>
+            <small x-text="member.email"></small>
+            <small class="admin-list__narrow-summary" x-text="memberSummary(member)"></small>
+          </span>
+          <span class="admin-list__cell admin-list__wide-only" x-text="LABELS.voices[member.voice_group]"></span>
+          <span class="admin-list__cell admin-list__wide-only" x-text="LABELS.ranks[member.rank]"></span>
+          <span class="admin-list__wide-only"><span class="badge" :class="member.status === 'active' ? 'badge--success' : 'badge--muted'" x-text="LABELS.statuses[member.status]"></span></span>
+          <span class="member-roles admin-list__wide-only">
+            <template x-for="role in member.roles" :key="role"><span class="badge" x-text="LABELS.roles[role]"></span></template>
+          </span>
+          <span class="admin-list__actions"><button class="button button--secondary button--small" type="button" @click="editMember(member, $event)" :aria-label="'Rediger ' + app.memberName(member)">Rediger</button></span>
+        </li>
+      </template>
+    </ul>
+    <p class="empty-state" x-show="!listedMembers.length">Ingen medlemmer passer søket.</p>
+
+    <div data-edit-drawer>
+      <form @submit.prevent="saveMember()" novalidate>
+        <div class="drawer__body">
+          <div data-form-template="template-member:editedMember:edit"></div>
+          <div class="member-form__invite">
+            <button class="button button--secondary button--small" type="button" @click="sendNewInvitation()">Send ny invitasjon</button>
+            <p class="hint">Sender en ny lenke for å sette passord. Gamle lenker slutter å virke.</p>
+          </div>
+        </div>
+        <div class="drawer__footer">
+          <template x-if="!confirmingDelete">
+            <div class="drawer__footer-group member-form__footer">
+              <button class="button" type="submit">Lagre endringer</button>
+              <button class="button button--danger" type="button" @click="confirmingDelete = true" :disabled="!!deleteBlockedReason(editedMember)" :title="deleteBlockedReason(editedMember)">Fjern medlem</button>
+            </div>
+          </template>
+          <template x-if="confirmingDelete">
+            <div class="drawer__footer-group">
+              <span class="drawer__question" x-text="'Fjerne ' + editedMember.first_name + ' fra medlemslista?'"></span>
+              <button class="button button--danger-filled button--small" type="button" @click="deleteMember()">Ja, fjern</button>
+              <button class="button button--secondary button--small" type="button" @click="confirmingDelete = false">Avbryt</button>
+            </div>
+          </template>
+          <p class="hint member-form__footer-hint" x-show="!confirmingDelete && deleteBlockedReason(editedMember)" x-text="deleteBlockedReason(editedMember)"></p>
+        </div>
+      </form>
+    </div>
+  </div>
+</main>
+
+<template id="template-member">
+  <div class="form-grid">
+    <label class="field" for="ID-first-name">Fornavn
+      <input id="ID-first-name" class="input" type="text" autocomplete="off" x-model="FORM.first_name" :aria-invalid="FORM.submitted && !!memberErrors(FORM).first_name">
+      <span class="field-error" x-show="FORM.submitted && memberErrors(FORM).first_name" x-text="memberErrors(FORM).first_name"></span>
+    </label>
+    <label class="field" for="ID-last-name">Etternavn
+      <input id="ID-last-name" class="input" type="text" autocomplete="off" x-model="FORM.last_name" :aria-invalid="FORM.submitted && !!memberErrors(FORM).last_name">
+      <span class="field-error" x-show="FORM.submitted && memberErrors(FORM).last_name" x-text="memberErrors(FORM).last_name"></span>
+    </label>
+    <label class="field" for="ID-email">E-post
+      <input id="ID-email" class="input" type="email" autocomplete="off" placeholder="navn@example.no" x-model="FORM.email" :aria-invalid="FORM.submitted && !!memberErrors(FORM).email">
+      <span class="field-error" x-show="FORM.submitted && memberErrors(FORM).email" x-text="memberErrors(FORM).email"></span>
+    </label>
+    <label class="field" for="ID-phone">Telefon
+      <input id="ID-phone" class="input" type="tel" autocomplete="off" placeholder="+47 912 34 567" x-model="FORM.phone">
+    </label>
+    <fieldset class="field">
+      <legend>Stemmegruppe</legend>
+      <div class="segmented" role="group" aria-label="Stemmegruppe">
+        <template x-for="voice in LABELS.voiceGroups" :key="voice">
+          <button type="button" :aria-pressed="FORM.voice_group === voice" @click="FORM.voice_group = voice" x-text="LABELS.voices[voice]"></button>
+        </template>
+      </div>
+    </fieldset>
+    <label class="field" for="ID-rank">Rang
+      <select id="ID-rank" class="input" x-model="FORM.rank">
+        <template x-for="(label, key) in LABELS.ranks" :key="key"><option :value="key" x-text="label" :selected="key === FORM.rank"></option></template>
+      </select>
+    </label>
+    <fieldset class="field">
+      <legend>Status</legend>
+      <div class="segmented" role="group" aria-label="Status">
+        <button type="button" :aria-pressed="FORM.status === 'active'" @click="FORM.status = 'active'">Aktiv</button>
+        <button type="button" :aria-pressed="FORM.status === 'former'" @click="FORM.status = 'former'">ypp.com.</button>
+      </div>
+    </fieldset>
+    <fieldset class="field">
+      <legend>Begynte</legend>
+      <div class="input-pair">
+        <label class="visually-hidden" for="ID-joined-term">Semester</label>
+        <select id="ID-joined-term" class="input" x-model="FORM.joined_term"><option value="spring">Vår</option><option value="autumn">Høst</option></select>
+        <label class="visually-hidden" for="ID-joined-year">År</label>
+        <input id="ID-joined-year" class="input" type="number" inputmode="numeric" min="1950" max="2030" x-model.number="FORM.joined_year" :aria-invalid="FORM.submitted && !!memberErrors(FORM).joined_year">
+      </div>
+      <span class="field-error" x-show="FORM.submitted && memberErrors(FORM).joined_year" x-text="memberErrors(FORM).joined_year"></span>
+    </fieldset>
+    <fieldset class="field form-grid__full" x-show="FORM.status === 'former'">
+      <legend>Sluttet (påkrevd for ypp.com.)</legend>
+      <div class="input-pair member-form__left">
+        <label class="visually-hidden" for="ID-left-term">Semester</label>
+        <select id="ID-left-term" class="input" x-model="FORM.left_term" :aria-invalid="FORM.submitted && !!memberErrors(FORM).left"><option value="">Velg</option><option value="spring">Vår</option><option value="autumn">Høst</option></select>
+        <label class="visually-hidden" for="ID-left-year">År</label>
+        <input id="ID-left-year" class="input" type="number" inputmode="numeric" min="1950" max="2030" placeholder="År" x-model="FORM.left_year" :aria-invalid="FORM.submitted && !!memberErrors(FORM).left">
+      </div>
+      <span class="field-error" x-show="FORM.submitted && memberErrors(FORM).left" x-text="memberErrors(FORM).left"></span>
+    </fieldset>
+    <fieldset class="field">
+      <legend>Tilgangsroller</legend>
+      <div class="checkbox-row">
+        <label class="checkbox"><input type="checkbox" value="master" x-model="FORM.roles"> Mester</label>
+        <label class="checkbox"><input type="checkbox" value="notes" x-model="FORM.roles"> Note</label>
+      </div>
+      <span class="field-error" x-show="memberErrors(FORM).roles" x-text="memberErrors(FORM).roles"></span>
+      <span class="hint">Mester gir tilgang til Admin og Note-admin. Note gir tilgang til Note-admin.</span>
+    </fieldset>
+    <div class="field">
+      <span>Profilbilde</span>
+      <div class="file-picker">
+        <label class="file-picker__button"><input class="visually-hidden" type="file" accept="image/*" @change="FORM.new_image_name = $event.target.files[0] ? $event.target.files[0].name : FORM.new_image_name"><span x-text="FORM.new_image_name || FORM.id ? 'Bytt bilde' : 'Velg bilde'"></span></label>
+        <span class="file-picker__name" x-text="FORM.new_image_name || (FORM.id ? FORM.image_file : 'Ingen fil valgt')"></span>
+      </div>
+    </div>
+  </div>
+</template>
+
+</body>
+</html>

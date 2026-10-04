@@ -1,0 +1,87 @@
+<!doctype html>
+<html lang="nb">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Logg inn – Mannskoret Arme Riddere</title>
+<link rel="stylesheet" href="css/global.css">
+<style>
+.login { min-height: 100vh; display: grid; grid-template-columns: 24rem 1fr; place-items: center start; padding: 0; background-size: cover; background-position: center; background-attachment: fixed; }
+.login__panel { width: 100%; height: 100%; background: var(--color-login-background); border-radius: 0; padding: 2.5rem 2rem; display: flex; flex-direction: column; justify-content: center;}
+.login__brand { display: flex; align-items: center; gap: 0.7rem; margin-bottom: 2.5rem; }
+.login__brand img { width: 30px; }
+.login__brand p { margin: 0; font-family: var(--font-heading); font-size: 1.3rem; }
+.login__title { margin: 0 0 1.5rem; font-family: var(--font-heading); font-weight: 350; font-size: 2.4rem; line-height: 1.05; }
+.login__form { display: grid; gap: 1rem; background: var(--color-background); border-radius: var(--radius-small); padding: 1.5rem; margin: 0 -0.5rem; }
+.login__form .field { margin: 0; }
+.login__form .input { background: var(surface--color-); border-color: rgba(255, 255, 255, 0.4); color: var(--color-text); opacity: 0.9;}
+.login__form .input::placeholder { color: rgba(255, 255, 255, 0.8); }
+.login__forgot { justify-self: start; }
+.login__demo { margin-top: 2.5rem; padding-top: 1.25rem; border-top: 1px dashed var(--color-text-faint); display: grid; gap: 0.4rem; }
+.login__demo .label { margin-bottom: 0.3rem; }
+</style>
+<script defer src="js/global.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3/dist/cdn.min.js"></script>
+</head>
+<body data-page="logg-inn">
+
+<main class="login" x-data="loginPage()" @init="init()" :style="`background-image: url('${backgroundImage}')`">
+  <div class="login__panel">
+    <div class="login__brand">
+      <img src="../storage/images/logo.png" alt="">
+      <p>Mannskoret Arme Riddere</p>
+    </div>
+    <h1 class="login__title">Logg inn</h1>
+
+    <form class="login__form" @submit.prevent="logInWithEmail()" novalidate>
+      <label class="field" for="login-email">E-post
+        <input id="login-email" class="input" type="email" autocomplete="username" x-model="email" :aria-invalid="error ? 'true' : null">
+      </label>
+      <label class="field" for="login-password">Passord
+        <input id="login-password" class="input" type="password" autocomplete="current-password" x-model="password">
+      </label>
+      <p class="field-error" x-show="error" x-text="error"></p>
+      <button class="button" type="submit">Logg inn</button>
+      <button class="text-link login__forgot" type="button" @click="forgotPassword()">Glemt passord?</button>
+      <p class="hint" x-show="resetMessage" x-text="resetMessage"></p>
+    </form>
+
+    <section class="login__demo" x-show="$store.app.ready" aria-labelledby="demo-users-title">
+      <h2 id="demo-users-title" class="label">Demo: logg inn som</h2>
+      <template x-for="user in DEMO_USERS" :key="user.memberId">
+        <button class="demo-user" type="button" @click="logInAs(user.memberId)">
+          <span class="portrait portrait--small"><img :src="$store.app.memberImage($store.app.member(user.memberId))" alt=""></span>
+          <span><span class="demo-user__name" x-text="$store.app.memberName($store.app.member(user.memberId))"></span><span class="demo-user__role" x-text="user.description"></span></span>
+        </button>
+      </template>
+    </section>
+    <p class="field-error" x-show="$store.app.loadError" x-cloak>Kunne ikke hente dataene. Åpne siden via en webserver: kjør <code>python3 -m http.server</code> i prosjektmappen og gå til http://localhost:8000/app/.</p>
+  </div>
+</main>
+
+<script>
+function loginPage() {
+  const BACKGROUNDS = ['12-Jon_Danielsen.jpg', '743Aspiranten rømmer.jpg', '9-Jon_Danielsen.jpg'];
+  return {
+    email: '',
+    password: '',
+    error: '',
+    resetMessage: '',
+    backgroundImage: '',
+    init() {
+      const randomBg = BACKGROUNDS[Math.floor(Math.random() * BACKGROUNDS.length)];
+      this.backgroundImage = `../storage/images/backgrounds/${randomBg}`;
+    },
+    logInWithEmail() {
+      const member = this.$store.app.db.members.find(member => member.email === this.email.trim().toLowerCase());
+      if (!member || !this.password) { this.error = 'Feil e-post eller passord.'; return; }
+      logInAs(member.id);
+    },
+    forgotPassword() {
+      this.resetMessage = 'Hvis e-posten finnes, er en lenke for å sette nytt passord sendt.';
+    },
+  };
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,177 @@
+<!doctype html>
+<html lang="nb">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Note-admin: Sanger – Mannskoret Arme Riddere</title>
+<link rel="stylesheet" href="../../felles/global.css">
+<link rel="stylesheet" href="../../felles/admin.css">
+<style>
+  /* list columns for this page */
+  .alist.songs{--cols:minmax(0,1.3fr) minmax(0,1fr) 4.5rem auto;--cols-narrow:minmax(0,1fr) auto}
+</style>
+<script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3/dist/cdn.min.js"></script>
+</head>
+<body data-page="noter/admin/sanger">
+
+<main class="page" x-data="adminSanger()">
+  <div class="inner body wide">
+    <div class="body-h"><div><h1 tabindex="-1">Administrer sanger</h1><p>Legg til sanger med tekst og filer, og rediger det som finnes.</p></div></div>
+    <p class="flash" aria-live="polite" x-text="flash"></p>
+
+    <form class="adm-add" @submit.prevent="create()" novalidate aria-labelledby="add-h">
+      <h2 id="add-h">Legg til sang</h2>
+      <div data-use="tpl-song:nySang:ny"></div>
+      <div class="factions">
+        <button class="btn" type="submit">Legg til sang</button>
+        <button class="btn btn-quiet" type="button" @click="nySang = blank()">Tøm skjemaet</button>
+      </div>
+    </form>
+
+    <div class="adm-list-h">
+      <div><h2>Alle sanger</h2><p x-text="A.songs.length + ' sanger, ' + A.songs.filter(s => s.secret).length + ' hemmelige'"></p></div>
+      <input class="search" type="search" placeholder="Søk etter sang eller sjanger" aria-label="Søk i alle sanger" x-model="q">
+    </div>
+    <ul class="alist songs fold">
+      <li class="hd" aria-hidden="true"><span>Navn</span><span>Sjangere</span><span>Filer</span><span></span></li>
+      <template x-for="s in list" :key="s.id">
+        <li>
+          <span class="an"><span x-text="s.t"></span><span class="tag q" x-show="s.secret">Hemmelig</span>
+            <small class="m-meta" x-text="(s.g.join(', ') || 'Ingen sjanger') + ', ' + files(s)"></small></span>
+          <span class="ac wide-only" x-text="s.g.join(', ') || '–'"></span>
+          <span class="ac num wide-only" x-text="files(s)"></span>
+          <span class="acts"><button class="btn btn-quiet btn-s" type="button" @click="edit(s, $event)" :aria-label="'Rediger ' + s.t">Rediger</button></span>
+        </li>
+      </template>
+    </ul>
+    <p class="empty" x-show="!list.length">Ingen sanger passer søket.</p>
+  </div>
+
+  <div data-drawer>
+    <form @submit.prevent="save()" novalidate>
+      <div class="dp-body"><div data-use="tpl-song:redSang:red"></div></div>
+      <div class="dp-f">
+        <div class="grp spread" x-show="!confirmDel">
+          <button class="btn" type="submit">Lagre endringer</button>
+          <button class="btn btn-danger" type="button" @click="confirmDel=true">Slett sang</button>
+        </div>
+        <div class="grp" x-show="confirmDel">
+          <span class="ask" x-text="'Slette «' + redSang.name + '» og alle filene?'"></span>
+          <button class="btn btn-danger solid btn-s" type="button" @click="remove()">Ja, slett sangen</button>
+          <button class="btn btn-quiet btn-s" type="button" @click="confirmDel=false">Avbryt</button>
+        </div>
+      </div>
+    </form>
+  </div>
+</main>
+
+<!-- one song form, used for "Legg til" and for "Rediger" -->
+<template id="tpl-song">
+  <div class="fgrid">
+    <label class="f span2" for="__P__-name">Navn
+      <input id="__P__-name" class="fld" type="text" x-model="__F__.name" placeholder="For eksempel Nidelven" :aria-invalid="__F__.tried && !__F__.name.trim()">
+    </label>
+    <p class="err span2" x-show="__F__.tried && !__F__.name.trim()">Skriv inn navnet på sangen.</p>
+    <fieldset class="f span2">
+      <legend>Sjangere</legend>
+      <div class="gchips">
+        <template x-for="g in RD.GENRES" :key="g">
+          <button type="button" class="gchip" :aria-pressed="__F__.genres.includes(g)" @click="toggleIn(__F__.genres, g)"><svg aria-hidden="true"><use href="#i-check"/></svg><span x-text="g"></span></button>
+        </template>
+      </div>
+    </fieldset>
+    <div class="f span2">
+      <label class="toggle"><input type="checkbox" x-model="__F__.secret"><span class="sw" aria-hidden="true"></span>Hemmelig</label>
+      <p class="hint">Hemmelige sanger vises bare for medlemmer når de ligger i et synlig repertoar.</p>
+    </div>
+    <label class="f span2" for="__P__-lyr">Tekst
+      <textarea id="__P__-lyr" class="fld" rows="4" x-model="__F__.lyrics" placeholder="Lim inn sangteksten"></textarea>
+    </label>
+    <label class="f span2" for="__P__-cho">Koreografilenke
+      <input id="__P__-cho" class="fld" type="url" x-model="__F__.choreo" placeholder="https://youtube.com/watch?v=…">
+    </label>
+    <fieldset class="f span2">
+      <legend>Filer</legend>
+      <div class="files">
+        <template x-for="(r,i) in __F__.files" :key="r.key">
+          <div class="frow">
+            <label class="f f-name" :for="'__P__-fn-'+r.key">Visningsnavn
+              <input :id="'__P__-fn-'+r.key" class="fld" type="text" x-model="r.name" placeholder="1. tenor">
+            </label>
+            <label class="f" :for="'__P__-fv-'+r.key">Stemme
+              <select :id="'__P__-fv-'+r.key" class="fld" x-model="r.voice">
+                <option>T1</option><option>T2</option><option>T3</option><option>B1</option><option>B2</option><option>Tutti</option>
+              </select>
+            </label>
+            <label class="f" :for="'__P__-ft-'+r.key">Type
+              <select :id="'__P__-ft-'+r.key" class="fld" x-model="r.type">
+                <option value="audio">Lyd</option><option value="sheet">Noter</option><option value="pitch">Toneangiver</option>
+              </select>
+            </label>
+            <div class="f f-file"><span>Fil</span>
+              <div class="pickwrap">
+                <label class="pick"><input type="file" class="sr" :accept="r.type==='sheet' ? '.pdf' : 'audio/*'" @change="r.file = $event.target.files[0] ? $event.target.files[0].name : r.file"><span x-text="r.file ? 'Bytt fil' : 'Velg fil'"></span></label>
+                <span class="fname" :class="r.file && 'has'" x-text="r.file || 'Ingen fil valgt'"></span>
+              </div>
+            </div>
+            <button type="button" class="rm" @click="__F__.files.splice(i,1)" :aria-label="'Fjern filraden ' + (r.name || (i+1))"><svg aria-hidden="true"><use href="#i-x"/></svg></button>
+          </div>
+        </template>
+        <p class="hint" x-show="!__F__.files.length">Ingen filer ennå. Legg til noter, lydfiler per stemme eller toneangiver.</p>
+        <div><button class="btn btn-quiet btn-s" type="button" @click="addFile(__F__)">Legg til fil</button></div>
+      </div>
+    </fieldset>
+  </div>
+</template>
+
+<script src="../../felles/data.js"></script>
+<script src="../../felles/meny.js"></script>
+<script src="../../felles/admin.js"></script>
+<script>
+function adminSanger(){
+  return {
+    ...adminBase(),
+    nySang:null, redSang:null,
+    init(){ this.nySang = this.blank(); this.redSang = this.blank(); },
+    get A(){ return this.$store.app },
+    get list(){
+      const q = this.q.trim().toLowerCase();
+      return this.A.songs.filter(s => !q || (s.t+' '+s.g.join(' ')).toLowerCase().includes(q));
+    },
+    get drawerTitle(){ return 'Rediger sang' },
+    get drawerSub(){ return (this.A.songById(this.redSang && this.redSang.id) || {}).t || '' },
+    files(s){ return s.files.length + (s.files.length===1 ? ' fil' : ' filer') },
+    blank(){ return {id:null, name:'', genres:[], secret:false, lyrics:'', choreo:'', files:[], tried:false} },
+    addFile(F){ F.files.push({key:++this._k, name:'', voice:'Tutti', type:'audio', file:''}); },
+    cleanFiles(F){ return F.files.map(({key, ...f}) => ({...f, name: f.name || RD.voiceName(f.voice)})); },
+    create(){
+      const F = this.nySang; F.tried = true;
+      if(!F.name.trim()){ this.focusFirstInvalid(); return; }
+      const id = Math.max(-1, ...this.A.songs.map(s => s.id)) + 1;
+      this.A.songs.push({id, t:F.name.trim(), g:[...F.genres], pitch:[], k:'ikke', secret:F.secret, lyrics:F.lyrics, choreo:F.choreo, files:this.cleanFiles(F)});
+      this.nySang = this.blank();
+      this.say(`«${F.name.trim()}» er lagt til` + (F.secret ? ' som hemmelig.' : '.'));
+    },
+    edit(s, e){
+      this.redSang = {id:s.id, name:s.t, genres:[...s.g], secret:s.secret, lyrics:s.lyrics, choreo:s.choreo, tried:false,
+        files:s.files.map(f => ({...f, key:++this._k}))};
+      this.openDrawer('song', e);
+    },
+    save(){
+      const F = this.redSang; F.tried = true;
+      if(!F.name.trim()){ this.focusFirstInvalid(); return; }
+      const s = this.A.songById(F.id);
+      Object.assign(s, {t:F.name.trim(), g:[...F.genres], secret:F.secret, lyrics:F.lyrics, choreo:F.choreo, files:this.cleanFiles(F)});
+      this.closeDrawer(); this.say(`Endringene i «${s.t}» er lagret.`);
+    },
+    remove(){
+      const id = this.redSang.id, name = (this.A.songById(id) || {}).t;
+      this.A.songs = this.A.songs.filter(s => s.id!==id);
+      this.A.reps.forEach(r => { r.songs = r.songs.filter(x => x!==id); });
+      this.closeDrawer(false); this.say(`«${name}» er slettet.`); this.focusHeading();
+    },
+  };
+}
+</script>
+</body>
+</html>

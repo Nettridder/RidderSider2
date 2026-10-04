@@ -1,0 +1,95 @@
+<!doctype html>
+<html lang="nb">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Admin: Dokumenter – Mannskoret Arme Riddere</title>
+<link rel="stylesheet" href="../css/global.css">
+<link rel="stylesheet" href="../css/documents.css">
+<script defer src="../js/global.js"></script>
+<script defer src="../js/documents.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3/dist/cdn.min.js"></script>
+</head>
+<body data-page="admin/dokumenter">
+
+<main>
+  <div class="content content--wide" x-data="adminDocumentsPage()">
+    <div class="page-header">
+      <div>
+        <h1 class="page-header__title" tabindex="-1">Administrer dokumenter</h1>
+        <p class="page-header__intro">Styrereferater og andre filer i dokumentarkivet. Det nyeste dokumentet vises på Hjem.</p>
+      </div>
+    </div>
+
+    <form class="admin-form" @submit.prevent="uploadDocument()" novalidate aria-labelledby="upload-title">
+      <h2 id="upload-title" class="section-title">Last opp dokument</h2>
+      <div data-form-template="template-document:newDocument:new"></div>
+      <div class="admin-form__actions">
+        <button class="button" type="submit">Last opp</button>
+      </div>
+    </form>
+
+    <div class="admin-list-header">
+      <div>
+        <h2 class="section-title">Alle dokumenter</h2>
+        <p class="hint" x-text="db.documents.length + ' dokumenter, nyeste først'"></p>
+      </div>
+      <input class="search-field" type="search" placeholder="Søk etter tittel" aria-label="Søk i dokumenter" x-model="search">
+    </div>
+    <ul class="admin-list documents-admin-list">
+      <li class="admin-list__row admin-list__head" aria-hidden="true"><span>Tittel</span><span>Type</span><span>Lagt ut av</span><span>Dato</span><span></span></li>
+      <template x-for="document in listedDocuments" :key="document.id">
+        <li class="admin-list__row">
+          <span class="admin-list__name">
+            <span x-text="document.title"></span>
+            <small x-text="document.file"></small>
+            <small class="admin-list__narrow-summary" x-text="fileType(document.file) + ', ' + app.memberName(app.member(document.created_by)) + ', ' + format.fullDate(format.parseDate(document.created_at))"></small>
+          </span>
+          <span class="admin-list__wide-only"><span class="badge badge--muted" x-text="fileType(document.file)"></span></span>
+          <span class="admin-list__cell admin-list__wide-only" x-text="app.memberName(app.member(document.created_by))"></span>
+          <span class="admin-list__cell admin-list__wide-only" x-text="format.fullDate(format.parseDate(document.created_at))"></span>
+          <span class="admin-list__actions" x-show="confirmingDeleteId !== document.id">
+            <button class="button button--secondary button--small" type="button" @click="editDocument(document, $event)" :aria-label="'Rediger ' + document.title">Rediger</button>
+            <button class="button button--danger button--small" type="button" @click="confirmingDeleteId = document.id" :aria-label="'Slett ' + document.title">Slett</button>
+          </span>
+          <span class="admin-list__confirm" x-show="confirmingDeleteId === document.id">
+            <span x-text="'Slette «' + document.title + '»?'"></span>
+            <button class="button button--danger-filled button--small" type="button" @click="deleteDocument(document)">Ja, slett</button>
+            <button class="button button--secondary button--small" type="button" @click="confirmingDeleteId = null">Avbryt</button>
+          </span>
+        </li>
+      </template>
+    </ul>
+    <p class="empty-state" x-show="!listedDocuments.length">Ingen dokumenter passer søket.</p>
+
+    <div data-edit-drawer>
+      <form @submit.prevent="saveDocument()" novalidate>
+        <div class="drawer__body"><div data-form-template="template-document:editedDocument:edit"></div></div>
+        <div class="drawer__footer">
+          <button class="button" type="submit">Lagre endringer</button>
+          <button class="button button--secondary" type="button" @click="closeDrawer()">Avbryt</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</main>
+
+<template id="template-document">
+  <div class="form-grid">
+    <label class="field" for="ID-title">Tittel
+      <input id="ID-title" class="input" type="text" placeholder="For eksempel Styrereferat 22.10.2026" x-model="FORM.title" :aria-invalid="FORM.submitted && !!documentErrors(FORM).title">
+      <span class="field-error" x-show="FORM.submitted && documentErrors(FORM).title" x-text="documentErrors(FORM).title"></span>
+    </label>
+    <div class="field">
+      <span x-text="FORM.id ? 'Bytt fil (valgfritt)' : 'Fil (PDF eller Word)'"></span>
+      <div class="file-picker">
+        <label class="file-picker__button"><input class="visually-hidden" type="file" accept=".pdf,.docx,.doc" @change="FORM.new_file = $event.target.files[0] ? $event.target.files[0].name : FORM.new_file" :aria-invalid="FORM.submitted && !!documentErrors(FORM).file ? 'true' : null"><span x-text="FORM.new_file || FORM.id ? 'Bytt fil' : 'Velg fil'"></span></label>
+        <span class="file-picker__name" x-text="FORM.new_file || FORM.file || 'Ingen fil valgt'"></span>
+      </div>
+      <span class="field-error" x-show="FORM.submitted && documentErrors(FORM).file" x-text="documentErrors(FORM).file"></span>
+    </div>
+  </div>
+</template>
+
+</body>
+</html>

@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="nb">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Achievements – Mannskoret Arme Riddere</title>
+<link rel="stylesheet" href="../css/global.css">
+<link rel="stylesheet" href="../css/members.css">
+<script defer src="../js/global.js"></script>
+<script defer src="../js/members.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3/dist/cdn.min.js"></script>
+</head>
+<body data-page="profil/achievements">
+
+<main>
+  <div class="content" x-data="achievementsPage()">
+    <div class="page-header">
+      <div>
+        <h1 class="page-header__title" tabindex="-1">Achievements</h1>
+        <p class="page-header__intro" x-text="earnedCount + ' av ' + achievements.length + ' oppnådd. De gis automatisk når du klarer dem.'"></p>
+      </div>
+    </div>
+    <ul class="achievement-grid">
+      <template x-for="achievement in achievements" :key="achievement.id">
+        <li class="achievement-card" :class="achievement.earnedAt ? 'achievement-card--earned' : 'achievement-card--locked'">
+          <svg class="achievement-card__icon" aria-hidden="true"><use href="#icon-medal"/></svg>
+          <h2 class="achievement-card__title" x-text="achievement.title"></h2>
+          <p class="achievement-card__description" x-text="achievement.description"></p>
+          <p class="achievement-card__status" x-text="achievement.earnedAt ? 'Oppnådd ' + format.fullDate(achievement.earnedAt) : 'Ikke oppnådd ennå'"></p>
+        </li>
+      </template>
+    </ul>
+  </div>
+</main>
+
+</body>
+</html>

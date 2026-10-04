@@ -1,0 +1,164 @@
+<!doctype html>
+<html lang="nb">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Sang – Mannskoret Arme Riddere</title>
+<link rel="stylesheet" href="../css/global.css">
+<link rel="stylesheet" href="../css/songs.css">
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<script defer src="../js/global.js"></script>
+<script defer src="../js/songs.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3/dist/cdn.min.js"></script>
+</head>
+<body data-page="noter/sang">
+
+<main>
+  <div class="content content--wide" x-data="songPage()">
+    <a class="back-link" href="sanger.html"><svg aria-hidden="true"><use href="#icon-left"/></svg>Alle sanger</a>
+
+    <template x-if="!song">
+      <div class="access-notice">
+        <h1>Fant ikke sangen</h1>
+        <p>Sangen finnes ikke, eller den er ikke tilgjengelig for deg.</p>
+        <a class="button button--secondary" href="sanger.html">Til Sanger</a>
+      </div>
+    </template>
+
+    <template x-if="song">
+      <div class="song-page">
+        <header class="song-header">
+          <div class="song-header__text">
+            <h1 class="page-header__title" tabindex="-1" x-text="song.name"></h1>
+            <p class="page-header__intro">
+              <span x-text="app.songGenreNames(song.id)"></span>
+              <span class="badge badge--muted" x-show="song.is_secret">Hemmelig, ikke del</span>
+            </p>
+          </div>
+          <div class="song-header__actions">
+            <div class="knowledge-picker" role="group" aria-label="Hvor godt kan du sangen">
+              <template x-for="level in KNOWLEDGE_LEVELS" :key="level.value">
+                <button type="button" :aria-pressed="app.knowledgeOf(song.id) === level.value" @click="app.setKnowledge(song.id, level.value)" :aria-label="level.label" :title="level.label">
+                  <span class="knowledge-dot" :class="'knowledge-dot--' + level.key"></span>
+                </button>
+              </template>
+            </div>
+            <button class="favorite-button" type="button" :aria-pressed="app.isFavorite(song.id)" @click="app.toggleFavorite(song.id)" :aria-label="app.isFavorite(song.id) ? 'Fjern fra favoritter' : 'Legg til i favoritter'">
+              <svg aria-hidden="true"><use href="#icon-heart"/></svg>
+            </button>
+          </div>
+        </header>
+
+        <div class="start-notes-row" x-show="startNotes.length">
+          <span class="label">Starttoner</span>
+          <button type="button" class="button button--secondary button--small" @click="playStartTones()">
+            <svg aria-hidden="true"><use href="#icon-play"/></svg>Spill alle
+          </button>
+          <div class="start-notes">
+            <template x-for="(note, index) in startNotes" :key="note.id">
+              <button type="button" class="start-note" :class="isPlayingNote(song.id, index) && 'is-playing'" @click="playNote(song.id, startNotes, index)" :aria-label="'Spill ' + (note.voice ? LABELS.voices[note.voice] : 'tutti') + ', ' + note.start_note">
+                <span class="start-note__voice" x-text="note.voice || 'Tutti'"></span>
+                <span class="start-note__pitch"><span x-text="noteParts(note.start_note).letter"></span><span class="start-note__accidental" x-show="noteParts(note.start_note).accidental" x-text="noteParts(note.start_note).accidental"></span><span x-text="noteParts(note.start_note).octave"></span></span>
+              </button>
+            </template>
+          </div>
+        </div>
+
+        <section class="player" :class="!playerOpen && 'player--fixed'" aria-label="Lydspiller">
+          <template x-if="!tracks.length">
+            <p class="empty-state player__empty">Ingen lydfiler er lagt ut for denne sangen ennå.</p>
+          </template>
+          <template x-if="tracks.length">
+            <div class="player__controls" role="group" aria-label="Lydspiller kontroller">
+              <label class="player__speed">
+                <select class="input" x-model.number="speed" @change="applySpeed()">
+                  <option value="0.5">50 %</option><option value="0.75">75 %</option><option value="0.8">80 %</option><option value="0.9">90 %</option><option value="1">100 %</option><option value="1.1">110 %</option><option value="1.25">125 %</option><option value="1.5">150 %</option><option value="2">200 %</option>
+                </select>
+              </label>
+
+              <button type="button" class="player__skip" @click="seekBy(-10)" aria-label="10 sekunder tilbake"><svg aria-hidden="true"><use href="#icon-back-10"/></svg></button>
+              <button type="button" class="player__play" @click="togglePlay()" :aria-label="isPlaying ? 'Pause' : 'Spill av'">
+                <svg aria-hidden="true"><use :href="isPlaying ? '#icon-pause' : '#icon-play'"/></svg>
+              </button>
+              <button type="button" class="player__skip" @click="seekBy(10)" aria-label="10 sekunder fram"><svg aria-hidden="true"><use href="#icon-forward-10"/></svg></button>
+
+              <div class="player__timeline">
+                <input class="player__seek" type="range" min="0" :max="duration || 0" step="0.1" :value="currentTime" @input="seekTo(Number($event.target.value))" aria-label="Posisjon i sangen"
+                       :style="`--progress:${duration ? currentTime / duration * 100 : 0}%`">
+                <div class="player__times"><span x-text="format.duration(currentTime)"></span><span x-text="format.duration(duration)"></span></div>
+              </div>
+
+              <div class="player__voice-dropdown">
+                <div class="player__voice-select" @click.away="showVoiceMenu = false">
+                  <button type="button" class="button button--secondary" @click="toggleVoiceMenu()" :aria-label="mode === 'mix' ? 'Miks valgt' : 'Stemme valgt'">
+                    <span x-text="mode === 'mix' ? 'MIX' : (selectedVoiceTrack ? voiceAbbr(selectedVoiceTrack.voice) : 'Stemmer')"></span>
+                  </button>
+                  <div class="dropdown" x-show="showVoiceMenu">
+                    <template x-if="mixTrack">
+                      <button type="button" class="dropdown-item" @click="setMode('mix'); showVoiceMenu = false" :class="mode === 'mix' && 'dropdown-item--active'">
+                        <span>MIX</span>
+                      </button>
+                    </template>
+                    <template x-for="track in voiceTracks" :key="track.id">
+                      <button type="button" class="dropdown-item" @click="selectVoice(track); showVoiceMenu = false" :class="mode === 'voices' && selectedVoiceTrack === track && 'dropdown-item--active'">
+                        <span x-text="voiceAbbr(track.voice)"></span>
+                        <span x-show="track.voice === app.me.voice_group" class="badge">Din stemme</span>
+                      </button>
+                    </template>
+                  </div>
+                </div>
+              </div>
+
+              <button type="button" class="player__minimize" @click="togglePlayer()" aria-label="Minimér spiller">
+                <svg aria-hidden="true"><use href="#icon-up"/></svg>
+              </button>
+            </div>
+          </template>
+        </section>
+
+        <button class="player-toggle" x-show="!playerOpen && tracks.length" @click="togglePlayer()" type="button" aria-label="Gjør spiller sticky">
+          <svg aria-hidden="true"><use href="#icon-down"/></svg>
+        </button>
+
+        <section class="song-materials" aria-label="Noter, video og tekst">
+          <div class="segmented song-materials__tabs" role="tablist" aria-label="Innhold">
+            <template x-for="tab in tabs" :key="tab.key">
+              <button type="button" role="tab" :aria-selected="activeTab === tab.key" :aria-pressed="activeTab === tab.key" @click="activeTab = tab.key" x-text="tab.label"></button>
+            </template>
+          </div>
+
+          <div x-show="activeTab === 'sheet'" role="tabpanel">
+            <template x-if="sheetUrl">
+              <div class="sheet-viewer">
+                <div class="sheet-pages" id="sheet-pages"></div>
+                <div class="button-row">
+                  <a class="button button--secondary button--small" :href="sheetUrl" target="_blank" rel="noopener"><svg aria-hidden="true"><use href="#icon-external"/></svg>Åpne i ny fane</a>
+                  <a class="button button--secondary button--small" :href="sheetUrl" download><svg aria-hidden="true"><use href="#icon-download"/></svg>Last ned PDF</a>
+                </div>
+              </div>
+            </template>
+            <p class="empty-state" x-show="!sheetUrl">Notene er ikke lagt ut ennå.</p>
+          </div>
+
+          <div x-show="activeTab === 'video'" role="tabpanel">
+            <template x-if="youtubeId">
+              <div class="video-frame"><iframe :src="'https://www.youtube-nocookie.com/embed/' + youtubeId" :title="'Koreografi for ' + song.name" allow="encrypted-media; picture-in-picture" allowfullscreen></iframe></div>
+            </template>
+            <template x-if="videoFileUrl">
+              <video class="video-frame" controls preload="metadata" :src="videoFileUrl"></video>
+            </template>
+            <p class="empty-state" x-show="!song.choreography_url">Ingen koreografivideo for denne sangen.</p>
+          </div>
+
+          <div x-show="activeTab === 'lyrics'" role="tabpanel">
+            <p class="lyrics" x-show="song.lyrics" x-text="song.lyrics"></p>
+            <p class="empty-state" x-show="!song.lyrics">Teksten er ikke lagt inn ennå.</p>
+          </div>
+        </section>
+      </div>
+    </template>
+  </div>
+</main>
+
+</body>
+</html>

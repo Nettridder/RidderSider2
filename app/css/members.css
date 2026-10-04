@@ -1,0 +1,158 @@
+/* Members: member lists, profiles, board, achievements, attendance, and the Medlemmer / Profil / Admin member pages. */
+
+/* ==================== Medlemmer (medlemmer/medlemmer) ==================== */
+
+.member-controls { display: flex; flex-wrap: wrap; gap: 0.75rem; margin-bottom: 1.5rem; }
+.person:hover .list__title > span:first-child { text-decoration: underline; text-decoration-color: var(--color-accent); text-underline-offset: 4px; }
+.member-gallery { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(8.5rem, 1fr)); gap: 1.75rem 1.25rem; }
+.member-gallery__card { display: block; }
+.member-gallery__portrait { width: 100%; height: auto; aspect-ratio: 4 / 5; border-radius: 6px; }
+.member-gallery__name { display: block; margin-top: 0.7rem; font-weight: 500; font-size: 0.95rem; }
+.member-gallery__details { display: block; color: var(--color-text-faint); font-size: 0.85rem; }
+.member-gallery__card:hover .member-gallery__name { text-decoration: underline; text-decoration-color: var(--color-accent); text-underline-offset: 4px; }
+@media (max-width: 720px) {
+  .member-gallery { grid-template-columns: repeat(auto-fill, minmax(6.5rem, 1fr)); gap: 1.25rem 0.9rem; }
+}
+
+/* ==================== Styret (medlemmer/styret) ==================== */
+
+.board-gallery { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(7.25rem, 1fr)); gap: 1.75rem 1rem; }
+.board-gallery__card { display: block; }
+.board-gallery__portrait { width: 100%; height: auto; aspect-ratio: 4 / 5; border-radius: 6px; }
+.board-gallery__position { display: block; margin-top: 0.7rem; font-size: 0.82rem; color: var(--color-accent-bright); }
+.board-gallery__name { display: block; font-weight: 500; font-size: 0.95rem; }
+.board-gallery__card[href]:hover .board-gallery__name { text-decoration: underline; text-decoration-color: var(--color-accent); text-underline-offset: 4px; }
+.board-history + .board-history { margin-top: 2.25rem; }
+.board-history__semester { margin: 0 0 0.5rem; font-family: var(--font-heading); font-weight: 450; font-size: 1.2rem; color: var(--color-text-dim); }
+
+/* ==================== Profil (profil/profil) ==================== */
+
+.profile-card { display: flex; align-items: flex-end; gap: 1.75rem; margin-bottom: 2rem; }
+.profile-card__details { min-width: 0; }
+.profile-card__name { margin-bottom: 0.35rem; }
+.profile-card__summary { margin: 0 0 0.6rem; color: var(--color-text-dim); font-size: 1.02rem; }
+.profile-card__status { display: flex; align-items: center; gap: 0.6rem; flex-wrap: wrap; margin: 0 0 0.6rem; color: var(--color-text-faint); font-size: 0.9rem; }
+.profile-card__roles { display: flex; gap: 0.35rem; flex-wrap: wrap; margin: 0 0 0.8rem; }
+.profile-card__links { display: flex; gap: 0.6rem; flex-wrap: wrap; }
+.profile-stats { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 1px; margin: 0 0 2.5rem; background: var(--color-border-soft); border: 1px solid var(--color-border-soft); border-radius: var(--radius); overflow: hidden; }
+.profile-stats__item { background: var(--color-surface); padding: 1rem 1.1rem; }
+.profile-stats dt { font-size: 0.84rem; color: var(--color-text-faint); }
+.profile-stats dd { margin: 0.2rem 0 0; font-family: var(--font-heading); font-size: 1.6rem; font-weight: 450; font-variant-numeric: tabular-nums; }
+.profile-sections { display: grid; gap: 2.25rem; }
+.profile-achievement { display: flex; align-items: center; gap: 0.6rem; min-width: 0; }
+.profile-achievement__icon { width: 1.2rem; height: 1.2rem; color: var(--color-accent-bright); flex: none; }
+.profile-missing { margin-top: 0.8rem; }
+@media (max-width: 720px) {
+  .profile-card { flex-direction: column; align-items: flex-start; gap: 1.1rem; }
+  .profile-card .portrait--large { width: 7rem; height: 8.75rem; }
+  .profile-stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
+/* ==================== Achievements (profil/achievements) ==================== */
+
+.achievement-grid { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(14rem, 1fr)); gap: 1rem; }
+.achievement-card { background: var(--color-surface); border: 1px solid var(--color-border-soft); border-radius: var(--radius); padding: 1.25rem 1.25rem 1.1rem; }
+.achievement-card__icon { width: 2.4rem; height: 2.4rem; margin-bottom: 0.8rem; }
+.achievement-card__title { margin: 0 0 0.3rem; font-family: var(--font-heading); font-weight: 450; font-size: 1.25rem; }
+.achievement-card__description { margin: 0 0 0.9rem; color: var(--color-text-dim); font-size: 0.92rem; }
+.achievement-card__status { margin: 0; font-size: 0.84rem; }
+.achievement-card--earned { border-color: var(--color-accent); background: linear-gradient(var(--color-accent-soft), var(--color-accent-soft)), var(--color-surface); }
+.achievement-card--earned .achievement-card__icon { color: var(--color-accent-bright); }
+.achievement-card--earned .achievement-card__status { color: var(--color-accent-bright); }
+.achievement-card--locked .achievement-card__icon { color: var(--color-text-faint); opacity: 0.5; }
+.achievement-card--locked .achievement-card__title, .achievement-card--locked .achievement-card__description { color: var(--color-text-faint); }
+.achievement-card--locked .achievement-card__status { color: var(--color-text-faint); }
+
+/* ==================== Innstillinger (profil/innstillinger) ==================== */
+
+.settings-card { display: grid; gap: 1.25rem; margin-bottom: 2.5rem; }
+.settings-question { gap: 0.8rem; }
+.settings-question__text { color: var(--color-text); font-family: var(--font-heading); font-size: 1.2rem; line-height: 1.35; margin-bottom: 0.8rem !important; }
+.settings-admin { margin-bottom: 2.5rem; }
+.settings-admin__body { display: flex; align-items: flex-start; gap: 1.5rem; margin-bottom: 0.9rem; }
+.settings-admin__portrait { width: 5.5rem; height: 6.9rem; }
+.settings-admin__details { margin: 0; display: grid; gap: 0.6rem; min-width: 0; }
+.settings-admin__details dt { font-size: 0.82rem; color: var(--color-text-faint); }
+.settings-admin__details dd { margin: 0; overflow-wrap: anywhere; }
+.settings-password .hint { margin-bottom: 0.9rem; }
+.settings-question .segmented { justify-self: start; }
+
+/* ==================== Admin: Medlemmer (admin/medlemmer) ==================== */
+
+.members-admin-list { --columns: 32px minmax(0, 1.5fr) 5.4rem minmax(0, 1fr) 5.4rem 7.5rem auto; --columns-narrow: 32px minmax(0, 1fr) auto; }
+.member-list-tools { display: flex; flex-wrap: wrap; gap: 0.75rem; align-items: center; }
+.member-roles { display: flex; gap: 0.3rem; flex-wrap: wrap; }
+.member-form__invite-hint { margin-top: 1rem; }
+.member-form__left { max-width: 17rem; }
+.member-form__owner-note { color: var(--color-accent-bright); }
+.member-form__invite { display: grid; gap: 0.4rem; justify-items: start; margin-top: 1.5rem; padding-top: 1.25rem; border-top: 1px solid var(--color-border-soft); }
+.member-form__footer { justify-content: space-between; width: 100%; }
+.member-form__footer-hint { width: 100%; text-align: right; }
+@media (max-width: 720px) {
+  .member-list-tools { width: 100%; }
+  .member-form__footer-hint { text-align: left; }
+}
+
+/* ==================== Admin: Styret (admin/styret) ==================== */
+
+.board-form__positions { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.9rem 1.1rem; margin-bottom: 0.6rem; }
+.board-form__position { display: grid; grid-template-columns: minmax(0, 1fr) 5rem; gap: 0.5rem; align-items: end; }
+.board-admin-history { display: grid; gap: 1rem; }
+.board-card__header { display: flex; align-items: center; justify-content: space-between; gap: 0.75rem 1rem; flex-wrap: wrap; margin-bottom: 1rem; }
+.board-card__title { margin: 0; font-family: var(--font-heading); font-weight: 450; font-size: 1.25rem; display: flex; align-items: center; gap: 0.6rem; flex-wrap: wrap; }
+.board-card__positions { margin: 0; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0.9rem 1.25rem; }
+.board-card__position dt { font-size: 0.82rem; color: var(--color-text-faint); }
+.board-card__position dd { margin: 0.1rem 0 0; }
+.board-card__empty { color: var(--color-text-faint); }
+.drawer .board-form__positions { grid-template-columns: minmax(0, 1fr); }
+@media (max-width: 720px) {
+  .board-form__positions { grid-template-columns: minmax(0, 1fr); }
+  .board-card__positions { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
+/* ==================== Admin: Opptellinger (admin/opptellinger) ==================== */
+
+.attendance-form__top { display: flex; align-items: flex-end; justify-content: space-between; gap: 1rem; flex-wrap: wrap; margin-bottom: 1.25rem; }
+.attendance-form__top .section-title { margin-bottom: 0.2rem; }
+.attendance-form__date { width: 12rem; }
+.attendance-form__date .input { color-scheme: dark; }
+.attendance-form__toolbar { display: flex; align-items: center; justify-content: space-between; gap: 1rem; flex-wrap: wrap; padding: 0.75rem 0; border-top: 1px solid var(--color-border-soft); border-bottom: 1px solid var(--color-border-soft); margin-bottom: 1.25rem; }
+.attendance-form__count { margin: 0; color: var(--color-text-dim); }
+.attendance-form__count b { color: var(--color-text); font-family: var(--font-heading); font-size: 1.4rem; font-weight: 450; font-variant-numeric: tabular-nums; }
+.attendance-groups { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1.25rem 1.5rem; }
+.attendance-group { border: 0; margin: 0; padding: 0; min-width: 0; }
+.attendance-group legend { padding: 0; margin-bottom: 0.5rem; }
+.attendance-group__members { display: grid; gap: 0.4rem; }
+.attendance-member {
+  display: flex; align-items: center; gap: 0.75rem; width: 100%; min-height: 3.25rem; padding: 0.4rem 0.75rem 0.4rem 0.45rem; text-align: left; cursor: pointer;
+  background: var(--color-background); border: 1px solid var(--color-border-soft); border-radius: var(--radius-small); color: var(--color-text-dim);
+  transition: border-color 0.15s, background 0.15s, color 0.15s;
+}
+.attendance-member:hover { border-color: var(--color-text-faint); color: var(--color-text); }
+.attendance-member[aria-pressed="true"] { background: var(--color-known-soft); border-color: rgba(143, 184, 122, 0.55); color: var(--color-text); }
+.attendance-member__name { flex: 1; min-width: 0; }
+.attendance-member__check { width: 1.5rem; height: 1.5rem; border-radius: 50%; border: 1.5px solid var(--color-border); display: grid; place-items: center; flex: none; }
+.attendance-member__check svg { width: 0.85rem; height: 0.85rem; opacity: 0; color: #13200d; }
+.attendance-member[aria-pressed="true"] .attendance-member__check { background: var(--color-known); border-color: var(--color-known); }
+.attendance-member[aria-pressed="true"] .attendance-member__check svg { opacity: 1; }
+.attendance-history { --columns: minmax(0, 1.4fr) 7rem minmax(0, 1fr) auto; --columns-narrow: minmax(0, 1fr) auto; }
+.attendance-history__row--open .admin-list__name > span:first-child { color: var(--color-accent-bright); }
+@media (max-width: 720px) {
+  .attendance-groups { grid-template-columns: minmax(0, 1fr); }
+  .attendance-form__date { width: 100%; }
+}
+
+/* ==================== Admin: Achievements (admin/achievements) ==================== */
+
+.achievements-admin-list { --columns: 2.5rem minmax(0, 1.8fr) minmax(0, 1fr) 8rem auto; --columns-narrow: 2.5rem minmax(0, 1fr) auto; }
+.achievement-icon { width: 2.5rem; height: 2.5rem; border-radius: 50%; display: grid; place-items: center; background: var(--color-accent-soft); color: var(--color-accent-bright); }
+.achievement-icon svg { width: 1.3rem; height: 1.3rem; }
+.achievement-key { color: var(--color-text-faint); font-size: 0.78rem !important; letter-spacing: 0.01em; }
+.achievement-key--readonly { margin: 0; padding: 0.55rem 0.8rem; background: var(--color-background); border: 1px dashed var(--color-border); border-radius: var(--radius-small); font-size: 0.9rem !important; }
+.achievements-admin__hint { margin-top: 1rem; }
+.achievement-holders { margin-top: 1.75rem; padding-top: 1.25rem; border-top: 1px solid var(--color-border-soft); }
+.achievement-holders__list { list-style: none; margin: 0.75rem 0; padding: 0; display: grid; gap: 0.5rem; }
+.achievement-holders__row { display: flex; align-items: center; justify-content: space-between; gap: 0.75rem; }
+.achievement-holders__meta { display: block; font-size: 0.8rem; }
+.achievement-holders__grant { display: flex; gap: 0.5rem; margin-top: 0.75rem; }
+.achievement-holders__grant select { flex: 1; min-width: 0; }

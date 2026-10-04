@@ -1,0 +1,2136 @@
+<!doctype html>
+<html lang="nb">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Mannskoret Arme Riddere</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,300..600;1,6..72,300..500&family=Schibsted+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3/dist/cdn.min.js"></script>
+<style>
+  :root{
+    --bg:#1d1e20;          /* graphite */
+    --bg-2:#25272a;        /* raised iron */
+    --bg-3:#2d3034;
+    --line:#35383d;
+    --line-soft:#2b2d31;
+    --ink:#efe8dc;         /* bone */
+    --dim:#b3ab9f;
+    --faint:#7d776e;
+    --ember:#ec6c00;
+    --ember-hot:#ff8a2b;
+    --ember-soft:rgba(236,108,0,.13);
+    /* song knowledge: muted sage / straw / brick, readable on graphite, distinct from ember */
+    --k-ok:#8fb87a;
+    --k-mid:#d8bc5c;
+    --k-no:#d8695d;
+    --k-ok-soft:rgba(143,184,122,.14);
+    --k-mid-soft:rgba(216,188,92,.14);
+    --k-no-soft:rgba(216,105,93,.14);
+    --paper:#efe8dc;       /* document reader page */
+    --paper-ink:#26231f;
+    --paper-dim:#6b645a;
+    --r-s:6px;
+    --r-m:10px;
+    --ease:cubic-bezier(.2,.7,.2,1);
+    --serif:"Newsreader", Georgia, serif;
+    --sans:"Schibsted Grotesk", system-ui, sans-serif;
+    --gutter:clamp(1rem,4vw,2.5rem);
+    --max:72rem;
+    --tabh:3.7rem;
+    --striph:2.9rem;
+    --safe:env(safe-area-inset-bottom, 0px);
+  }
+  *{box-sizing:border-box}
+  html{background:var(--bg)}
+  body{
+    margin:0;min-height:100vh;background:var(--bg);color:var(--ink);
+    font-family:var(--sans);font-size:1rem;line-height:1.5;
+    -webkit-font-smoothing:antialiased;overflow-x:hidden;
+  }
+  a{color:inherit;text-decoration:none}
+  button,input,select,textarea{font:inherit;color:inherit}
+  :focus-visible{outline:2px solid var(--ember);outline-offset:3px;border-radius:4px}
+  [x-cloak]{display:none!important}
+  .ext{width:.72em;height:.72em;margin-left:.25em;vertical-align:.05em;opacity:.6;flex:none}
+  .inner{max-width:var(--max);margin:0 auto;padding:0 var(--gutter)}
+  .sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+
+  /* ---------- top bar ---------- */
+  .top .inner{display:flex;align-items:center;justify-content:space-between;gap:1rem;padding-top:1rem;padding-bottom:.9rem}
+  .brand{display:flex;align-items:center;gap:.7rem;min-width:0}
+  .brand img{width:26px;height:auto;display:block;flex:none}
+  .brand .bn{font-family:var(--serif);font-size:1.3rem;font-weight:450;letter-spacing:-.005em;white-space:nowrap;line-height:1.1}
+  .me{position:relative;flex:none}
+  .me-btn{
+    display:flex;align-items:center;gap:.8rem;background:none;border:0;padding:.25rem .25rem .25rem .6rem;
+    border-radius:var(--r-m);cursor:pointer;text-align:right;
+  }
+  .me-btn:hover{background:var(--bg-2)}
+  .me-btn .who{line-height:1.25}
+  .me-btn .who b{display:block;font-weight:600;font-size:.95rem;white-space:nowrap}
+  .me-btn .who small{display:block;font-size:.8rem;color:var(--faint);white-space:nowrap}
+  .portrait{
+    width:40px;height:50px;border-radius:5px;overflow:hidden;flex:none;background:#d6d2cc;
+    box-shadow:0 4px 14px rgba(0,0,0,.45),0 0 0 1px rgba(255,255,255,.07);
+  }
+  .portrait img{width:100%;height:100%;object-fit:cover;display:block}
+  .menu{
+    position:absolute;right:0;top:calc(100% + .5rem);z-index:40;min-width:13rem;
+    background:var(--bg-2);border:1px solid var(--line);border-radius:var(--r-m);
+    padding:.4rem;box-shadow:0 18px 50px rgba(0,0,0,.5);list-style:none;margin:0;
+  }
+  .menu a{display:flex;align-items:center;padding:.55rem .75rem;border-radius:var(--r-s);font-size:.95rem}
+  .menu a:hover,.menu a:focus-visible{background:var(--bg-3);outline-offset:-2px}
+  .menu .sep{height:1px;background:var(--line);margin:.35rem .4rem}
+  .menu .quiet{color:var(--dim)}
+
+  /* ---------- nav dock: main menu bar + sub-strip ---------- */
+  .mainbar{border-bottom:1px solid var(--line)}
+  .mainbar-list{display:flex;gap:.25rem;list-style:none;margin:0;padding:0}
+  .mainbar-btn{
+    position:relative;display:block;padding:.7rem .85rem .85rem;font-size:.98rem;font-weight:500;color:var(--dim);
+    white-space:nowrap;border-radius:var(--r-s) var(--r-s) 0 0;transition:color .15s;
+  }
+  .mainbar-btn .tab-ic{display:none}
+  .mainbar-list li:first-of-type .mainbar-btn{padding-left:0}
+  .mainbar-btn:hover{color:var(--ink)}
+  .mainbar-btn::after{
+    content:"";position:absolute;left:.85rem;right:.85rem;bottom:-1px;height:2px;border-radius:2px;
+    background:var(--ember);transform:scaleX(0);transform-origin:left;transition:transform .22s var(--ease);
+  }
+  .mainbar-list li:first-of-type .mainbar-btn::after{left:0}
+  .mainbar-btn.on{color:var(--ink)}
+  .mainbar-btn.on::after{transform:scaleX(1)}
+  .mainbar-btn:focus-visible{outline-offset:-2px}
+
+  .substrip{background:var(--bg-2);border-bottom:1px solid var(--line-soft)}
+  .sub-body{display:flex;align-items:center;gap:.25rem 1.6rem;padding-top:.75rem;padding-bottom:.75rem}
+  .sub-body.swap{animation:swap .24s var(--ease)}
+  @keyframes swap{from{opacity:0;transform:translateY(-3px)}}
+  .sub-wrap{display:contents}
+  .sub-links{display:flex;flex-wrap:wrap;gap:.25rem 1.6rem;list-style:none;margin:0;padding:0}
+  .sub-links a{
+    display:inline-flex;align-items:center;font-size:.95rem;color:var(--dim);padding:.2rem 0;white-space:nowrap;
+    border-bottom:1px solid transparent;transition:color .15s,border-color .15s;
+  }
+  .sub-links a:hover{color:var(--ink);border-bottom-color:var(--faint)}
+  .sub-links a.on{color:var(--ink);font-weight:500;border-bottom:2px solid var(--ember);padding-bottom:calc(.2rem - 1px)}
+  .sub-admin{margin-left:auto;display:flex;gap:1rem;list-style:none;padding:0 0 0 1rem;margin-top:0;margin-bottom:0;border-left:1px solid var(--line)}
+  .sub-admin a{display:inline-block;font-size:.85rem;color:var(--faint);padding:.2rem 0;white-space:nowrap;border-bottom:1px solid transparent}
+  .sub-admin a:hover{color:var(--dim)}
+  .sub-back{display:inline-flex;align-items:center;gap:.3rem;font-size:.88rem;color:var(--faint);white-space:nowrap;padding:.2rem .6rem .2rem 0;border-right:1px solid var(--line);flex:none}
+  .sub-back svg{width:.8rem;height:.8rem}
+  .sub-back:hover{color:var(--ink)}
+  .sub-lbl{flex:none}
+  .sub-links a:focus-visible,.sub-admin a:focus-visible,.sub-back:focus-visible{outline-offset:2px}
+
+  /* ---------- page body ---------- */
+  .page{padding-top:clamp(2.25rem,7vh,4.5rem);padding-bottom:8rem}
+  .page-h:focus{outline:none}
+
+  /* ---------- Hjem ---------- */
+  .hello{max-width:40rem;margin-bottom:clamp(2rem,5vh,3rem)}
+  .hello h1{
+    margin:0;font-family:var(--serif);font-weight:350;font-optical-sizing:auto;
+    font-size:clamp(1.9rem,3.6vw,2.7rem);line-height:1.08;letter-spacing:-.015em;color:var(--dim);
+  }
+  .hello p{margin:.8rem 0 0;color:var(--dim);font-family:var(--serif);font-size:1.12rem;line-height:1.55;max-width:36rem}
+
+  .home{
+    display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1fr);gap:1.75rem clamp(2rem,4.5vw,3.5rem);align-items:start;
+  }
+  .col{display:flex;flex-direction:column;gap:1.75rem;min-width:0}
+
+  .panel{background:var(--bg-2);border:1px solid var(--line-soft);border-radius:var(--r-m);padding:1.4rem 1.5rem}
+  .panel-h{margin:0;font-size:.9rem;font-weight:500;color:var(--faint)}
+
+  /* registration card */
+  .reg{border-color:var(--line)}
+  .reg-top{display:flex;align-items:center;justify-content:space-between;gap:1rem}
+  .reg-top h2{margin:0;font-family:var(--serif);font-weight:450;font-size:1.35rem;letter-spacing:-.01em}
+  .reg-day{margin:.2rem 0 0;font-size:.85rem;color:var(--faint)}
+  .streak{display:inline-flex;align-items:center;gap:.4rem;font-size:.9rem;color:var(--dim);white-space:nowrap}
+  .streak svg{width:.85rem;height:1rem;color:var(--ember)}
+  .streak b{color:var(--ink);font-weight:600;font-variant-numeric:tabular-nums;display:inline-block}
+  .streak b.bump{animation:bump .6s var(--ease)}
+  @keyframes bump{30%{transform:translateY(-3px);color:var(--ember-hot)}}
+  .reg-row{display:flex;flex-wrap:wrap;align-items:stretch;gap:.75rem;margin-top:1.1rem}
+  .step{display:inline-flex;align-items:stretch;background:var(--bg);border:1px solid var(--line);border-radius:var(--r-s);overflow:hidden}
+  .step button{
+    background:none;border:0;padding:0 .95rem;min-height:2.75rem;cursor:pointer;color:var(--dim);font-weight:500;
+    font-variant-numeric:tabular-nums;transition:color .15s,background .15s;
+  }
+  .step button:hover{color:var(--ink);background:var(--bg-3)}
+  .step button:disabled{color:var(--line);cursor:not-allowed;background:none}
+  .step button:focus-visible{outline-offset:-2px}
+  .step .val{display:flex;gap:.25rem;padding:0 .5rem;border-left:1px solid var(--line);border-right:1px solid var(--line);align-self:stretch;align-items:center}
+  .step input{
+    width:3.2ch;background:none;border:0;padding:0;text-align:right;
+    font-family:var(--serif);font-size:1.45rem;font-weight:450;color:var(--ink);font-variant-numeric:tabular-nums;
+    -moz-appearance:textfield;
+  }
+  .step input::-webkit-outer-spin-button,.step input::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
+  .step input:focus{outline:none}
+  .step .val:focus-within{box-shadow:inset 0 -2px 0 var(--ember)}
+  .step .unit{color:var(--faint);font-size:.9rem}
+  .btn{
+    display:inline-flex;align-items:center;justify-content:center;gap:.5rem;background:var(--ember);color:#1a1004;border:0;border-radius:var(--r-s);
+    padding:.75rem 1.25rem;font-weight:600;font-size:1rem;cursor:pointer;transition:background .15s;font-variant-numeric:tabular-nums;
+  }
+  .btn:hover{background:var(--ember-hot)}
+  .btn:disabled{background:var(--bg-3);color:var(--faint);cursor:not-allowed}
+  .btn svg{width:1.05em;height:1.05em}
+  .btn-quiet{background:var(--bg-2);color:var(--ink);border:1px solid var(--line)}
+  .btn-quiet:hover{background:var(--bg-3)}
+  .btn-s{padding:.45rem .85rem;font-size:.9rem;font-weight:500}
+  .btn-danger{background:none;color:var(--k-no);border:1px solid rgba(216,105,93,.45)}
+  .btn-danger:hover{background:var(--k-no-soft)}
+  .btn-danger.solid{background:var(--k-no);color:#1d0d0a;border-color:var(--k-no)}
+  .btn-danger.solid:hover{background:#e27a6e}
+  .reg-row .btn{flex:1 1 10rem}
+  .week{margin-top:1.25rem;padding-top:1rem;border-top:1px solid var(--line-soft)}
+  .week-t{display:flex;justify-content:space-between;gap:1rem;font-size:.88rem;color:var(--faint)}
+  .week-t b{color:var(--ink);font-weight:500;font-variant-numeric:tabular-nums}
+  .week-t .gl{display:inline-flex;align-items:center;gap:.35rem}
+  .week-t .gl svg{width:.9rem;height:.9rem}
+  .week.done .week-t .gl{color:var(--k-ok)}
+  .bar{height:4px;border-radius:4px;background:var(--bg-3);margin-top:.5rem;overflow:hidden}
+  .bar i{display:block;height:100%;background:var(--ember);border-radius:4px;transition:width .5s var(--ease),background .3s}
+  .week.done .bar i{background:var(--k-ok)}
+  .reg-note{margin:.85rem 0 0;font-size:.9rem;color:var(--ink);min-height:1.35em}
+  .reg-note:empty{display:none}
+  .reg-note::before{content:"";display:inline-block;width:.42rem;height:.42rem;border-radius:50%;background:var(--ember);margin-right:.55rem;vertical-align:.12em}
+  .fade-in{animation:fadein .3s var(--ease)}
+  @keyframes fadein{from{opacity:0;transform:translateY(3px)}}
+  .tid{margin:0;color:var(--dim);max-width:30rem;font-family:var(--serif);font-size:1.12rem}
+
+  /* Toppliste: quiet, no fill */
+  .lb{padding:1.1rem 0 0;border-top:1px solid var(--line)}
+  .lb dl{margin:.7rem 0 0;display:grid;gap:.45rem}
+  .lb-row{display:grid;grid-template-columns:9.5rem minmax(0,1fr) auto;gap:.2rem 1rem;align-items:baseline;font-size:.93rem}
+  .lb dt{color:var(--faint)}
+  .lb dd{margin:0}
+  .lb .lb-n{color:var(--ink);min-width:0}
+  .lb .lb-v{color:var(--dim);font-variant-numeric:tabular-nums;text-align:right;white-space:nowrap}
+  .lb-me{margin:.75rem 0 0;font-size:.85rem;color:var(--faint);font-variant-numeric:tabular-nums}
+
+  /* Snart */
+  .soon{padding-bottom:1.1rem}
+  .soon .panel-h{margin-bottom:1.1rem}
+  .next{display:block;padding-bottom:1.25rem;border-bottom:1px solid var(--line)}
+  .next .kind{display:block;font-size:.85rem;color:var(--ember-hot);margin-bottom:.35rem}
+  .next .date{display:block;font-family:var(--serif);font-size:clamp(1.5rem,2.6vw,1.85rem);font-weight:450;line-height:1.1;letter-spacing:-.01em}
+  .next .date .tm{color:var(--dim);font-weight:350}
+  .next .title{display:block;margin-top:.4rem;font-weight:600;font-size:1.05rem}
+  .next:hover .title{text-decoration:underline;text-decoration-color:var(--ember);text-underline-offset:4px}
+  .later{list-style:none;margin:0;padding:.4rem 0 0}
+  .later a{display:grid;grid-template-columns:5.2rem minmax(0,1fr) auto;gap:.75rem;align-items:baseline;padding:.6rem .5rem;margin:0 -.5rem;border-radius:var(--r-s);font-size:.93rem}
+  .later a:hover{background:var(--bg-3)}
+  .later .d{color:var(--faint)}
+  .later .w{color:var(--ink);min-width:0;overflow-wrap:anywhere}
+  .later .w small{display:block;color:var(--faint);font-size:.85rem}
+  .later .t{color:var(--dim);font-variant-numeric:tabular-nums}
+  .textlink{display:inline-block;font-size:.88rem;color:var(--dim);border-bottom:1px solid var(--faint);line-height:1.35}
+  .textlink:hover{color:var(--ink);border-color:var(--ember)}
+  .soon .textlink{margin-top:.7rem}
+
+  /* Latest document: outlined card */
+  .doc{border:1px solid var(--line);border-radius:var(--r-m);padding:1.2rem 1.25rem}
+  .doc-top{display:flex;align-items:center;gap:.6rem}
+  .doc-grid{display:flex;align-items:center;justify-content:space-between;gap:1rem;margin-top:.6rem}
+  .doc-name{margin:0;font-family:var(--serif);font-size:1.3rem;font-weight:450;line-height:1.2;letter-spacing:-.005em}
+  .doc-by{margin:.2rem 0 0;color:var(--faint);font-size:.9rem}
+  .doc .btn{padding:.6rem 1.15rem;flex:none}
+  .doc .textlink{margin-top:1rem}
+  .tag{display:inline-block;font-size:.78rem;color:var(--ember-hot);background:var(--ember-soft);border-radius:999px;padding:.05rem .5rem;line-height:1.5;white-space:nowrap}
+  .tag.q{color:var(--dim);background:var(--bg-3)}
+  .tag.ok{color:var(--k-ok);background:var(--k-ok-soft)}
+
+  /* ---------- section pages ---------- */
+  .body{max-width:54rem}
+  .body.wide{max-width:66rem}
+  .body-h{display:flex;align-items:flex-end;justify-content:space-between;gap:1rem;flex-wrap:wrap;margin-bottom:1.75rem}
+  .body-h h1{margin:0;font-family:var(--serif);font-weight:350;font-size:clamp(2rem,4vw,2.9rem);line-height:1.05;letter-spacing:-.02em}
+  .body-h p{margin:.45rem 0 0;color:var(--faint);font-size:.93rem}
+  .search{
+    width:100%;max-width:20rem;background:var(--bg-2);border:1px solid var(--line);border-radius:var(--r-s);
+    padding:.6rem .85rem;font-size:.95rem;color:var(--ink);
+  }
+  .search::placeholder{color:var(--faint)}
+  .search:focus{outline:none;border-color:var(--ember)}
+  .empty{color:var(--faint);padding:1.5rem 0}
+
+  .rows{list-style:none;margin:0;padding:0;border-top:1px solid var(--line-soft)}
+  .rows>li{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:.5rem 1.25rem;align-items:center;padding:.85rem 0;border-bottom:1px solid var(--line-soft)}
+  .rows .nm{font-weight:500;min-width:0}
+  .rows .nm small{display:block;font-weight:400;color:var(--faint);font-size:.86rem}
+  .rows .aside{color:var(--dim);font-size:.9rem;font-variant-numeric:tabular-nums;text-align:right}
+
+  /* knowledge: colour language shared by Sanger (editable) and Repertoar (read-only) */
+  .kd{display:inline-block;width:.6rem;height:.6rem;border-radius:50%;flex:none;background:var(--faint)}
+  .kd.kjent{background:var(--k-ok)}
+  .kd.litt{background:var(--k-mid)}
+  .kd.ikke{background:var(--k-no)}
+  .t-kjent{color:var(--k-ok)}.t-litt{color:var(--k-mid)}.t-ikke{color:var(--k-no)}
+  .know{display:inline-flex;background:var(--bg-2);border:1px solid var(--line-soft);border-radius:var(--r-s);padding:2px}
+  .know button{
+    display:inline-flex;align-items:center;gap:.4rem;background:none;border:0;border-radius:4px;cursor:pointer;
+    padding:.28rem .6rem;font-size:.82rem;color:var(--faint);white-space:nowrap;transition:color .15s,background .15s;
+  }
+  .know button:hover{color:var(--ink)}
+  .know button[aria-pressed="true"]{background:var(--bg-3);color:var(--ink)}
+  .know .pip{width:.55rem;height:.55rem;border-radius:50%;border:1.5px solid currentColor;flex:none;opacity:.7}
+  .know button[aria-pressed="true"] .pip{opacity:1}
+  .know .k-kjent[aria-pressed="true"] .pip{background:var(--k-ok);border-color:var(--k-ok)}
+  .know .k-litt[aria-pressed="true"] .pip{background:var(--k-mid);border-color:var(--k-mid)}
+  .know .k-ikke[aria-pressed="true"] .pip{background:var(--k-no);border-color:var(--k-no)}
+  .know button:focus-visible{outline-offset:0}
+
+  /* Repertoar */
+  .repsel{margin:-.5rem 0 1.5rem;overflow-x:auto;scrollbar-width:none;max-width:100%}
+  .repsel::-webkit-scrollbar{display:none}
+  .repsel .seg button{white-space:nowrap;display:inline-flex;align-items:center;gap:.45rem}
+  .repsel .tag{font-size:.72rem}
+  .kfilter{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:.75rem 1rem;margin-bottom:1rem}
+  .kfilter .seg{flex-wrap:wrap}
+  .kfilter .seg button{display:inline-flex;align-items:center;gap:.45rem;white-space:nowrap}
+  .kfilter .seg .n{color:var(--faint);font-variant-numeric:tabular-nums}
+  .kfilter .hint a{color:var(--dim);border-bottom:1px solid var(--faint)}
+  .kfilter .hint a:hover{color:var(--ink);border-color:var(--ember)}
+  .order{list-style:none;margin:0;padding:0;border-top:1px solid var(--line-soft)}
+  .order li{display:grid;grid-template-columns:2rem minmax(0,1fr) auto;gap:1rem;align-items:center;padding:.8rem 0;border-bottom:1px solid var(--line-soft)}
+  .order .no{color:var(--faint);font-variant-numeric:tabular-nums;font-size:.9rem}
+  .order .rn{display:flex;align-items:center;gap:.7rem;min-width:0}
+  .order small{font-size:.86rem}
+  .rep-empty{max-width:32rem}
+  .rep-empty h1{margin:0 0 .6rem;font-family:var(--serif);font-weight:350;font-size:clamp(2rem,4vw,2.6rem);line-height:1.08;letter-spacing:-.02em}
+  .rep-empty p{margin:0 0 1rem;color:var(--dim);font-family:var(--serif);font-size:1.12rem}
+
+  /* Øvingsplan / Kalender */
+  .plan{list-style:none;margin:0;padding:0;display:grid;gap:1rem}
+  .plan li{background:var(--bg-2);border:1px solid var(--line-soft);border-radius:var(--r-m);padding:1.1rem 1.25rem}
+  .plan .when{font-family:var(--serif);font-size:1.35rem;font-weight:450}
+  .plan .what{margin-top:.2rem;font-weight:600}
+  .plan .songs{margin-top:.35rem;color:var(--dim);font-size:.92rem}
+  .plan li:first-child{border-color:var(--line)}
+  .src{display:inline-flex;align-items:center;gap:.4rem;margin:.45rem 0 0;color:var(--faint);font-size:.88rem}
+  .src svg{width:.9rem;height:.9rem}
+  .wk{display:flex;align-items:baseline;gap:.75rem;margin:2rem 0 .4rem}
+  .wk:first-of-type{margin-top:0}
+  .wk h2{margin:0;font-family:var(--serif);font-weight:450;font-size:1.2rem;color:var(--dim)}
+  .wk span{color:var(--faint);font-size:.88rem}
+  .cal-row{display:grid;grid-template-columns:5.5rem minmax(0,1fr) auto;gap:1rem;align-items:baseline}
+  .cal-row .d{color:var(--faint);font-size:.92rem}
+  .cal-row .t{color:var(--dim);font-size:.9rem;font-variant-numeric:tabular-nums}
+  .cal-row .tag{margin-left:.5rem;vertical-align:.1em}
+
+  .mhead{display:flex;align-items:center;justify-content:space-between;gap:1rem;margin-bottom:.85rem}
+  .mhead h2{margin:0;font-family:var(--serif);font-weight:450;font-size:1.45rem;letter-spacing:-.01em}
+  .mnav{display:flex;gap:.4rem}
+  .mnav button{width:2.4rem;height:2.4rem;display:grid;place-items:center;background:var(--bg-2);border:1px solid var(--line);border-radius:var(--r-s);color:var(--dim);cursor:pointer}
+  .mnav button:hover:not(:disabled){color:var(--ink);background:var(--bg-3)}
+  .mnav button:disabled{opacity:.35;cursor:not-allowed}
+  .mnav svg{width:1rem;height:1rem}
+  .mgrid{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));border-top:1px solid var(--line-soft);border-left:1px solid var(--line-soft)}
+  .mgrid .dow{padding:.45rem .5rem;font-size:.8rem;color:var(--faint);border-right:1px solid var(--line-soft);border-bottom:1px solid var(--line-soft);background:var(--bg-2)}
+  .cell{
+    position:relative;min-height:6rem;display:flex;flex-direction:column;align-items:stretch;gap:.2rem;text-align:left;
+    padding:.4rem .45rem .5rem;background:none;border:0;border-right:1px solid var(--line-soft);border-bottom:1px solid var(--line-soft);
+    cursor:pointer;color:var(--ink);min-width:0;
+  }
+  .cell:hover{background:var(--bg-2)}
+  .cell .dn{font-size:.85rem;font-variant-numeric:tabular-nums;color:var(--dim);line-height:1.5;width:1.6rem;height:1.6rem;display:grid;place-items:center;border-radius:50%;margin:-.1rem 0 0 -.15rem}
+  .cell.out{cursor:default;background:repeating-linear-gradient(135deg,transparent 0 6px,rgba(255,255,255,.012) 6px 7px)}
+  .cell.out .dn{color:var(--line)}
+  .cell.past .dn{color:var(--faint)}
+  .cell.today .dn{background:var(--ink);color:var(--bg);font-weight:600}
+  .cell.sel{box-shadow:inset 0 0 0 2px var(--ember);background:var(--bg-2)}
+  .cell:focus-visible{outline-offset:-3px;border-radius:0}
+  .cell .ev{display:block;font-size:.74rem;line-height:1.3;padding:.08rem .35rem;border-radius:3px;background:var(--bg-3);color:var(--dim);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .cell .ev.pub{background:var(--ember-soft);color:var(--ember-hot)}
+  .cell .ev.oth{color:var(--ink)}
+  .cell .dots{display:none;gap:3px;margin-top:auto}
+  .cell .dots i{width:5px;height:5px;border-radius:50%;background:var(--dim)}
+  .cell .dots i.pub{background:var(--ember-hot)}
+  .cell .dots i.oth{background:var(--ink)}
+  .dayview{margin-top:1.5rem}
+  .dayview h3{margin:0 0 .6rem;font-family:var(--serif);font-weight:450;font-size:1.25rem}
+
+  /* Toneangiver */
+  .tlist>li{grid-template-columns:minmax(0,1fr) auto}
+  .tone{display:flex;align-items:center;gap:1rem;background:none;border:0;padding:0;text-align:left;cursor:pointer;min-width:0}
+  .tone .play{
+    width:2.25rem;height:2.25rem;border-radius:50%;flex:none;display:grid;place-items:center;
+    border:1px solid var(--line);background:var(--bg-2);color:var(--dim);transition:color .15s,border-color .15s,background .15s;
+  }
+  .tone .play svg{width:.85rem;height:.85rem}
+  .tone:hover .play{color:var(--ink);border-color:var(--faint)}
+  .playing .tone .play{background:var(--ember);border-color:var(--ember);color:#1a1004}
+  .tone .nm{min-width:0}
+  .tone:focus-visible{outline-offset:4px}
+  .chips{display:flex;flex-wrap:wrap;gap:.35rem;justify-content:flex-end}
+  .chip{
+    display:inline-flex;align-items:baseline;gap:.35rem;background:var(--bg-2);border:1px solid var(--line-soft);border-radius:var(--r-s);
+    padding:.25rem .55rem;cursor:pointer;transition:border-color .15s,background .15s,color .15s;
+  }
+  .chip .cv{font-size:.74rem;color:var(--faint);font-weight:500}
+  .chip .cn{font-family:var(--serif);font-size:1.05rem;font-weight:450;font-variant-numeric:tabular-nums}
+  .chip .acc{display:inline-block;font-family:var(--sans);font-size:.78em;margin:0 -.08em 0 .02em;transform:translateY(-.12em)}
+  .chip:hover{border-color:var(--faint)}
+  .chip.on{background:var(--ember-soft);border-color:var(--ember)}
+  .chip.on .cn{color:var(--ember-hot)}
+  .chip.on .cv{color:var(--ember-hot)}
+  .bars{display:inline-flex;gap:2px;align-items:flex-end;height:.8rem;margin-left:.5rem;vertical-align:-.05em}
+  .bars i{width:2px;background:var(--ember-hot);border-radius:1px;animation:barz .7s ease-in-out infinite alternate}
+  .bars i:nth-child(2){animation-delay:-.25s}.bars i:nth-child(3){animation-delay:-.5s}
+  @keyframes barz{from{height:25%}to{height:100%}}
+
+  /* Medlemmer */
+  .seg{display:inline-flex;background:var(--bg-2);border:1px solid var(--line-soft);border-radius:var(--r-s);padding:2px}
+  .seg button{background:none;border:0;border-radius:4px;padding:.35rem .8rem;font-size:.88rem;color:var(--dim);cursor:pointer}
+  .seg button:hover{color:var(--ink)}
+  .seg button[aria-pressed="true"]{background:var(--bg-3);color:var(--ink)}
+  .seg button:focus-visible{outline-offset:0}
+  .mlist .who{display:flex;align-items:center;gap:.9rem;min-width:0}
+  .mlist .portrait,.thumb{width:32px;height:40px;box-shadow:0 3px 10px rgba(0,0,0,.4),0 0 0 1px rgba(255,255,255,.07)}
+  .gallery{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(auto-fill,minmax(8.5rem,1fr));gap:1.75rem 1.25rem}
+  .gallery .portrait{width:100%;height:auto;aspect-ratio:4/5;border-radius:6px}
+  .gallery b{display:block;margin-top:.7rem;font-weight:500;font-size:.95rem}
+  .gallery small{color:var(--faint);font-size:.85rem}
+
+  /* toggles, forms */
+  .toggle{display:inline-flex;align-items:center;gap:.6rem;cursor:pointer;font-size:.9rem;color:var(--dim)}
+  .toggle input{position:absolute;opacity:0;width:1px;height:1px}
+  .toggle .sw{width:2.1rem;height:1.2rem;border-radius:999px;background:var(--bg-3);border:1px solid var(--line);position:relative;transition:background .15s;flex:none}
+  .toggle .sw::after{content:"";position:absolute;top:2px;left:2px;width:.8rem;height:.8rem;border-radius:50%;background:var(--dim);transition:transform .18s var(--ease),background .15s}
+  .toggle input:checked+.sw{background:var(--ember-soft);border-color:var(--ember)}
+  .toggle input:checked+.sw::after{transform:translateX(.9rem);background:var(--ember-hot)}
+  .toggle input:focus-visible+.sw{outline:2px solid var(--ember);outline-offset:2px}
+  .form{display:grid;gap:1.1rem;max-width:36rem}
+  .form label.f,.f{display:grid;gap:.4rem;font-size:.9rem;color:var(--dim);min-width:0;align-content:start}
+  .fld,.form input[type=text],.form textarea{
+    width:100%;background:var(--bg);border:1px solid var(--line);border-radius:var(--r-s);padding:.62rem .8rem;color:var(--ink);font-size:.98rem;min-width:0;
+  }
+  .form input[type=text],.form textarea{background:var(--bg-2)}
+  select.fld{
+    -webkit-appearance:none;appearance:none;padding-right:2rem;cursor:pointer;
+    background-image:linear-gradient(45deg,transparent 50%,var(--dim) 50%),linear-gradient(135deg,var(--dim) 50%,transparent 50%);
+    background-position:calc(100% - 1rem) 55%,calc(100% - .7rem) 55%;background-size:.3rem .3rem;background-repeat:no-repeat;
+  }
+  select.fld option{background:var(--bg-2)}
+  textarea.fld,.form textarea{min-height:7rem;resize:vertical;line-height:1.5}
+  .form textarea{min-height:9rem}
+  .fld:focus,.form input:focus,.form textarea:focus{outline:none;border-color:var(--ember)}
+  .fld[aria-invalid="true"]{border-color:var(--k-no)}
+  .fld::placeholder{color:var(--faint)}
+  .form .row{display:flex;align-items:center;justify-content:space-between;gap:1rem;flex-wrap:wrap}
+  .hint{margin:0;color:var(--faint);font-size:.88rem}
+  .err{margin:0;color:var(--k-no);font-size:.85rem}
+  .ph{max-width:34rem;color:var(--dim)}
+  .ph p{margin:0 0 1rem}
+  .doclist a{display:contents;cursor:pointer}
+  .doclist button.nm{background:none;border:0;padding:0;text-align:left;cursor:pointer;color:var(--ink)}
+  .doclist .nm:hover .t{text-decoration:underline;text-decoration-color:var(--ember);text-underline-offset:4px}
+  .doclist .tag{margin-left:.5rem}
+
+  /* ---------- admin ---------- */
+  .adm-add{background:var(--bg-2);border:1px solid var(--line);border-radius:var(--r-m);padding:1.4rem 1.5rem;margin-bottom:2.5rem}
+  .adm-add>h2,.adm-list-h h2{margin:0 0 1.1rem;font-family:var(--serif);font-weight:450;font-size:1.35rem;letter-spacing:-.01em}
+  .adm-list-h{display:flex;align-items:flex-end;justify-content:space-between;gap:1rem;flex-wrap:wrap;margin-bottom:1rem}
+  .adm-list-h h2{margin:0}
+  .adm-list-h p{margin:.2rem 0 0;color:var(--faint);font-size:.88rem}
+  .fgrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:1rem 1.1rem}
+  .fgrid .span2{grid-column:1 / -1}
+  fieldset.f{border:0;margin:0;padding:0}
+  fieldset.f legend{padding:0;margin-bottom:.4rem}
+  .pair{display:flex;gap:.5rem}
+  .pair select{flex:0 0 5.5rem}
+  .gchips{display:flex;flex-wrap:wrap;gap:.35rem}
+  .gchip{
+    background:var(--bg);border:1px solid var(--line);border-radius:999px;padding:.3rem .75rem;font-size:.86rem;color:var(--dim);cursor:pointer;
+    display:inline-flex;align-items:center;gap:.35rem;transition:border-color .15s,background .15s,color .15s;
+  }
+  .gchip:hover{color:var(--ink);border-color:var(--faint)}
+  .gchip[aria-pressed="true"]{background:var(--ember-soft);border-color:var(--ember);color:var(--ink)}
+  .gchip svg{width:.75rem;height:.75rem;display:none}
+  .gchip[aria-pressed="true"] svg{display:block;color:var(--ember-hot)}
+  .checks{display:flex;flex-wrap:wrap;gap:.5rem 1.5rem}
+  .check{display:inline-flex;align-items:center;gap:.5rem;cursor:pointer;color:var(--ink);font-size:.93rem}
+  .check input{accent-color:var(--ember);width:1rem;height:1rem;margin:0}
+  .check small{color:var(--faint)}
+  .files{display:grid;gap:.6rem}
+  .frow{
+    display:grid;grid-template-columns:minmax(0,1.3fr) 6.2rem 8rem minmax(0,1.3fr) auto;gap:.5rem;align-items:end;
+    padding:.7rem;background:var(--bg);border:1px solid var(--line-soft);border-radius:var(--r-s);
+  }
+  .frow .f{font-size:.8rem}
+  .frow .fld{padding:.5rem .6rem;font-size:.92rem;background:var(--bg-2)}
+  .frow select.fld{padding-right:1.8rem}
+  .dpanel .frow{grid-template-columns:minmax(0,1fr) 5.6rem 7.6rem auto}
+  .dpanel .frow .f-file{grid-column:1 / -1}
+  .dpanel .frow .rm{grid-column:4;grid-row:1}
+  .pickwrap{display:flex;align-items:center;gap:.5rem;min-width:0;min-height:2.35rem}
+  .pick{flex:none;display:inline-flex;align-items:center;background:var(--bg-3);border:1px solid var(--line);border-radius:var(--r-s);padding:.4rem .65rem;font-size:.85rem;color:var(--ink);cursor:pointer}
+  .pick:hover{border-color:var(--faint)}
+  .pick:focus-within{outline:2px solid var(--ember);outline-offset:2px}
+  .fname{font-size:.82rem;color:var(--faint);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+  .fname.has{color:var(--dim)}
+  .rm{background:none;border:1px solid transparent;border-radius:var(--r-s);color:var(--faint);cursor:pointer;height:2.35rem;padding:0 .55rem;display:grid;place-items:center}
+  .rm:hover{color:var(--k-no);border-color:var(--line)}
+  .rm svg{width:1rem;height:1rem}
+  .factions{display:flex;flex-wrap:wrap;align-items:center;gap:.75rem 1rem;margin-top:1.25rem}
+  .flash{margin:0 0 1.25rem;display:flex;align-items:center;gap:.55rem;color:var(--ink);font-size:.93rem}
+  .flash:empty{display:none}
+  .flash::before{content:"";width:.45rem;height:.45rem;border-radius:50%;background:var(--k-ok);flex:none}
+
+  .alist{list-style:none;margin:0;padding:0;border-top:1px solid var(--line-soft)}
+  .alist>li{display:grid;gap:.4rem 1.1rem;align-items:center;padding:.8rem 0;border-bottom:1px solid var(--line-soft)}
+  .alist.songs>li{grid-template-columns:minmax(0,1.3fr) minmax(0,1fr) 4.5rem auto}
+  .alist.reps>li{grid-template-columns:minmax(0,1fr) 6rem 5.5rem auto}
+  .alist.mems>li{grid-template-columns:32px minmax(0,1.5fr) 5.2rem minmax(0,1fr) 5.2rem 7rem auto}
+  .alist .an{font-weight:500;min-width:0;display:flex;align-items:center;gap:.5rem;flex-wrap:wrap}
+  .alist .an small{display:block;width:100%;font-weight:400;color:var(--faint);font-size:.84rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .alist .an .m-meta{display:none}
+  .alist .ac{color:var(--dim);font-size:.9rem;min-width:0}
+  .alist .num{font-variant-numeric:tabular-nums}
+  .alist .acts{display:flex;gap:.5rem;justify-content:flex-end;align-items:center;flex-wrap:wrap}
+  .alist .confirm{display:flex;align-items:center;gap:.5rem;flex-wrap:wrap;justify-content:flex-end;font-size:.88rem;color:var(--dim)}
+  .alist .hd{padding:.45rem 0;font-size:.8rem;color:var(--faint);border-bottom:1px solid var(--line-soft)}
+  .roles{display:flex;gap:.3rem;flex-wrap:wrap}
+
+  /* rep editor inside drawer */
+  .rsongs{list-style:none;margin:0;padding:0;border-top:1px solid var(--line-soft)}
+  .rsongs li{display:grid;grid-template-columns:1.6rem minmax(0,1fr) auto;gap:.6rem;align-items:center;padding:.45rem 0;border-bottom:1px solid var(--line-soft);font-size:.95rem}
+  .rsongs .no{color:var(--faint);font-variant-numeric:tabular-nums;font-size:.85rem}
+  .ibtns{display:flex;gap:.25rem}
+  .ib{width:2rem;height:2rem;display:grid;place-items:center;background:var(--bg);border:1px solid var(--line);border-radius:var(--r-s);color:var(--dim);cursor:pointer}
+  .ib:hover:not(:disabled){color:var(--ink);background:var(--bg-3)}
+  .ib:disabled{opacity:.3;cursor:not-allowed}
+  .ib.x:hover:not(:disabled){color:var(--k-no)}
+  .ib svg{width:.85rem;height:.85rem}
+  .addrow{display:flex;gap:.5rem;margin-top:.8rem}
+  .addrow select{flex:1}
+
+  /* ---------- drawer (edit) ---------- */
+  .drawer{position:fixed;inset:0;z-index:58;display:flex;justify-content:flex-end}
+  .dpanel{
+    position:relative;width:min(38rem,100%);height:100%;display:flex;flex-direction:column;
+    background:var(--bg-2);border-left:1px solid var(--line);box-shadow:-30px 0 80px rgba(0,0,0,.5);animation:slidein .28s var(--ease);
+  }
+  @keyframes slidein{from{opacity:0;transform:translateX(16px)}}
+  .dp-body{flex:1;overflow-y:auto;overscroll-behavior:contain;padding:1.35rem 1.5rem 2rem}
+  .dp-f{display:flex;align-items:center;justify-content:space-between;gap:.75rem;flex-wrap:wrap;padding:.9rem 1.5rem calc(.9rem + var(--safe));border-top:1px solid var(--line)}
+  .dp-f .grp{display:flex;gap:.6rem;align-items:center;flex-wrap:wrap}
+  .dp-f .ask{font-size:.9rem;color:var(--ink)}
+
+  /* ---------- document reader overlay ---------- */
+  .reader{position:fixed;inset:0;z-index:60;display:flex;align-items:flex-start;justify-content:center;padding:clamp(.75rem,4vh,2.5rem) var(--gutter)}
+  .reader-bg{position:absolute;inset:0;background:rgba(12,12,13,.78)}
+  .sheet{
+    position:relative;width:100%;max-width:42rem;max-height:calc(100vh - 2 * clamp(.75rem,4vh,2.5rem));
+    display:flex;flex-direction:column;background:var(--bg-2);border:1px solid var(--line);border-radius:var(--r-m);
+    box-shadow:0 30px 80px rgba(0,0,0,.6);animation:rise .28s var(--ease);
+  }
+  @keyframes rise{from{opacity:0;transform:translateY(10px)}}
+  .sheet-h{display:flex;align-items:center;justify-content:space-between;gap:1rem;padding:.85rem 1rem .85rem 1.25rem;border-bottom:1px solid var(--line)}
+  .sheet-h h2{margin:0;font-size:.95rem;font-weight:600;min-width:0}
+  .sheet-h small{display:block;font-weight:400;color:var(--faint);font-size:.83rem}
+  .x{background:none;border:1px solid var(--line);border-radius:var(--r-s);color:var(--dim);padding:.4rem .75rem;cursor:pointer;font-size:.9rem;flex:none}
+  .x:hover{color:var(--ink);background:var(--bg-3)}
+  .sheet-body{overflow-y:auto;overscroll-behavior:contain;padding:1rem;background:var(--bg)}
+  .sheet-body:focus-visible{outline-offset:-3px}
+  .paper{
+    background:var(--paper);color:var(--paper-ink);border-radius:4px;padding:clamp(1.5rem,5vw,3rem) clamp(1.25rem,5vw,3.25rem);
+    font-family:var(--serif);font-size:1.08rem;line-height:1.6;box-shadow:0 2px 0 rgba(0,0,0,.25);
+  }
+  .paper h3{margin:0;font-weight:450;font-size:1.9rem;line-height:1.1;letter-spacing:-.015em}
+  .paper .meta{margin:.6rem 0 1.6rem;color:var(--paper-dim);font-size:.98rem;font-style:italic}
+  .paper h4{margin:1.6rem 0 .3rem;font-family:var(--sans);font-size:.95rem;font-weight:600}
+  .paper h4 span{color:var(--paper-dim);font-weight:500;margin-right:.5rem;font-variant-numeric:tabular-nums}
+  .paper p{margin:0 0 .6rem;max-width:34em}
+  .paper .vedtak{border-left:2px solid var(--ember);padding-left:.8rem}
+  .paper .sign{margin-top:2rem;color:var(--paper-dim);font-size:.98rem}
+  .sheet-f{display:flex;align-items:center;justify-content:space-between;gap:1rem;padding:.85rem 1.25rem;border-top:1px solid var(--line)}
+  .sheet-f .hint{font-size:.83rem}
+
+  /* ---------- demo ---------- */
+  .demo{position:fixed;left:var(--gutter);bottom:1rem;z-index:30;font-size:.85rem}
+  .demo>button{background:var(--bg);color:var(--faint);border:1px dashed var(--faint);border-radius:999px;padding:.35rem .8rem;cursor:pointer}
+  .demo>button:hover{color:var(--ink)}
+  .demo-panel{position:absolute;bottom:calc(100% + .5rem);left:0;width:14rem;background:var(--bg-2);border:1px dashed var(--faint);border-radius:var(--r-m);padding:.9rem 1rem;display:grid;gap:.8rem;color:var(--dim)}
+  .demo-panel fieldset{border:0;margin:0;padding:0;display:grid;gap:.3rem}
+  .demo-panel legend{color:var(--ink);font-weight:600;margin-bottom:.25rem}
+  .demo-panel label{display:flex;gap:.5rem;align-items:center;cursor:pointer}
+  .demo-panel input{accent-color:var(--ember)}
+  .demo-panel .inl{display:flex;gap:1rem}
+
+  /* ---------- mid ---------- */
+  @media (max-width:900px){
+    .alist.mems>li{grid-template-columns:32px minmax(0,1fr) auto}
+    .alist.mems .m-v,.alist.mems .m-r,.alist.mems .m-s,.alist.mems .m-roles{display:none}
+    .alist.mems .an .m-meta{display:block}
+    .alist .hd{display:none}
+  }
+  @media (max-width:760px){
+    .home{grid-template-columns:minmax(0,1fr);gap:1.5rem}
+    .col{display:contents}
+    .a-reg{order:1}.a-soon{order:2}.a-lb{order:3}.a-doc{order:4}
+  }
+
+  /* ---------- narrow: main menu docks at the bottom, sub-strip above it ---------- */
+  @media (max-width:720px){
+    .top .inner{padding-top:.7rem;padding-bottom:.7rem}
+    .brand .bn{font-size:1.12rem}
+    .me-btn{padding-left:.4rem;gap:.6rem}
+    .me-btn .who b{font-size:.88rem}
+    .me-btn .who small{font-size:.75rem}
+    .portrait{width:34px;height:42px}
+    .top{border-bottom:1px solid var(--line-soft)}
+
+    .mainbar{
+      position:fixed;left:0;right:0;bottom:0;z-index:36;border-bottom:0;border-top:1px solid var(--line);
+      background:var(--bg-2);padding-bottom:var(--safe);
+    }
+    .mainbar .inner{padding:0;max-width:none}
+    .mainbar-list{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:0;height:var(--tabh)}
+    .mainbar-btn,.mainbar-list li:first-of-type .mainbar-btn{
+      height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:.22rem;
+      padding:.35rem .15rem;font-size:.7rem;font-weight:500;border-radius:0;letter-spacing:.005em;
+    }
+    .mainbar-btn .tab-ic{display:block;width:1.3rem;height:1.3rem}
+    .mainbar-btn::after,.mainbar-list li:first-of-type .mainbar-btn::after{left:32%;right:32%;top:-1px;bottom:auto;transform-origin:center}
+    .mainbar-btn.on .tab-ic{color:var(--ember-hot)}
+
+    .substrip{
+      position:fixed;left:0;right:0;bottom:calc(var(--tabh) + var(--safe));z-index:35;height:var(--striph);
+      background:var(--bg);border-top:1px solid var(--line-soft);border-bottom:0;box-shadow:0 -10px 24px rgba(0,0,0,.25);
+    }
+    .substrip .inner{padding:0;height:100%}
+    .sub-body{
+      height:100%;overflow-x:auto;scrollbar-width:none;-webkit-overflow-scrolling:touch;
+      gap:1.3rem;padding:0 var(--gutter);flex-wrap:nowrap;
+    }
+    .sub-body::-webkit-scrollbar{display:none}
+    .sub-links{flex-wrap:nowrap;gap:1.3rem;flex:none}
+    .sub-links a{font-size:.9rem;padding:.35rem 0}
+    .sub-links a.on{padding-bottom:calc(.35rem - 1px)}
+    .sub-admin{flex:none;margin-left:0;padding-left:1.1rem}
+    .sub-body::after{content:"";flex:none;width:1px}
+    .sub-body.swap{animation:none}
+
+    .page{padding-top:1.6rem;padding-bottom:calc(var(--tabh) + var(--striph) + 4.5rem + var(--safe))}
+    .demo{left:auto;right:.75rem;bottom:calc(var(--tabh) + var(--striph) + .6rem + var(--safe))}
+    .demo>button{padding:.25rem .65rem;font-size:.8rem;background:var(--bg-2)}
+    .demo-panel{left:auto;right:0}
+
+    .hello p{font-size:1.04rem}
+    .panel,.adm-add{padding:1.2rem 1.1rem}
+    .reg-row{gap:.6rem}
+    .step{flex:1 1 100%;justify-content:space-between}
+    .step .val{flex:1;justify-content:center}
+    .reg-row .btn{flex:1 1 100%}
+    .later a{grid-template-columns:4.6rem minmax(0,1fr) auto}
+    .lb-row{grid-template-columns:minmax(0,1fr) auto}
+    .lb dt{grid-column:1 / -1;font-size:.84rem}
+    .doc-grid{align-items:flex-end}
+    .rows.songs>li{grid-template-columns:1fr}
+    .rows.songs .aside{text-align:left}
+    .tlist>li{grid-template-columns:1fr}
+    .tlist .chips{justify-content:flex-start;padding-left:3.25rem}
+    .cal-row{grid-template-columns:4.6rem minmax(0,1fr) auto;gap:.75rem}
+    .search{max-width:none}
+    .kfilter .seg{flex-wrap:nowrap;max-width:100%;overflow-x:auto;scrollbar-width:none}
+    .kfilter .seg button{padding:.35rem .5rem;font-size:.84rem;gap:.35rem}
+    .fgrid{grid-template-columns:minmax(0,1fr)}
+    .frow{grid-template-columns:minmax(0,1fr) minmax(0,1fr) auto}
+    .frow .f-name{grid-column:1 / 3}
+    .frow .f-file{grid-column:1 / -1}
+    .frow .rm{grid-column:3;grid-row:1}
+    .alist.songs>li{grid-template-columns:minmax(0,1fr) auto}
+    .alist.songs .s-g,.alist.songs .s-f{display:none}
+    .alist.songs .an .m-meta{display:block}
+    .alist.reps>li{grid-template-columns:minmax(0,1fr) auto}
+    .alist.reps .r-n,.alist.reps .r-v{display:none}
+    .alist.reps .an .m-meta{display:block}
+    .alist .confirm{grid-column:1 / -1;justify-content:flex-start}
+    .cell{min-height:3.4rem;padding:.3rem .2rem .35rem;align-items:center}
+    .cell .dn{margin:0}
+    .cell .ev{display:none}
+    .cell .dots{display:flex}
+    .mgrid .dow{padding:.4rem .2rem;text-align:center;font-size:.72rem}
+    .reader{padding:0}
+    .sheet{max-width:none;max-height:100vh;height:100%;border-radius:0;border:0}
+    .sheet-body{padding:.6rem}
+    .sheet-f{flex-wrap:wrap}
+    .dpanel{border-left:0}
+    .dp-body{padding:1.1rem 1.1rem 2rem}
+    .dp-f{padding-left:1.1rem;padding-right:1.1rem}
+  }
+  @media (max-width:480px){
+    .brand{gap:.55rem;align-items:center}
+    .brand .bn{font-size:1.05rem}
+    .brand .bn2{display:block}
+    .brand img{width:22px}
+  }
+
+  @media (prefers-reduced-motion:reduce){
+    *,*::before,*::after{animation:none!important;transition:none!important}
+  }
+</style>
+</head>
+<body x-data="app()" x-init="init()" @keydown.escape.window="onEsc()" x-effect="document.title = pageTitle + ' – Mannskoret Arme Riddere'">
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="i-out" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" d="M8 16 16 8M9.5 8H16v6.5"/></symbol>
+  <symbol id="i-play" viewBox="0 0 24 24"><path fill="currentColor" d="M7 4.5v15l12.5-7.5z"/></symbol>
+  <symbol id="i-flame" viewBox="0 0 96 112"><path fill="currentColor" d="M48 4c4 17 30 29 30 62a30 30 0 0 1-60 0c0-14 7-23 14-29 0 12 5 18 11 20C40 43 38 26 48 4z"/></symbol>
+  <symbol id="i-down" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" d="M12 4v11m-4.5-4.5L12 15l4.5-4.5M5 19.5h14"/></symbol>
+  <symbol id="i-check" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" d="M5 12.5 10 17 19 7"/></symbol>
+  <symbol id="i-l" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" d="M15 5 8 12l7 7"/></symbol>
+  <symbol id="i-r" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" d="m9 5 7 7-7 7"/></symbol>
+  <symbol id="i-up" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" d="m5 15 7-7 7 7"/></symbol>
+  <symbol id="i-dn" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" d="m5 9 7 7 7-7"/></symbol>
+  <symbol id="i-x" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" d="M6 6l12 12M18 6 6 18"/></symbol>
+  <symbol id="i-cal" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3.5" y="5" width="17" height="15" rx="2"/><path d="M3.5 10h17M8 3v4M16 3v4"/></g></symbol>
+  <!-- bottom tab icons -->
+  <symbol id="t-hjem" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" d="M4 10.5 12 4l8 6.5V20h-5.2v-5.5H9.2V20H4z"/></symbol>
+  <symbol id="t-noter" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 17.5V5.5l10-2v12"/><circle cx="6.5" cy="17.5" r="2.5"/><circle cx="16.5" cy="15.5" r="2.5"/></g></symbol>
+  <symbol id="t-medlemmer" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="9" cy="8" r="3.3"/><path d="M3 20c.4-3.4 2.9-5.6 6-5.6s5.6 2.2 6 5.6"/><path d="M15.5 4.9a3.2 3.2 0 0 1 0 6.2M17.6 14.6c1.9.7 3.2 2.6 3.4 5.4"/></g></symbol>
+  <symbol id="t-ridderdata" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" stroke-linecap="round"><rect x="3" y="4" width="18" height="5" rx="1.2"/><path d="M5 9v10.5h14V9M10 13h4"/></g></symbol>
+  <symbol id="t-kontakt" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><rect x="3" y="5.5" width="18" height="13" rx="2"/><path d="M3.8 7 12 13l8.2-6"/></g></symbol>
+</svg>
+
+<!-- ============ top bar ============ -->
+<header class="top">
+  <div class="inner">
+    <a class="brand" href="#/">
+      <img src="../../logo.png" alt="">
+      <span class="bn">Mannskoret <span class="bn2">Arme Riddere</span></span>
+    </a>
+
+    <div class="me" @click.outside="meOpen=false">
+      <button class="me-btn" x-ref="meBtn" type="button" aria-haspopup="true" :aria-expanded="meOpen" aria-controls="me-menu"
+              @click="toggleMe()" @keydown.down.prevent="openMe()">
+        <span class="who">
+          <b>Ola Nordmann</b>
+          <small x-text="status==='aktiv' ? '2. tenor · Ridder' : 'Ridder · ypp.com.'"></small>
+        </span>
+        <span class="portrait"><img src="../../portrett.png" alt=""></span>
+      </button>
+      <ul class="menu" id="me-menu" x-ref="meMenu" x-show="meOpen" x-cloak
+          @keydown.down.prevent="moveMenu(1)" @keydown.up.prevent="moveMenu(-1)" @keydown.tab="meOpen=false">
+        <li><a href="/app/profil">Vis profil</a></li>
+        <li><a href="/app/achievements">Achievements</a></li>
+        <li><a href="/app/innstillinger">Innstillinger</a></li>
+        <li class="sep" role="presentation"></li>
+        <li><a class="quiet" href="/logout">Logg ut</a></li>
+      </ul>
+    </div>
+  </div>
+</header>
+
+<!-- ============ nav dock: main menu + sub-strip. Top on desktop, bottom on phones ============ -->
+<div class="navdock">
+  <nav class="mainbar" aria-label="Hovedmeny">
+    <div class="inner">
+      <ul class="mainbar-list">
+        <template x-for="k in order" :key="k">
+          <li>
+            <a class="mainbar-btn" :class="sec===k && 'on'" :href="k==='hjem' ? '#/' : '#/'+k+'/'+defaultSub(k)"
+               :aria-current="sec===k ? 'page' : null">
+              <svg class="tab-ic" aria-hidden="true"><use :href="'#t-'+k"/></svg>
+              <span x-text="sections[k].label"></span>
+            </a>
+          </li>
+        </template>
+      </ul>
+    </div>
+  </nav>
+
+  <nav class="substrip" x-show="sec!=='hjem'" x-cloak :aria-label="sec!=='hjem' ? 'Undermeny ' + sections[sec].label : null">
+    <div class="inner">
+      <template x-for="k in stripKey" :key="k">
+        <div class="sub-body swap">
+          <template x-if="sub!=='admin'">
+            <div class="sub-wrap">
+              <ul class="sub-links">
+                <template x-for="s in subs(sec).filter(s=>!s.roles)" :key="s.k">
+                  <li><a :href="s.h || '#/'+sec+'/'+s.k" :class="sub===s.k && 'on'" :aria-current="sub===s.k ? 'page' : null"
+                         :target="s.h ? '_blank' : null" :rel="s.h ? 'noopener' : null"><span x-text="s.t"></span><svg class="ext" x-show="s.h" aria-label="åpnes i ny fane"><use href="#i-out"/></svg></a></li>
+                </template>
+              </ul>
+              <template x-if="subs(sec).some(s=>s.roles)">
+                <ul class="sub-admin">
+                  <template x-for="s in subs(sec).filter(s=>s.roles)" :key="s.k">
+                    <li><a :href="'#/'+sec+'/admin/'+s.pages[0].k" x-text="s.t"></a></li>
+                  </template>
+                </ul>
+              </template>
+            </div>
+          </template>
+          <template x-if="sub==='admin'">
+            <div class="sub-wrap">
+              <a class="sub-back" :href="'#/'+sec+'/'+defaultSub(sec)"><svg aria-hidden="true"><use href="#i-l"/></svg><span x-text="sections[sec].label"></span></a>
+              <span class="tag sub-lbl" x-text="adminItem.t"></span>
+              <ul class="sub-links">
+                <template x-for="p in adminItem.pages" :key="p.k">
+                  <li><a :href="'#/'+sec+'/admin/'+p.k" :class="adm===p.k && 'on'" :aria-current="adm===p.k ? 'page' : null" x-text="p.t"></a></li>
+                </template>
+              </ul>
+            </div>
+          </template>
+        </div>
+      </template>
+    </div>
+  </nav>
+</div>
+
+<main class="page">
+  <div class="inner">
+
+    <!-- ============ Hjem ============ -->
+    <div x-show="sec==='hjem'">
+      <div class="hello">
+        <h1 id="hi" class="page-h" tabindex="-1"><span x-text="greeting"></span>, Ola.</h1>
+        <p>Internsidene og appen er nå samlet på ett sted. Noter, øvingsplan, medlemslister og arkivet ligger bak samme innlogging.</p>
+      </div>
+
+      <div class="home">
+        <div class="col">
+          <!-- Registrer øving -->
+          <form class="panel reg a-reg" x-show="status==='aktiv'" @submit.prevent="register()" aria-labelledby="reg-h">
+            <div class="reg-top">
+              <div>
+                <h2 id="reg-h">Registrer øving</h2>
+                <p class="reg-day">Registreres for i dag</p>
+              </div>
+              <span class="streak"><svg aria-hidden="true"><use href="#i-flame"/></svg><b :class="bumped && 'bump'" x-text="streak"></b> dager på rad</span>
+            </div>
+            <div class="reg-row">
+              <div class="step" role="group" aria-label="Minutter øvd">
+                <button type="button" @click="nudge(-5)" :disabled="mins<=0" aria-label="5 minutter mindre">−5</button>
+                <label class="val" for="min">
+                  <span class="sr">Minutter øvd</span>
+                  <input id="min" type="number" inputmode="numeric" min="0" max="600" step="1" x-model="minutes"
+                         @focus="$event.target.select()" @change="minutes = mins">
+                  <span class="unit" aria-hidden="true">min</span>
+                </label>
+                <button type="button" @click="nudge(5)" aria-label="5 minutter mer">+5</button>
+              </div>
+              <button class="btn" type="submit" :disabled="!(mins>0)" x-text="'Registrer ' + mins + ' min'">Registrer 15 min</button>
+            </div>
+            <p class="reg-note" :class="last && 'fade-in'" aria-live="polite" x-text="last"></p>
+            <div class="week" :class="week>=goal && 'done'">
+              <div class="week-t">
+                <span class="gl"><svg x-show="week>=goal" aria-hidden="true"><use href="#i-check"/></svg><span x-text="week>=goal ? 'Ukemålet er nådd' : 'Denne uka'"></span></span>
+                <span><b x-text="week"></b> av <span x-text="goal"></span> min</span>
+              </div>
+              <div class="bar" role="progressbar" aria-label="Øvingsminutter denne uka, mål 60" :aria-valuenow="week" aria-valuemin="0" :aria-valuemax="goal"><i :style="`width:${Math.min(100, week/goal*100)}%`"></i></div>
+            </div>
+          </form>
+          <p class="tid a-reg" x-show="status==='tidligere'" x-cloak>Koret synger snart igjen. Du er alltid velkommen i salen.</p>
+
+          <!-- Toppliste -->
+          <section class="lb a-lb" aria-labelledby="lb-h">
+            <h2 id="lb-h" class="panel-h">Toppliste</h2>
+            <dl>
+              <div class="lb-row"><dt>Lengste streak</dt><dd class="lb-n">Per Hansen</dd><dd class="lb-v">23 dager</dd></div>
+              <div class="lb-row"><dt>Mest øving totalt</dt><dd class="lb-n">Knut Berg</dd><dd class="lb-v" x-text="fmt(4312) + ' min'">4 312 min</dd></div>
+            </dl>
+            <p class="lb-me" x-show="status==='aktiv'">Du: <span x-text="streak"></span> dager · <span x-text="fmt(total)"></span> min</p>
+          </section>
+        </div>
+
+        <div class="col">
+          <!-- Snart -->
+          <section class="panel soon a-soon" aria-labelledby="soon-h">
+            <h2 id="soon-h" class="panel-h">Snart</h2>
+            <a class="next" :href="status==='aktiv' ? '#/noter/ovingsplan' : '#/ridderdata/kalender'">
+              <span class="kind" x-text="lead.kind"></span>
+              <span class="date"><span x-text="lead.day"></span> <span class="tm" x-text="lead.time"></span></span>
+              <span class="title" x-text="lead.title"></span>
+            </a>
+            <ul class="later">
+              <template x-for="e in later" :key="e.id">
+                <li><a href="#/ridderdata/kalender">
+                  <span class="d" x-text="e.d"></span>
+                  <span class="w"><span x-text="e.w"></span><small x-show="e.where" x-text="e.where"></small></span>
+                  <span class="t" x-text="e.t"></span>
+                </a></li>
+              </template>
+            </ul>
+            <a class="textlink" href="#/ridderdata/kalender">Åpne kalenderen</a>
+          </section>
+
+          <!-- Latest document -->
+          <section class="doc a-doc" aria-labelledby="doc-h">
+            <div class="doc-top">
+              <h2 id="doc-h" class="panel-h">Nytt dokument</h2>
+              <span class="tag" x-show="!docRead">Ny</span>
+            </div>
+            <div class="doc-grid">
+              <div>
+                <p class="doc-name">Styrereferat 18.09.2026</p>
+                <p class="doc-by">Lagt ut av Paragrafrytteren</p>
+              </div>
+              <button class="btn btn-quiet" type="button" @click="openDoc($event)" aria-label="Les Styrereferat 18.09.2026">Les</button>
+            </div>
+            <a class="textlink" href="#/ridderdata/dokumenter">Alle dokumenter</a>
+          </section>
+        </div>
+      </div>
+    </div>
+
+    <!-- ============ section pages ============ -->
+    <template x-if="sec!=='hjem'">
+      <section class="body" :class="sub==='admin' && 'wide'" :aria-label="pageTitle">
+
+        <!-- Noter / Sanger -->
+        <template x-if="sec==='noter' && sub==='sanger'">
+          <div>
+            <div class="body-h">
+              <div>
+                <h1 class="page-h" tabindex="-1">Sanger</h1>
+                <p x-text="knownCount + ' av ' + visibleSongs.length + ' kan du'"></p>
+              </div>
+              <input class="search" type="search" placeholder="Søk etter sang eller sjanger" aria-label="Søk i sanger" x-model="q">
+            </div>
+            <ul class="rows songs">
+              <template x-for="s in filtered" :key="s.id">
+                <li>
+                  <a class="nm" :href="'/app/noter/sang/' + s.id"><span x-text="s.t"></span><small x-text="s.g.join(', ')"></small></a>
+                  <div class="aside">
+                    <div class="know" role="group" :aria-label="'Hvor godt kan du ' + s.t">
+                      <template x-for="o in know" :key="o.v">
+                        <button type="button" :class="'k-'+o.v" :aria-pressed="s.k===o.v" @click="s.k=o.v"><span class="pip" aria-hidden="true"></span><span x-text="o.t"></span></button>
+                      </template>
+                    </div>
+                  </div>
+                </li>
+              </template>
+            </ul>
+            <p class="empty" x-show="!filtered.length">Ingen sanger passer søket. Prøv et kortere ord.</p>
+          </div>
+        </template>
+
+        <!-- Noter / Repertoar -->
+        <template x-if="sec==='noter' && sub==='repertoar'">
+          <div>
+            <template x-if="!visibleReps.length">
+              <div class="rep-empty">
+                <h1 class="page-h" tabindex="-1">Ingen repertoar ennå</h1>
+                <p>Når noteansvarlig legger ut et repertoar, finner du sangene og rekkefølgen her. Til da kan du øve på sangene i Sanger.</p>
+                <a class="btn btn-quiet" href="#/noter/sanger">Gå til Sanger</a>
+                <a class="textlink" style="margin-left:1rem" x-show="isNoteAdmin" href="#/noter/admin/repertoar">Opprett et repertoar</a>
+              </div>
+            </template>
+            <template x-if="visibleReps.length">
+              <div>
+                <div class="body-h">
+                  <div>
+                    <h1 class="page-h" tabindex="-1" x-text="curRep.name"></h1>
+                    <p x-text="repNote(curRep)"></p>
+                  </div>
+                </div>
+                <div class="repsel" x-show="visibleReps.length > 1">
+                  <div class="seg" role="group" aria-label="Velg repertoar">
+                    <template x-for="r in visibleReps" :key="r.id">
+                      <button type="button" :aria-pressed="curRep.id===r.id" @click="repSel=r.id; kf='alle'"><span x-text="r.name"></span><span class="tag q" x-show="!r.visible">Utkast</span></button>
+                    </template>
+                  </div>
+                </div>
+                <div class="kfilter">
+                  <div class="seg" role="group" aria-label="Vis sanger etter hvor godt du kan dem">
+                    <button type="button" :aria-pressed="kf==='alle'" @click="kf='alle'">Alle <span class="n" x-text="curRep.songs.length"></span></button>
+                    <template x-for="o in know" :key="o.v">
+                      <button type="button" :aria-pressed="kf===o.v" @click="kf=o.v"><span class="kd" :class="o.v" aria-hidden="true"></span><span x-text="o.t"></span> <span class="n" x-text="repCounts[o.v]"></span></button>
+                    </template>
+                  </div>
+                  <p class="hint">Endre hvor godt du kan en sang i <a href="#/noter/sanger">sangvisningen</a>.</p>
+                </div>
+                <ol class="order" aria-label="Sanger i konsertrekkefølge">
+                  <template x-for="row in repRows" :key="row.s.id">
+                    <li>
+                      <span class="no" x-text="row.pos"></span>
+                      <span class="rn"><span class="kd" :class="row.s.k" aria-hidden="true"></span><span x-text="row.s.t"></span></span>
+                      <small :class="'t-'+row.s.k" x-text="knowLabel(row.s.k)"></small>
+                    </li>
+                  </template>
+                </ol>
+                <p class="empty" x-show="!repRows.length && curRep.songs.length">Ingen sanger med denne fargen. <a class="textlink" href="#" @click.prevent="kf='alle'">Vis alle</a></p>
+                <p class="empty" x-show="!curRep.songs.length">Repertoaret er tomt ennå.</p>
+              </div>
+            </template>
+          </div>
+        </template>
+
+        <!-- Noter / Øvingsplan -->
+        <template x-if="sec==='noter' && sub==='ovingsplan'">
+          <div>
+            <div class="body-h"><div><h1 class="page-h" tabindex="-1">Øvingsplan</h1><p>De neste tre øvingene.</p></div></div>
+            <ul class="plan">
+              <template x-for="p in plan" :key="p.d">
+                <li><div class="when"><span x-text="p.d"></span></div><div class="what" x-text="p.w"></div><div class="songs" x-text="p.s"></div></li>
+              </template>
+            </ul>
+          </div>
+        </template>
+
+        <!-- Noter / Toneangiver -->
+        <template x-if="sec==='noter' && sub==='toneangiver'">
+          <div>
+            <div class="body-h">
+              <div><h1 class="page-h" tabindex="-1">Toneangiver</h1><p>Trykk på sangen for å høre alle starttonene, eller på én tone.</p></div>
+              <input class="search" type="search" placeholder="Søk etter sang" aria-label="Søk i toneangiver" x-model="q">
+            </div>
+            <ul class="rows tlist">
+              <template x-for="s in toneSongs" :key="s.id">
+                <li :class="playing.s===s.id && 'playing'">
+                  <button type="button" class="tone" @click="playSong(s)" :aria-label="'Spill starttonene for ' + s.t + ': ' + s.pitch.map(p=>p.v+' '+p.n).join(', ')">
+                    <span class="play" aria-hidden="true"><svg><use href="#i-play"/></svg></span>
+                    <span class="nm"><span x-text="s.t"></span><span class="bars" x-show="playing.s===s.id" aria-hidden="true"><i></i><i></i><i></i></span><small x-text="playing.s===s.id ? 'Spiller' : s.g.join(', ')"></small></span>
+                  </button>
+                  <div class="chips">
+                    <template x-for="(p,i) in s.pitch" :key="i">
+                      <button type="button" class="chip" :class="playing.s===s.id && playing.i===i && 'on'" @click="playNote(s,i)" :aria-label="'Spill ' + voiceName(p.v) + ', ' + p.n">
+                        <span class="cv" x-text="p.v"></span><span class="cn"><span x-text="p.n[0]"></span><span class="acc" x-show="p.n.length>2" x-text="p.n.slice(1,-1)"></span><span x-text="p.n.slice(-1)"></span></span>
+                      </button>
+                    </template>
+                  </div>
+                </li>
+              </template>
+            </ul>
+            <p class="empty" x-show="!toneSongs.length">Ingen sanger passer søket.</p>
+            <p class="sr" aria-live="polite" x-text="playing.s!==null ? 'Spiller ' + (songById(playing.s)||{}).t : ''"></p>
+          </div>
+        </template>
+
+        <!-- ===== Note-admin / Sanger ===== -->
+        <template x-if="sec==='noter' && sub==='admin' && adm==='sanger'">
+          <div>
+            <div class="body-h"><div><h1 class="page-h" tabindex="-1">Administrer sanger</h1><p>Legg til sanger med tekst og filer, og rediger det som finnes.</p></div></div>
+            <p class="flash" aria-live="polite" x-text="flash"></p>
+            <form class="adm-add" @submit.prevent="createSong()" novalidate aria-labelledby="as-h">
+              <h2 id="as-h">Legg til sang</h2>
+              <div data-use="tpl-song:songNew:ns"></div>
+              <div class="factions">
+                <button class="btn" type="submit">Legg til sang</button>
+                <button class="btn btn-quiet" type="button" @click="songNew = blankSong()">Tøm skjemaet</button>
+              </div>
+            </form>
+
+            <div class="adm-list-h">
+              <div><h2>Alle sanger</h2><p x-text="songs.length + ' sanger, ' + songs.filter(s=>s.secret).length + ' hemmelige'"></p></div>
+              <input class="search" type="search" placeholder="Søk etter sang eller sjanger" aria-label="Søk i alle sanger" x-model="q">
+            </div>
+            <ul class="alist songs">
+              <li class="hd" aria-hidden="true"><span>Navn</span><span class="s-g">Sjangere</span><span class="s-f">Filer</span><span></span></li>
+              <template x-for="s in adminSongs" :key="s.id">
+                <li>
+                  <span class="an"><span x-text="s.t"></span><span class="tag q" x-show="s.secret">Hemmelig</span>
+                    <small class="m-meta" x-text="(s.g.join(', ') || 'Ingen sjanger') + ', ' + s.files.length + (s.files.length===1 ? ' fil' : ' filer')"></small></span>
+                  <span class="ac s-g" x-text="s.g.join(', ') || '–'"></span>
+                  <span class="ac num s-f" x-text="s.files.length + (s.files.length===1 ? ' fil' : ' filer')"></span>
+                  <span class="acts"><button class="btn btn-quiet btn-s" type="button" @click="editSong(s,$event)" :aria-label="'Rediger ' + s.t">Rediger</button></span>
+                </li>
+              </template>
+            </ul>
+            <p class="empty" x-show="!adminSongs.length">Ingen sanger passer søket.</p>
+          </div>
+        </template>
+
+        <!-- ===== Note-admin / Repertoar ===== -->
+        <template x-if="sec==='noter' && sub==='admin' && adm==='repertoar'">
+          <div>
+            <div class="body-h"><div><h1 class="page-h" tabindex="-1">Administrer repertoar</h1><p>Et repertoar er en navngitt liste med sanger i fast rekkefølge.</p></div></div>
+            <p class="flash" aria-live="polite" x-text="flash"></p>
+            <form class="adm-add" @submit.prevent="createRep()" novalidate aria-labelledby="ar-h">
+              <h2 id="ar-h">Nytt repertoar</h2>
+              <div class="fgrid">
+                <label class="f" for="nr-name">Navn
+                  <input id="nr-name" class="fld" type="text" x-model="repNew.name" placeholder="For eksempel Vårkonsert 2027" :aria-invalid="repNew.tried && !repNew.name.trim()">
+                </label>
+                <div class="f" style="align-content:end">
+                  <label class="toggle" style="min-height:2.6rem"><input type="checkbox" x-model="repNew.visible"><span class="sw" aria-hidden="true"></span>Synlig for medlemmer</label>
+                </div>
+                <p class="err span2" x-show="repNew.tried && !repNew.name.trim()">Gi repertoaret et navn.</p>
+                <p class="hint span2">Nye repertoarer er skjult til du slår på Synlig, så du kan bygge dem ferdig først.</p>
+              </div>
+              <div class="factions"><button class="btn" type="submit">Opprett repertoar</button></div>
+            </form>
+
+            <div class="adm-list-h"><div><h2>Alle repertoarer</h2><p x-text="reps.length ? reps.length + ' repertoarer' : 'Ingen repertoarer ennå'"></p></div></div>
+            <ul class="alist reps">
+              <template x-for="r in reps" :key="r.id">
+                <li>
+                  <span class="an"><span x-text="r.name"></span><small class="m-meta" x-text="r.songs.length + ' sanger, ' + (r.visible ? 'synlig' : 'skjult')"></small></span>
+                  <span class="ac num r-n" x-text="r.songs.length + ' sanger'"></span>
+                  <span class="r-v"><span class="tag" :class="r.visible ? 'ok' : 'q'" x-text="r.visible ? 'Synlig' : 'Utkast'"></span></span>
+                  <span class="acts" x-show="repDel!==r.id">
+                    <button class="btn btn-quiet btn-s" type="button" @click="editRep(r,$event)" :aria-label="'Rediger ' + r.name">Rediger</button>
+                    <button class="btn btn-danger btn-s" type="button" @click="repDel=r.id" :aria-label="'Slett ' + r.name">Slett</button>
+                  </span>
+                  <span class="confirm" x-show="repDel===r.id">
+                    <span x-text="'Slette «' + r.name + '»?'"></span>
+                    <button class="btn btn-danger solid btn-s" type="button" @click="deleteRep(r)">Ja, slett</button>
+                    <button class="btn btn-quiet btn-s" type="button" @click="repDel=null">Avbryt</button>
+                  </span>
+                </li>
+              </template>
+            </ul>
+          </div>
+        </template>
+
+        <!-- ===== Note-admin placeholders ===== -->
+        <template x-if="sec==='noter' && sub==='admin' && ['kunnskap','plan','konkurranse'].includes(adm)">
+          <div class="ph">
+            <div class="body-h"><div><h1 class="page-h" tabindex="-1" x-text="adminPage.t"></h1></div></div>
+            <p x-text="adminPage.d"></p>
+            <button class="btn btn-quiet" type="button" disabled x-text="adminPage.b"></button>
+          </div>
+        </template>
+
+        <!-- Medlemmer / Medlemmer -->
+        <template x-if="sec==='medlemmer' && sub==='medlemmer'">
+          <div>
+            <div class="body-h">
+              <div><h1 class="page-h" tabindex="-1">Medlemmer</h1><p x-text="activeMembers.length + ' aktive riddere'"></p></div>
+              <div class="seg" role="group" aria-label="Visning">
+                <button type="button" :aria-pressed="view==='list'" @click="view='list'">Liste</button>
+                <button type="button" :aria-pressed="view==='gallery'" @click="view='gallery'">Galleri</button>
+              </div>
+            </div>
+            <ul class="rows mlist" x-show="view==='list'">
+              <template x-for="m in activeMembers" :key="m.id">
+                <li><span class="who"><span class="portrait"><img src="../../portrett.png" alt=""></span><span class="nm"><span x-text="m.fn+' '+m.ln"></span><small x-text="voiceName(m.voice)"></small></span></span><span class="aside" x-text="'Siden ' + m.jy"></span></li>
+              </template>
+            </ul>
+            <ul class="gallery" x-show="view==='gallery'">
+              <template x-for="m in activeMembers" :key="m.id">
+                <li><span class="portrait"><img src="../../portrett.png" alt=""></span><b x-text="m.fn+' '+m.ln"></b><small x-text="voiceName(m.voice)"></small></li>
+              </template>
+            </ul>
+          </div>
+        </template>
+
+        <!-- Medlemmer / Styret -->
+        <template x-if="sec==='medlemmer' && sub==='styret'">
+          <div>
+            <div class="body-h"><div><h1 class="page-h" tabindex="-1">Styret</h1><p>Styret for sesongen 2026–27.</p></div></div>
+            <ul class="rows">
+              <template x-for="b in board" :key="b.r">
+                <li><span class="nm" x-text="b.n"></span><span class="aside" x-text="b.r"></span></li>
+              </template>
+            </ul>
+          </div>
+        </template>
+
+        <!-- ===== Admin / Medlemmer ===== -->
+        <template x-if="sec==='medlemmer' && sub==='admin' && adm==='medlemmer'">
+          <div>
+            <div class="body-h"><div><h1 class="page-h" tabindex="-1">Administrer medlemmer</h1><p>Legg til nye riddere, og endre stemme, rang, status og roller.</p></div></div>
+            <p class="flash" aria-live="polite" x-text="flash"></p>
+            <form class="adm-add" @submit.prevent="createMem()" novalidate aria-labelledby="am-h">
+              <h2 id="am-h">Legg til medlem</h2>
+              <div data-use="tpl-mem:memNew:nm"></div>
+              <div class="factions">
+                <button class="btn" type="submit">Legg til og send invitasjon</button>
+                <button class="btn btn-quiet" type="button" @click="memNew = blankMem()">Tøm skjemaet</button>
+              </div>
+            </form>
+
+            <div class="adm-list-h">
+              <div><h2>Alle medlemmer</h2><p x-text="members.filter(m=>m.status==='active').length + ' aktive, ' + members.filter(m=>m.status==='former').length + ' ypp.com.'"></p></div>
+              <input class="search" type="search" placeholder="Søk etter navn eller e-post" aria-label="Søk i medlemmer" x-model="q">
+            </div>
+            <ul class="alist mems">
+              <li class="hd" aria-hidden="true"><span></span><span>Navn</span><span>Stemme</span><span>Rang</span><span>Status</span><span>Roller</span><span></span></li>
+              <template x-for="m in adminMembers" :key="m.id">
+                <li>
+                  <span class="portrait thumb"><img src="../../portrett.png" alt=""></span>
+                  <span class="an"><span x-text="m.fn + ' ' + m.ln"></span>
+                    <small x-text="m.email"></small>
+                    <small class="m-meta" x-text="voiceName(m.voice) + ', ' + rankName(m.rank) + (m.status==='former' ? ', ypp.com.' : '') + (m.roles.length ? ', ' + m.roles.map(roleName).join(' og ') : '')"></small></span>
+                  <span class="ac m-v" x-text="voiceName(m.voice)"></span>
+                  <span class="ac m-r" x-text="rankName(m.rank)"></span>
+                  <span class="m-s"><span class="tag" :class="m.status==='active' ? 'ok' : 'q'" x-text="m.status==='active' ? 'Aktiv' : 'ypp.com.'"></span></span>
+                  <span class="roles m-roles"><template x-for="r in m.roles" :key="r"><span class="tag" x-text="roleName(r)"></span></template></span>
+                  <span class="acts"><button class="btn btn-quiet btn-s" type="button" @click="editMem(m,$event)" :aria-label="'Rediger ' + m.fn + ' ' + m.ln">Rediger</button></span>
+                </li>
+              </template>
+            </ul>
+            <p class="empty" x-show="!adminMembers.length">Ingen medlemmer passer søket.</p>
+          </div>
+        </template>
+
+        <!-- ===== Admin placeholders ===== -->
+        <template x-if="sec==='medlemmer' && sub==='admin' && adm!=='medlemmer'">
+          <div class="ph">
+            <div class="body-h"><div><h1 class="page-h" tabindex="-1" x-text="adminPage.t"></h1></div></div>
+            <p x-text="adminPage.d"></p>
+            <button class="btn btn-quiet" type="button" disabled x-text="adminPage.b"></button>
+          </div>
+        </template>
+
+        <!-- Ridderdata / Kalender -->
+        <template x-if="sec==='ridderdata' && sub==='kalender'">
+          <div>
+            <div class="body-h">
+              <div><h1 class="page-h" tabindex="-1">Kalender</h1><p class="src"><svg aria-hidden="true"><use href="#i-cal"/></svg>Fra Google Kalender</p></div>
+              <div class="seg" role="group" aria-label="Visning">
+                <button type="button" :aria-pressed="calView==='list'" @click="calView='list'">Liste</button>
+                <button type="button" :aria-pressed="calView==='month'" @click="calView='month'">Måned</button>
+              </div>
+            </div>
+
+            <div x-show="calView==='list'">
+              <template x-for="g in weeks" :key="g.key">
+                <div>
+                  <div class="wk"><h2 x-text="g.rel || ('Uke ' + g.wk)"></h2><span x-text="(g.rel ? 'Uke ' + g.wk + ', ' : '') + g.range"></span></div>
+                  <ul class="rows">
+                    <template x-for="e in g.items" :key="e.id">
+                      <li style="grid-template-columns:1fr"><div class="cal-row">
+                        <span class="d" x-text="shortDate(e.date)"></span>
+                        <span class="nm"><span x-text="e.w"></span><span class="tag" x-show="e.pub && status==='aktiv'">Åpen</span><small x-show="e.where" x-text="e.where"></small></span>
+                        <span class="t" x-text="e.t"></span>
+                      </div></li>
+                    </template>
+                  </ul>
+                </div>
+              </template>
+            </div>
+
+            <div x-show="calView==='month'">
+              <div class="mhead">
+                <h2 aria-live="polite" x-text="monthName(calM) + ' ' + calY"></h2>
+                <div class="mnav">
+                  <button type="button" @click="shiftMonth(-1)" :disabled="calM<=8" aria-label="Forrige måned"><svg aria-hidden="true"><use href="#i-l"/></svg></button>
+                  <button type="button" @click="shiftMonth(1)" :disabled="calM>=11" aria-label="Neste måned"><svg aria-hidden="true"><use href="#i-r"/></svg></button>
+                </div>
+              </div>
+              <div class="mgrid" role="grid" :aria-label="monthName(calM) + ' ' + calY">
+                <template x-for="d in ['Man','Tir','Ons','Tor','Fre','Lør','Søn']" :key="d"><div class="dow" role="columnheader" x-text="d"></div></template>
+                <template x-for="c in grid" :key="c.iso">
+                  <button type="button" class="cell" role="gridcell" :disabled="!c.inMonth" :tabindex="c.inMonth ? 0 : -1"
+                          :class="{out:!c.inMonth, past:c.past, today:c.today, sel:c.iso===selDay}"
+                          @click="c.inMonth && (selDay=c.iso)" :aria-pressed="c.iso===selDay"
+                          :aria-label="longDate(c.date) + (c.events.length ? ', ' + c.events.length + (c.events.length===1 ? ' hendelse' : ' hendelser') : '')">
+                    <span class="dn" x-text="c.date.getDate()"></span>
+                    <template x-if="c.inMonth">
+                      <span style="display:contents">
+                        <template x-for="e in c.events.slice(0,2)" :key="e.id"><span class="ev" :class="evKind(e)" x-text="(e.t ? e.t + ' ' : '') + e.w"></span></template>
+                        <span class="ev" x-show="c.events.length>2" x-text="'+' + (c.events.length-2) + ' til'"></span>
+                        <span class="dots" x-show="c.events.length"><template x-for="e in c.events" :key="e.id"><i :class="evKind(e)"></i></template></span>
+                      </span>
+                    </template>
+                  </button>
+                </template>
+              </div>
+              <div class="dayview" aria-live="polite">
+                <h3 x-text="longDate(selDate)"></h3>
+                <ul class="rows" x-show="dayEvents.length">
+                  <template x-for="e in dayEvents" :key="e.id">
+                    <li style="grid-template-columns:1fr"><div class="cal-row">
+                      <span class="d" x-text="e.t || 'Hele dagen'"></span>
+                      <span class="nm"><span x-text="e.w"></span><span class="tag" x-show="e.pub && status==='aktiv'">Åpen</span><small x-show="e.where" x-text="e.where"></small></span>
+                      <span class="t"></span>
+                    </div></li>
+                  </template>
+                </ul>
+                <p class="empty" style="padding-top:.25rem" x-show="!dayEvents.length">Ingenting i kalenderen denne dagen.</p>
+              </div>
+            </div>
+          </div>
+        </template>
+
+        <!-- Ridderdata / Dokumenter -->
+        <template x-if="sec==='ridderdata' && sub==='dokumenter'">
+          <div>
+            <div class="body-h"><div><h1 class="page-h" tabindex="-1">Dokumenter</h1></div></div>
+            <ul class="rows doclist">
+              <li>
+                <button class="nm" type="button" @click="openDoc($event)"><span class="t">Styrereferat 18.09.2026</span><span class="tag" x-show="!docRead">Ny</span><small>Lagt ut av Paragrafrytteren</small></button>
+                <span class="aside">Sep 2026</span>
+              </li>
+              <template x-for="d in docs" :key="d.t">
+                <li><a href="/app/dokumenter"><span class="nm"><span class="t" x-text="d.t"></span></span><span class="aside" x-text="d.d"></span></a></li>
+              </template>
+            </ul>
+          </div>
+        </template>
+
+        <!-- Kontakt / Epostlister -->
+        <template x-if="sec==='kontakt' && sub==='epost'">
+          <div>
+            <div class="body-h"><div><h1 class="page-h" tabindex="-1">Epostlister</h1><p>Velg hvilke lister du får e-post fra.</p></div></div>
+            <ul class="rows">
+              <template x-for="l in lists.filter(l => status==='aktiv' || l.all)" :key="l.t">
+                <li>
+                  <span class="nm"><span x-text="l.t"></span><small x-text="l.d"></small></span>
+                  <label class="toggle"><input type="checkbox" x-model="l.on"><span class="sw" aria-hidden="true"></span><span x-text="l.on ? 'Abonnerer' : 'Av'"></span><span class="sr" x-text="l.t"></span></label>
+                </li>
+              </template>
+            </ul>
+          </div>
+        </template>
+
+        <!-- Kontakt / Anonym Forum -->
+        <template x-if="sec==='kontakt' && sub==='forum'">
+          <div>
+            <div class="body-h"><div><h1 class="page-h" tabindex="-1">Anonym Forum</h1><p>Si fra om noe til styret. Du velger selv om navnet ditt følger med.</p></div></div>
+            <form class="form" @submit.prevent="sent = true" x-show="!sent">
+              <label class="f">Emne<input type="text" x-model="fTitle" placeholder="Hva gjelder det?"></label>
+              <label class="f">Melding<textarea x-model="fBody"></textarea></label>
+              <div class="row">
+                <label class="toggle"><input type="checkbox" x-model="anon"><span class="sw" aria-hidden="true"></span>Send anonymt</label>
+                <button class="btn" type="submit" :disabled="!fBody.trim()" x-text="anon ? 'Send anonymt' : 'Send som Ola'"></button>
+              </div>
+              <p class="hint" x-text="anon ? 'Styret ser ikke hvem som sendte meldingen.' : 'Styret ser at meldingen er fra deg.'"></p>
+            </form>
+            <div x-show="sent" class="ph fade-in">
+              <p x-text="anon ? 'Sendt anonymt. Styret tar det opp på neste møte.' : 'Sendt. Styret svarer deg direkte.'"></p>
+              <button class="btn btn-quiet" type="button" @click="sent=false;fTitle='';fBody=''">Skriv en ny</button>
+            </div>
+          </div>
+        </template>
+
+      </section>
+    </template>
+
+  </div>
+</main>
+
+<!-- ============ edit drawer (songs, repertoires, members) ============ -->
+<div class="drawer" x-show="drawer" x-cloak @keydown.tab="trap($event, $refs.dpanel)">
+  <div class="reader-bg" @click="closeDrawer()" aria-hidden="true"></div>
+  <aside class="dpanel" role="dialog" aria-modal="true" aria-labelledby="dr-h" x-ref="dpanel">
+    <div class="sheet-h">
+      <h2 id="dr-h"><span x-text="drawerTitle"></span><small x-text="drawerSub"></small></h2>
+      <button class="x" type="button" x-ref="drClose" @click="closeDrawer()">Lukk</button>
+    </div>
+
+    <!-- song -->
+    <template x-if="drawer==='song'">
+      <form class="sub-wrap" @submit.prevent="saveSong()" novalidate>
+        <div class="dp-body"><div data-use="tpl-song:songEdit:es"></div></div>
+        <div class="dp-f">
+          <template x-if="!confirmDel">
+            <div class="grp" style="justify-content:space-between;width:100%">
+              <button class="btn" type="submit">Lagre endringer</button>
+              <button class="btn btn-danger" type="button" @click="confirmDel=true">Slett sang</button>
+            </div>
+          </template>
+          <template x-if="confirmDel">
+            <div class="grp">
+              <span class="ask" x-text="'Slette «' + songEdit.name + '» og alle filene?'"></span>
+              <button class="btn btn-danger solid btn-s" type="button" @click="deleteSong()">Ja, slett sangen</button>
+              <button class="btn btn-quiet btn-s" type="button" @click="confirmDel=false">Avbryt</button>
+            </div>
+          </template>
+        </div>
+      </form>
+    </template>
+
+    <!-- repertoire -->
+    <template x-if="drawer==='rep'">
+      <form class="sub-wrap" @submit.prevent="saveRep()" novalidate>
+        <div class="dp-body">
+          <div class="fgrid">
+            <label class="f span2" for="er-name">Navn
+              <input id="er-name" class="fld" type="text" x-model="repEdit.name" :aria-invalid="repEdit.tried && !repEdit.name.trim()">
+            </label>
+            <p class="err span2" x-show="repEdit.tried && !repEdit.name.trim()">Gi repertoaret et navn.</p>
+            <label class="toggle span2"><input type="checkbox" x-model="repEdit.visible"><span class="sw" aria-hidden="true"></span>Synlig for medlemmer</label>
+            <div class="f span2">
+              <span x-text="'Sanger i rekkefølge (' + repEdit.songs.length + ')'"></span>
+              <ol class="rsongs">
+                <template x-for="(id,i) in repEdit.songs" :key="id">
+                  <li>
+                    <span class="no" x-text="i+1"></span>
+                    <span style="color:var(--ink);min-width:0" x-text="(songById(id)||{}).t"></span>
+                    <span class="ibtns">
+                      <button class="ib" type="button" @click="moveSong(i,-1)" :disabled="i===0" :aria-label="'Flytt ' + (songById(id)||{}).t + ' opp'"><svg aria-hidden="true"><use href="#i-up"/></svg></button>
+                      <button class="ib" type="button" @click="moveSong(i,1)" :disabled="i===repEdit.songs.length-1" :aria-label="'Flytt ' + (songById(id)||{}).t + ' ned'"><svg aria-hidden="true"><use href="#i-dn"/></svg></button>
+                      <button class="ib x" type="button" @click="repEdit.songs.splice(i,1)" :aria-label="'Fjern ' + (songById(id)||{}).t + ' fra repertoaret'"><svg aria-hidden="true"><use href="#i-x"/></svg></button>
+                    </span>
+                  </li>
+                </template>
+              </ol>
+              <p class="hint" x-show="!repEdit.songs.length">Ingen sanger ennå. Legg til den første under.</p>
+              <div class="addrow">
+                <label class="sr" for="er-add">Legg til sang</label>
+                <select id="er-add" class="fld" x-model="repEdit.add">
+                  <option value="">Velg sang å legge til</option>
+                  <template x-for="s in songs.filter(s => !repEdit.songs.includes(s.id))" :key="s.id">
+                    <option :value="s.id" x-text="s.t + (s.secret ? ' (hemmelig)' : '')"></option>
+                  </template>
+                </select>
+                <button class="btn btn-quiet btn-s" type="button" @click="addToRep()" :disabled="repEdit.add===''">Legg til</button>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="dp-f"><button class="btn" type="submit">Lagre endringer</button><button class="btn btn-quiet" type="button" @click="closeDrawer()">Avbryt</button></div>
+      </form>
+    </template>
+
+    <!-- member -->
+    <template x-if="drawer==='mem'">
+      <form class="sub-wrap" @submit.prevent="saveMem()" novalidate>
+        <div class="dp-body"><div data-use="tpl-mem:memEdit:em"></div></div>
+        <div class="dp-f">
+          <template x-if="!confirmDel">
+            <div class="grp" style="justify-content:space-between;width:100%">
+              <button class="btn" type="submit">Lagre endringer</button>
+              <button class="btn btn-danger" type="button" @click="confirmDel=true">Fjern medlem</button>
+            </div>
+          </template>
+          <template x-if="confirmDel">
+            <div class="grp">
+              <span class="ask" x-text="'Fjerne ' + memEdit.fn + ' ' + memEdit.ln + ' fra medlemslista?'"></span>
+              <button class="btn btn-danger solid btn-s" type="button" @click="deleteMem()">Ja, fjern</button>
+              <button class="btn btn-quiet btn-s" type="button" @click="confirmDel=false">Avbryt</button>
+            </div>
+          </template>
+        </div>
+      </form>
+    </template>
+  </aside>
+</div>
+
+<!-- ============ document reader ============ -->
+<div class="reader" x-show="readerOpen" x-cloak @keydown.tab="trap($event, $refs.sheet)">
+  <div class="reader-bg" @click="closeDoc()" aria-hidden="true"></div>
+  <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="doc-title" x-ref="sheet">
+    <div class="sheet-h">
+      <h2 id="doc-title">Styrereferat 18.09.2026<small>Lagt ut av Paragrafrytteren, 19. sep 2026</small></h2>
+      <button class="x" type="button" x-ref="closeBtn" @click="closeDoc()">Lukk</button>
+    </div>
+    <div class="sheet-body" tabindex="0" aria-label="Dokumentets innhold">
+      <article class="paper">
+        <h3>Referat fra styremøte</h3>
+        <p class="meta">Fredag 18. september 2026, kl. 18:00, øvingslokalet i Johanneskirken. Til stede: Erik Moe (leder), Per Hansen, Lars Berg og Anders Lie (referent).</p>
+
+        <h4><span>Sak 23/26</span>Julekonserten 2026</h4>
+        <p>Johanneskirken er bekreftet for lørdag 12. desember kl. 19:00. Billettsalget åpner 1. november. Dirigenten ønsker fjorten sanger i programmet, og øvingsplanen for oktober er lagt opp etter det.</p>
+        <p class="vedtak">Vedtak: Styret godkjenner programmet og billettprisen på 250 kr.</p>
+
+        <h4><span>Sak 24/26</span>Opptreden i Grieghallen</h4>
+        <p>Mannskoret Arme Riddere synger i foajeen lørdag 3. oktober kl. 14:00. Oppmøte 13:15 ved artistinngangen. Antrekk: mørk dress og kortet slips.</p>
+
+        <h4><span>Sak 25/26</span>Semesterfest</h4>
+        <p>Festen holdes fredag 16. oktober. Festkomiteen sender invitasjon innen utgangen av september. Styret setter av 6 000 kr.</p>
+
+        <h4><span>Sak 26/26</span>Økonomi</h4>
+        <p>Kassereren la frem regnskapet per august. Kontingenten er betalt av 41 av 46 aktive. Påminnelse sendes de resterende.</p>
+
+        <h4><span>Sak 27/26</span>Eventuelt</h4>
+        <p>Øvingsappen er tatt i bruk. Styret oppfordrer alle til å registrere øving og markere hvilke sanger de kan. Ukemålet er 60 minutter.</p>
+
+        <p class="sign">Neste styremøte: torsdag 22. oktober 2026.<br>Referent: Anders Lie</p>
+      </article>
+    </div>
+    <div class="sheet-f">
+      <p class="hint">PDF, 2 sider</p>
+      <a class="btn btn-quiet" href="/app/dokumenter/styrereferat-2026-09-18.pdf" download><svg aria-hidden="true"><use href="#i-down"/></svg>Last ned PDF</a>
+    </div>
+  </div>
+</div>
+
+<div class="demo" @click.outside="demoOpen=false">
+  <button type="button" :aria-expanded="demoOpen" aria-controls="demo-panel" @click="demoOpen=!demoOpen">Demo</button>
+  <div class="demo-panel" id="demo-panel" x-show="demoOpen" x-cloak>
+    <fieldset>
+      <legend>Status</legend>
+      <label><input type="radio" value="aktiv" x-model="status"> Aktiv</label>
+      <label><input type="radio" value="tidligere" x-model="status"> Tidligere</label>
+    </fieldset>
+    <fieldset>
+      <legend>Roller</legend>
+      <label><input type="checkbox" value="master" x-model="roles"> master</label>
+      <label><input type="checkbox" value="notes" x-model="roles"> notes</label>
+    </fieldset>
+    <fieldset>
+      <legend>Repertoarer</legend>
+      <div class="inl">
+        <label><input type="radio" value="0" x-model="repCount"> 0</label>
+        <label><input type="radio" value="1" x-model="repCount"> 1</label>
+        <label><input type="radio" value="3" x-model="repCount"> 3</label>
+      </div>
+    </fieldset>
+  </div>
+</div>
+
+<!-- ============ reusable form parts (expanded into [data-use] before Alpine starts) ============ -->
+<template id="tpl-song">
+  <div class="fgrid">
+    <label class="f span2" for="__P__-name">Navn
+      <input id="__P__-name" class="fld" type="text" x-model="__F__.name" placeholder="For eksempel Nidelven" :aria-invalid="__F__.tried && !__F__.name.trim()">
+    </label>
+    <p class="err span2" x-show="__F__.tried && !__F__.name.trim()">Skriv inn navnet på sangen.</p>
+    <fieldset class="f span2">
+      <legend>Sjangere</legend>
+      <div class="gchips">
+        <template x-for="g in genres" :key="g">
+          <button type="button" class="gchip" :aria-pressed="__F__.genres.includes(g)" @click="toggleIn(__F__.genres, g)"><svg aria-hidden="true"><use href="#i-check"/></svg><span x-text="g"></span></button>
+        </template>
+      </div>
+    </fieldset>
+    <div class="f span2">
+      <label class="toggle"><input type="checkbox" x-model="__F__.secret"><span class="sw" aria-hidden="true"></span>Hemmelig</label>
+      <p class="hint">Hemmelige sanger vises bare for medlemmer når de ligger i et synlig repertoar.</p>
+    </div>
+    <label class="f span2" for="__P__-lyr">Tekst
+      <textarea id="__P__-lyr" class="fld" rows="4" x-model="__F__.lyrics" placeholder="Lim inn sangteksten"></textarea>
+    </label>
+    <label class="f span2" for="__P__-cho">Koreografilenke
+      <input id="__P__-cho" class="fld" type="url" x-model="__F__.choreo" placeholder="https://youtube.com/watch?v=…">
+    </label>
+    <fieldset class="f span2">
+      <legend>Filer</legend>
+      <div class="files">
+        <template x-for="(r,i) in __F__.files" :key="r.key">
+          <div class="frow">
+            <label class="f f-name" :for="'__P__-fn-'+r.key">Visningsnavn
+              <input :id="'__P__-fn-'+r.key" class="fld" type="text" x-model="r.name" placeholder="1. tenor">
+            </label>
+            <label class="f" :for="'__P__-fv-'+r.key">Stemme
+              <select :id="'__P__-fv-'+r.key" class="fld" x-model="r.voice">
+                <option>T1</option><option>T2</option><option>T3</option><option>B1</option><option>B2</option><option>Tutti</option>
+              </select>
+            </label>
+            <label class="f" :for="'__P__-ft-'+r.key">Type
+              <select :id="'__P__-ft-'+r.key" class="fld" x-model="r.type">
+                <option value="audio">Lyd</option><option value="sheet">Noter</option><option value="pitch">Toneangiver</option>
+              </select>
+            </label>
+            <div class="f f-file"><span>Fil</span>
+              <div class="pickwrap">
+                <label class="pick"><input type="file" class="sr" :accept="r.type==='sheet' ? '.pdf' : 'audio/*'" @change="r.file = $event.target.files[0] ? $event.target.files[0].name : r.file"><span x-text="r.file ? 'Bytt fil' : 'Velg fil'"></span></label>
+                <span class="fname" :class="r.file && 'has'" x-text="r.file || 'Ingen fil valgt'"></span>
+              </div>
+            </div>
+            <button type="button" class="rm" @click="__F__.files.splice(i,1)" :aria-label="'Fjern filraden ' + (r.name || (i+1))"><svg aria-hidden="true"><use href="#i-x"/></svg></button>
+          </div>
+        </template>
+        <p class="hint" x-show="!__F__.files.length">Ingen filer ennå. Legg til noter, lydfiler per stemme eller toneangiver.</p>
+        <div><button class="btn btn-quiet btn-s" type="button" @click="addFile(__F__)">Legg til fil</button></div>
+      </div>
+    </fieldset>
+  </div>
+</template>
+
+<template id="tpl-mem">
+  <div class="fgrid">
+    <label class="f" for="__P__-fn">Fornavn
+      <input id="__P__-fn" class="fld" type="text" autocomplete="off" x-model="__F__.fn" :aria-invalid="__F__.tried && !!memErr(__F__).fn">
+      <span class="err" x-show="__F__.tried && memErr(__F__).fn" x-text="memErr(__F__).fn"></span>
+    </label>
+    <label class="f" for="__P__-ln">Etternavn
+      <input id="__P__-ln" class="fld" type="text" autocomplete="off" x-model="__F__.ln" :aria-invalid="__F__.tried && !!memErr(__F__).ln">
+      <span class="err" x-show="__F__.tried && memErr(__F__).ln" x-text="memErr(__F__).ln"></span>
+    </label>
+    <label class="f" for="__P__-em">E-post
+      <input id="__P__-em" class="fld" type="email" autocomplete="off" x-model="__F__.email" placeholder="navn@example.no" :aria-invalid="__F__.tried && !!memErr(__F__).email">
+      <span class="err" x-show="__F__.tried && memErr(__F__).email" x-text="memErr(__F__).email"></span>
+    </label>
+    <label class="f" for="__P__-ph">Telefon
+      <input id="__P__-ph" class="fld" type="tel" autocomplete="off" x-model="__F__.phone" placeholder="+47 912 34 567">
+    </label>
+    <fieldset class="f">
+      <legend>Stemmegruppe</legend>
+      <div class="seg" role="group" aria-label="Stemmegruppe">
+        <template x-for="v in ['T1','T2','B1','B2']" :key="v">
+          <button type="button" :aria-pressed="__F__.voice===v" @click="__F__.voice=v" :title="voiceName(v)" x-text="v"></button>
+        </template>
+      </div>
+    </fieldset>
+    <label class="f" for="__P__-rk">Rang
+      <select id="__P__-rk" class="fld" x-model="__F__.rank">
+        <template x-for="r in ranks" :key="r.k"><option :value="r.k" x-text="r.t" :selected="r.k===__F__.rank"></option></template>
+      </select>
+    </label>
+    <fieldset class="f">
+      <legend>Status</legend>
+      <div class="seg" role="group" aria-label="Status">
+        <button type="button" :aria-pressed="__F__.status==='active'" @click="__F__.status='active'">Aktiv</button>
+        <button type="button" :aria-pressed="__F__.status==='former'" @click="__F__.status='former'">ypp.com.</button>
+      </div>
+    </fieldset>
+    <fieldset class="f">
+      <legend>Begynte</legend>
+      <div class="pair">
+        <label class="sr" :for="'__P__-jt'">Semester</label>
+        <select id="__P__-jt" class="fld" x-model="__F__.jt"><option value="V">Vår</option><option value="H">Høst</option></select>
+        <label class="sr" for="__P__-jy">År</label>
+        <input id="__P__-jy" class="fld" type="number" inputmode="numeric" min="1950" max="2030" x-model.number="__F__.jy" :aria-invalid="__F__.tried && !!memErr(__F__).jy">
+      </div>
+      <span class="err" x-show="__F__.tried && memErr(__F__).jy" x-text="memErr(__F__).jy"></span>
+    </fieldset>
+    <fieldset class="f span2" x-show="__F__.status==='former'">
+      <legend>Sluttet (påkrevd for ypp.com.)</legend>
+      <div class="pair" style="max-width:17rem">
+        <label class="sr" for="__P__-lt">Semester</label>
+        <select id="__P__-lt" class="fld" x-model="__F__.lt" :aria-invalid="__F__.tried && !!memErr(__F__).left"><option value="">Velg</option><option value="V">Vår</option><option value="H">Høst</option></select>
+        <label class="sr" for="__P__-ly">År</label>
+        <input id="__P__-ly" class="fld" type="number" inputmode="numeric" min="1950" max="2030" placeholder="År" x-model="__F__.ly" :aria-invalid="__F__.tried && !!memErr(__F__).left">
+      </div>
+      <span class="err" x-show="__F__.tried && memErr(__F__).left" x-text="memErr(__F__).left"></span>
+    </fieldset>
+    <fieldset class="f span2">
+      <legend>Roller</legend>
+      <div class="checks">
+        <label class="check"><input type="checkbox" value="master" x-model="__F__.roles"> Mester <small>alt av admin</small></label>
+        <label class="check"><input type="checkbox" value="notes" x-model="__F__.roles"> Note <small>sanger og repertoar</small></label>
+      </div>
+    </fieldset>
+    <p class="hint span2" x-show="'__F__'==='memNew'">Medlemmet får en invitasjon på e-post og velger passord selv. Lenken gjelder i 7 dager.</p>
+  </div>
+</template>
+
+<script>
+/* Expand [data-use="tplId:formVar:idPrefix"] placeholders (also inside <template> contents) before Alpine starts. */
+(function expand(root){
+  root.querySelectorAll('template').forEach(t => { if(t.id && t.id.startsWith('tpl-')) return; expand(t.content); });
+  root.querySelectorAll('[data-use]').forEach(el => {
+    const [tpl, F, P] = el.dataset.use.split(':');
+    el.innerHTML = document.getElementById(tpl).innerHTML.replaceAll('__F__', F).replaceAll('__P__', P);
+    el.removeAttribute('data-use');
+    expand(el);
+  });
+})(document);
+
+function app(){
+  // Demo "today": Friday 25 September 2026, so weekday labels match the fake calendar.
+  const TODAY = new Date(2026, 8, 25);
+  const VOICES = {T1:'1. tenor', T2:'2. tenor', T3:'3. tenor', B1:'1. bass', B2:'2. bass', Tutti:'Tutti', Alle:'Alle'};
+  const MONTHS = ['januar','februar','mars','april','mai','juni','juli','august','september','oktober','november','desember'];
+  const MON_S = ['jan','feb','mar','apr','mai','jun','jul','aug','sep','okt','nov','des'];
+  const DAYS = ['søndag','mandag','tirsdag','onsdag','torsdag','fredag','lørdag'];
+  const cap = s => s[0].toUpperCase() + s.slice(1);
+  const iso = d => d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
+  const slug = s => s.toLowerCase().replace(/[æ]/g,'ae').replace(/[ø]/g,'o').replace(/[å]/g,'a').replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'');
+
+  // id, name, genres, starting notes, knowledge, secret
+  const SONGS = [
+    [0,'Stille Natt',['Julesang'],'T1 B♭3, T2 F3, B1 D3, B2 B♭2','kjent'],
+    [1,'Deilig er jorden',['Salme','Julesang'],'T1 D4, T2 A3, B1 F♯3, B2 D3','kjent'],
+    [2,'Glade jul',['Julesang'],'T1 E4, T2 C4, B1 G3, B2 C3','litt'],
+    [3,'Jeg er så glad hver julekveld',['Julesang'],'T1 C4, B2 F2','ikke'],
+    [4,'O helga natt',['Julesang'],'T1 E♭4, T2 C4, T3 A♭3, B1 E♭3, B2 A♭2','litt'],
+    [5,'Nidelven',['Vise'],'T1 E♭4, T2 B♭3, B2 E♭3','kjent'],
+    [6,'Kjerringa med staven',['Folketone'],'Alle G3','kjent'],
+    [7,'Vårsøg',['Romanse'],'T1 A♭3, T2 E♭3, B1 C3, B2 A♭2','ikke'],
+    [8,'Bergensiana',['Byvise'],'T1 A3, B2 D3','kjent'],
+    [9,'Sønner av Norge',['Fedrelandssang'],'T1 E4, T2 B3, B1 G♯3, B2 E3','ikke'],
+    [10,'Mitt hjerte alltid vanker',['Salme','Julesang'],'T1 E♭4, T2 B♭3, B1 G3','kjent'],
+    [11,'Det kimer nå til julefest',['Julesang'],'T1 F4, T2 C4, B1 A3, B2 F3','kjent'],
+    [12,'Et barn er født i Betlehem',['Salme'],'Alle G3','kjent'],
+    [13,'Nordnorsk julesalme',['Julesang','Salme'],'T1 A3, T2 E3, B1 C♯3, B2 A2','kjent'],
+    [14,'Vi ere en nasjon, vi med',['Fedrelandssang'],'T1 D4, T2 B♭3, B1 F3, B2 B♭2','litt'],
+    [15,'Ja, vi elsker',['Fedrelandssang'],'T1 F4, T2 C4, B1 A3, B2 F3','kjent'],
+    [16,'Helan går',['Drikkevise'],'Alle C4','kjent'],
+    [17,'Riddersangen',['Drikkevise','Vise'],'T1 G4, T2 D4, B1 B3, B2 G3','litt'],
+    [18,'Bestillingsverk 2027',['Romanse'],'T1 E4, T2 C4, T3 A3, B1 E3, B2 A2','ikke', true],
+    [19,'Bursdagssang for dirigenten',['Vise'],'Alle D4','ikke', true],
+  ].map(([id,t,g,p,k,secret]) => {
+    const pitch = p.split(', ').map(x => { const [v,n] = x.split(' '); return {v, n}; });
+    const files = [{name:'Noter', voice:'Tutti', type:'sheet', file:slug(t)+'.pdf'}];
+    pitch.forEach(q => files.push(q.v==='Alle'
+      ? {name:'Tutti', voice:'Tutti', type:'audio', file:slug(t)+'-tutti.mp3'}
+      : {name:VOICES[q.v], voice:q.v, type:'audio', file:slug(t)+'-'+q.v.toLowerCase()+'.mp3'}));
+    files.push({name:'Toneangiver', voice:'Tutti', type:'pitch', file:slug(t)+'-toner.mp3'});
+    return {id, t, g, pitch, k, secret:!!secret, lyrics:'', choreo: id===17 ? 'https://youtube.com/watch?v=riddersang' : '', files};
+  });
+
+  const REPS = [
+    {id:1, name:'Julekonsert 2026', visible:true, note:'Johanneskirken, lør 12. des 19:00. Sangene i konsertrekkefølge.', songs:[11,1,10,2,12,7,5,8,6,9,13,3,4,0]},
+    {id:2, name:'Faste sanger', visible:true, note:'Sangene vi alltid skal kunne synge.', songs:[17,15,16,5,8,6,9]},
+    {id:3, name:'Vårkonsert 2027', visible:false, note:'Utkast. Bare synlig for noteansvarlige.', songs:[18,7,14,10]},
+  ];
+
+  // date, time, title, where, public
+  const EV = [
+    ['2026-09-17','19:00','Øving','',0],
+    ['2026-09-18','18:00','Styremøte','Øvingslokalet',0],
+    ['2026-09-24','19:00','Øving','',0],
+    ['2026-10-01','19:00','Øving','Julekonsert-innspurt',0],
+    ['2026-10-03','14:00','Opptreden','Grieghallen foyer',1],
+    ['2026-10-08','19:00','Øving','Stemmeøving, tenorer først',0],
+    ['2026-10-15','19:00','Øving','Gjennomkjøring av programmet',0],
+    ['2026-10-16','','Semesterfest','',0],
+    ['2026-10-22','17:30','Styremøte','Øvingslokalet',0],
+    ['2026-10-22','19:00','Øving','',0],
+    ['2026-10-29','19:00','Øving','',0],
+    ['2026-11-05','19:00','Øving','',0],
+    ['2026-11-07','18:00','Høstkonsert','Universitetsaulaen',1],
+    ['2026-11-12','19:00','Øving','',0],
+    ['2026-11-19','19:00','Øving','',0],
+    ['2026-11-26','19:00','Øving','',0],
+    ['2026-12-03','19:00','Øving','',0],
+    ['2026-12-10','19:00','Øving','',0],
+    ['2026-12-11','18:00','Generalprøve','Johanneskirken',0],
+    ['2026-12-12','19:00','Julekonsert','Johanneskirken',1],
+    ['2026-12-17','19:00','Juleavslutning','',0],
+  ].map(([d,t,w,where,pub],i) => { const [y,m,dd] = d.split('-').map(Number); return {id:'e'+i, iso:d, date:new Date(y,m-1,dd), t, w, where, pub:!!pub}; });
+
+  return {
+    status:'aktiv', roles:[], repCount:'3', route:{sec:'hjem', sub:null, adm:null},
+    meOpen:false, demoOpen:false, greeting:'Hei',
+    // Hjem / practice log
+    streak:6, week:45, goal:60, total:1540, minutes:15, bumped:false, last:'', logged:false,
+    // document reader + drawer
+    readerOpen:false, docRead:false, _opener:null,
+    drawer:null, confirmDel:false, flash:'',
+    // pages
+    q:'', view:'list', anon:true, sent:false, fTitle:'', fBody:'',
+    kf:'alle', repSel:1, calView:'list', calY:2026, calM:9, selDay:'2026-10-01',
+    playing:{s:null, i:null},
+    order:['hjem','noter','medlemmer','ridderdata','kontakt'],
+    sections:{
+      hjem:{label:'Hjem'},
+      noter:{label:'Noter', subs:[
+        {k:'sanger', t:'Sanger'},
+        {k:'repertoar', t:'Repertoar', activeOnly:true},
+        {k:'ovingsplan', t:'Øvingsplan', activeOnly:true},
+        {k:'toneangiver', t:'Toneangiver'},
+        {k:'admin', t:'Note-admin', roles:['notes','master'], pages:[
+          {k:'sanger', t:'Sanger'},
+          {k:'repertoar', t:'Repertoar'},
+          {k:'kunnskap', t:'Sangkunnskap', d:'Se hvem som kan hver sang, sortert på stemme. Nyttig før du setter opp øvingsplanen.', b:'Velg sang'},
+          {k:'plan', t:'Øvingsplan', d:'Sett opp øvingene fremover med dato, tema og hvilke sanger som skal øves.', b:'Ny øving'},
+          {k:'konkurranse', t:'Øvingskonkurranse', d:'Start en konkurranse med periode og premie. Topplista på Hjem regnes ut fra registrert øving.', b:'Ny konkurranse'},
+        ]},
+      ]},
+      medlemmer:{label:'Medlemmer', subs:[
+        {k:'medlemmer', t:'Medlemmer'},
+        {k:'styret', t:'Styret'},
+        {k:'admin', t:'Admin', roles:['master'], pages:[
+          {k:'medlemmer', t:'Medlemmer'},
+          {k:'styret', t:'Styret', d:'Sett hvem som sitter i styret og med hvilket verv, sesong for sesong.', b:'Nytt verv'},
+          {k:'opptellinger', t:'Opptellinger', d:'Registrer oppmøte på øvinger og konserter, og se oppmøte per medlem.', b:'Ny opptelling'},
+          {k:'dokumenter', t:'Dokumenter', d:'Last opp referater og andre dokumenter. Det siste dokumentet vises på Hjem.', b:'Last opp dokument'},
+          {k:'resolusjonar', t:'Resolusjonar', d:'Skriv inn og arkiver resolusjonar vedtatt på generalforsamlingen.', b:'Ny resolusjon'},
+          {k:'bakgrunn', t:'Bakgrunnsbilete', d:'Velg bildene som vises bak innloggingen.', b:'Last opp bilde'},
+        ]},
+      ]},
+      ridderdata:{label:'Ridderdata', subs:[
+        {k:'kalender', t:'Kalender'},
+        {k:'dokumenter', t:'Dokumenter'},
+        {k:'wiki', t:'RidderWiki', h:'/ridderwiki'},
+        {k:'video', t:'Videoarkiv', h:'/ridderwiki/Videoarkiv'},
+        {k:'bilder', t:'Bildearkiv', h:'https://armeriddere.smugmug.com'},
+      ]},
+      kontakt:{label:'Kontakt', subs:[
+        {k:'epost', t:'Epostlister'},
+        {k:'forum', t:'Anonym Forum'},
+      ]},
+    },
+    know:[{v:'kjent',t:'Kjent'},{v:'litt',t:'Litt kjent'},{v:'ikke',t:'Ikke kjent'}],
+    genres:['Julesang','Salme','Vise','Folketone','Romanse','Byvise','Fedrelandssang','Drikkevise'],
+    ranks:[
+      {k:'aspirant',t:'Aspirant'},{k:'knekt',t:'Knekt'},{k:'ridder',t:'Ridder'},
+      {k:'ridder_1st_class',t:'Ridder av 1. klasse'},{k:'kommandorridder',t:'Kommandørridder'},{k:'storridder',t:'Storridder'},
+    ],
+    songs: SONGS,
+    reps: REPS.map(r => ({...r, songs:[...r.songs]})),
+    events: EV,
+    plan:[
+      {d:'Torsdag 1. okt, 19:00', w:'Julekonsert-innspurt', s:'Deilig er jorden, Glade jul, O helga natt'},
+      {d:'Torsdag 8. okt, 19:00', w:'Stemmeøving, tenorer først', s:'Vårsøg, Sønner av Norge'},
+      {d:'Torsdag 15. okt, 19:00', w:'Gjennomkjøring av programmet', s:'Hele julekonserten'},
+    ],
+    members:[
+      {id:1, fn:'Ola', ln:'Nordmann', email:'ola.nordmann@example.no', phone:'+4791234567', voice:'T2', rank:'ridder', status:'active', roles:[], jt:'H', jy:2019, lt:'', ly:''},
+      {id:2, fn:'Per', ln:'Hansen', email:'per.hansen@example.no', phone:'+4792345678', voice:'T1', rank:'kommandorridder', status:'active', roles:[], jt:'V', jy:2011, lt:'', ly:''},
+      {id:3, fn:'Knut', ln:'Berg', email:'knut.berg@example.no', phone:'', voice:'B2', rank:'storridder', status:'active', roles:[], jt:'H', jy:2004, lt:'', ly:''},
+      {id:4, fn:'Lars', ln:'Berg', email:'lars.berg@example.no', phone:'+4793456789', voice:'B1', rank:'ridder_1st_class', status:'active', roles:['notes'], jt:'V', jy:2016, lt:'', ly:''},
+      {id:5, fn:'Jon', ln:'Dahl', email:'jon.dahl@example.no', phone:'', voice:'T2', rank:'knekt', status:'active', roles:[], jt:'H', jy:2022, lt:'', ly:''},
+      {id:6, fn:'Erik', ln:'Moe', email:'erik.moe@example.no', phone:'+4794567890', voice:'B2', rank:'storridder', status:'active', roles:['master'], jt:'H', jy:2008, lt:'', ly:''},
+      {id:7, fn:'Anders', ln:'Lie', email:'anders.lie@example.no', phone:'', voice:'T1', rank:'aspirant', status:'active', roles:[], jt:'V', jy:2024, lt:'', ly:''},
+      {id:8, fn:'Sindre', ln:'Aas', email:'sindre.aas@example.no', phone:'', voice:'B1', rank:'ridder', status:'former', roles:[], jt:'H', jy:2013, lt:'V', ly:2023},
+    ],
+    board:[
+      {r:'Leder', n:'Erik Moe'},{r:'Nestleder', n:'Per Hansen'},{r:'Kasserer', n:'Lars Berg'},{r:'Sekretær', n:'Anders Lie'},
+    ],
+    docs:[{t:'Sangerhåndbok', d:'Aug 2026'},{t:'Referat fra årsmøtet', d:'Feb 2026'},{t:'Vedtekter', d:'Mars 2024'}],
+    lists:[
+      {t:'Hele koret', d:'Beskjeder til alle aktive', on:true},
+      {t:'Tenorer', d:'Stemmegruppe', on:true},
+      {t:'Konsertnytt', d:'Åpne konserter og billetter', on:false, all:true},
+      {t:'Ypp.com.', d:'Tidligere medlemmer', on:false, all:true},
+    ],
+    snart:{
+      aktiv:{
+        lead:{kind:'Neste øving', day:'Torsdag 1. okt', time:'19:00', title:'«Julekonsert-innspurt»'},
+        later:[
+          {id:'a1', d:'Lør 3. okt', w:'Opptreden', where:'Grieghallen foyer', t:'14:00'},
+          {id:'a2', d:'Tor 8. okt', w:'Øving', t:'19:00'},
+          {id:'a3', d:'Fre 16. okt', w:'Semesterfest', t:''},
+        ]},
+      tidligere:{
+        lead:{kind:'Neste opptreden', day:'Lørdag 3. okt', time:'14:00', title:'Grieghallen foyer'},
+        later:[
+          {id:'t1', d:'Lør 7. nov', w:'Høstkonsert', where:'Universitetsaulaen', t:'18:00'},
+          {id:'t2', d:'Lør 12. des', w:'Julekonsert', where:'Johanneskirken', t:'19:00'},
+        ]},
+    },
+    // admin forms
+    _k:0,
+    songNew:null, songEdit:null, repNew:{name:'', visible:false, tried:false}, repEdit:{id:null,name:'',visible:false,songs:[],add:'',tried:false}, repDel:null,
+    memNew:null, memEdit:null,
+
+    get lead(){ return this.snart[this.status].lead },
+    get later(){ return this.snart[this.status].later },
+    get mins(){ const n = Math.round(+this.minutes); return isFinite(n) && n>0 ? Math.min(600,n) : 0 },
+    get isNoteAdmin(){ return this.roles.includes('notes') || this.roles.includes('master') },
+
+    /* ---------- songs ---------- */
+    songById(id){ return this.songs.find(s => s.id===id) },
+    get visibleSongs(){
+      const shown = new Set(this.reps.filter(r => r.visible).flatMap(r => r.songs));
+      return this.songs.filter(s => !s.secret || shown.has(s.id));
+    },
+    get knownCount(){ return this.visibleSongs.filter(s=>s.k==='kjent').length },
+    match(s){ const q=this.q.trim().toLowerCase(); return !q || (s.t+' '+s.g.join(' ')).toLowerCase().includes(q) },
+    get filtered(){ return this.visibleSongs.filter(s => this.match(s)) },
+    get toneSongs(){ return this.filtered.filter(s => s.pitch.length) },
+    get adminSongs(){ return this.songs.filter(s => this.match(s)) },
+    knowLabel(k){ return this.know.find(o=>o.v===k).t },
+    voiceName(v){ return VOICES[v] || v },
+    rankName(k){ return (this.ranks.find(r=>r.k===k)||{}).t || k },
+    roleName(r){ return r==='master' ? 'Mester' : r==='notes' ? 'Note' : r },
+    fmt(n){ return n.toLocaleString('nb-NO') },
+
+    /* ---------- repertoar ---------- */
+    get visibleReps(){ return this.reps.filter(r => r.visible || this.isNoteAdmin) },
+    get curRep(){ return this.visibleReps.find(r => r.id===this.repSel) || this.visibleReps[0] },
+    get repCounts(){
+      const c = {kjent:0, litt:0, ikke:0};
+      if(this.curRep) this.curRep.songs.forEach(id => { const s=this.songById(id); if(s) c[s.k]++; });
+      return c;
+    },
+    get repRows(){
+      if(!this.curRep) return [];
+      return this.curRep.songs.map((id,i) => ({pos:i+1, s:this.songById(id)})).filter(r => r.s && (this.kf==='alle' || r.s.k===this.kf));
+    },
+    repNote(r){ return r.note || (r.songs.length + ' sanger') },
+    seedReps(n){ this.reps = REPS.slice(0, +n).map(r => ({...r, songs:[...r.songs]})); this.repSel = this.reps.length ? this.reps[0].id : null; this.kf='alle'; },
+
+    /* ---------- routing (fake, hash based) ---------- */
+    subs(sec){
+      const list = this.sections[sec].subs || [];
+      return list.filter(s => !(s.activeOnly && this.status==='tidligere') && !(s.roles && !s.roles.some(r => this.roles.includes(r))));
+    },
+    defaultSub(sec){ const v = this.subs(sec).filter(x => !x.h); return v.length ? v[0].k : '' },
+    get sec(){ return this.route.sec },
+    get sub(){
+      const s = this.route.sec; if(s==='hjem') return null;
+      const vis = this.subs(s).filter(x => !x.h);
+      return vis.some(x => x.k===this.route.sub) ? this.route.sub : vis[0].k;
+    },
+    get adminItem(){ return (this.sections[this.sec].subs || []).find(s => s.k==='admin') || {t:'', pages:[]} },
+    get adm(){
+      if(this.sub!=='admin') return null;
+      const p = this.adminItem.pages;
+      return p.some(x => x.k===this.route.adm) ? this.route.adm : p[0].k;
+    },
+    get adminPage(){ return this.adminItem.pages.find(p => p.k===this.adm) || {} },
+    get stripKey(){ return this.sec==='hjem' ? [] : [this.sec + (this.sub==='admin' ? ':adm' : '')] },
+    get pageTitle(){
+      if(this.sec==='hjem') return 'Hjem';
+      if(this.sub==='admin') return this.adminItem.t + ': ' + this.adminPage.t;
+      const s = this.subs(this.sec).find(x=>x.k===this.sub); return s ? s.t : '';
+    },
+    parse(){
+      const [a,b,c] = location.hash.replace(/^#\/?/,'').split('/');
+      const sec = this.sections[a] ? a : 'hjem';
+      this.route = {sec, sub: sec==='hjem' ? null : (b || null), adm: c || null};
+    },
+    init(){
+      const h = new Date().getHours();
+      this.greeting = h>=5 && h<12 ? 'God morgen' : h>=12 && h<18 ? 'God ettermiddag' : 'God kveld';
+      this.songNew = this.blankSong(); this.songEdit = this.blankSong();
+      this.memNew = this.blankMem(); this.memEdit = this.blankMem();
+      this.parse();
+      this.$watch('repCount', v => this.seedReps(v));
+      // keep Ola's own member row in step with the demo control
+      this.$watch('roles', v => { this.members[0].roles = [...v]; });
+      this.$watch('status', v => { const m=this.members[0]; m.status = v==='aktiv' ? 'active' : 'former'; if(v!=='aktiv' && !m.lt){ m.lt='V'; m.ly=2026; } });
+      window.addEventListener('hashchange', () => {
+        const prev = [this.sec, this.sub, this.adm].join('/');
+        this.parse(); this.meOpen=false; this.q=''; this.sent=false; this.flash=''; this.repDel=null;
+        if(this.readerOpen) this.closeDoc(false);
+        if(this.drawer) this.closeDrawer(false);
+        this.stopAudio();
+        if(prev === [this.sec, this.sub, this.adm].join('/')) return;
+        window.scrollTo(0,0);
+        this.$nextTick(() => {
+          const el = [...document.querySelectorAll('.page-h')].find(el => el.offsetParent);
+          el && el.focus({preventScroll:true});
+        });
+      });
+    },
+
+    /* ---------- practice ---------- */
+    nudge(d){ this.minutes = Math.max(0, Math.min(600, this.mins + d)) },
+    register(){
+      const n = this.mins; if(!(n>0)) return;
+      const before = this.week;
+      if(!this.logged){ this.logged = true; this.streak = 7; }
+      this.week += n; this.total += n;
+      this.last = `${n} min registrert for i dag. ${this.streak} dager på rad.` + (before < this.goal && this.week >= this.goal ? ' Ukemålet på 60 min er nådd.' : '');
+      this.bumped = false;
+      this.$nextTick(() => { this.bumped = true; });
+      clearTimeout(this._t); this._t = setTimeout(() => { this.bumped=false; }, 800);
+    },
+
+    /* ---------- calendar ---------- */
+    get calEvents(){ return this.events.filter(e => this.status==='aktiv' || e.pub) },
+    isoWeek(d){
+      const t = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
+      const day = t.getUTCDay() || 7; t.setUTCDate(t.getUTCDate() + 4 - day);
+      const y0 = new Date(Date.UTC(t.getUTCFullYear(), 0, 1));
+      return Math.ceil(((t - y0) / 864e5 + 1) / 7);
+    },
+    get weeks(){
+      const out = [], by = {};
+      const thisWk = this.isoWeek(TODAY);
+      this.calEvents.filter(e => e.date >= TODAY).forEach(e => {
+        const wk = this.isoWeek(e.date);
+        if(!by[wk]){
+          const mon = new Date(e.date); mon.setDate(mon.getDate() - ((mon.getDay()+6)%7));
+          const sun = new Date(mon); sun.setDate(sun.getDate()+6);
+          const range = mon.getDate() + '. ' + MON_S[mon.getMonth()] + '–' + sun.getDate() + '. ' + MON_S[sun.getMonth()];
+          by[wk] = {key:'w'+wk, wk, range, rel: wk===thisWk ? 'Denne uka' : wk===thisWk+1 ? 'Neste uke' : '', items:[]};
+          out.push(by[wk]);
+        }
+        by[wk].items.push(e);
+      });
+      return out;
+    },
+    get grid(){
+      const y=this.calY, m=this.calM, first=new Date(y,m,1);
+      const off=(first.getDay()+6)%7, dim=new Date(y,m+1,0).getDate();
+      const n=Math.ceil((off+dim)/7)*7, cells=[];
+      for(let i=0;i<n;i++){
+        const d=new Date(y,m,1-off+i), k=iso(d), inMonth=d.getMonth()===m;
+        cells.push({date:d, iso:k, inMonth, today:k===iso(TODAY), past:d<TODAY, events: inMonth ? this.calEvents.filter(e=>e.iso===k) : []});
+      }
+      return cells;
+    },
+    get selDate(){ const [y,m,d]=this.selDay.split('-').map(Number); return new Date(y,m-1,d) },
+    get dayEvents(){ return this.calEvents.filter(e => e.iso===this.selDay) },
+    shiftMonth(d){
+      this.calM = Math.max(8, Math.min(11, this.calM + d));
+      const first = this.calEvents.find(e => e.date.getMonth()===this.calM && e.date >= TODAY) || this.calEvents.find(e => e.date.getMonth()===this.calM);
+      this.selDay = first ? first.iso : iso(new Date(this.calY, this.calM, 1));
+    },
+    evKind(e){ return e.pub ? 'pub' : e.w==='Øving' ? '' : 'oth' },
+    monthName(m){ return cap(MONTHS[m]) },
+    shortDate(d){ return cap(DAYS[d.getDay()].slice(0,3)) + ' ' + d.getDate() + '. ' + MON_S[d.getMonth()] },
+    longDate(d){ return cap(DAYS[d.getDay()]) + ' ' + d.getDate() + '. ' + MONTHS[d.getMonth()] },
+
+    /* ---------- admin: shared ---------- */
+    say(msg){ this.flash=''; this.$nextTick(() => { this.flash = msg; }); },
+    toggleIn(arr, v){ const i = arr.indexOf(v); i<0 ? arr.push(v) : arr.splice(i,1); },
+    focusFirstInvalid(){ this.$nextTick(() => { const el = document.querySelector('[aria-invalid="true"]'); el && el.focus(); }); },
+    openDrawer(kind, e){
+      this._opener = e && e.currentTarget;
+      this.confirmDel = false; this.drawer = kind; this.meOpen=false; this.demoOpen=false;
+      document.documentElement.style.overflow = 'hidden';
+      this.$nextTick(() => requestAnimationFrame(() => this.$refs.drClose.focus()));
+    },
+    closeDrawer(restore = true){
+      this.drawer = null; this.confirmDel = false;
+      document.documentElement.style.overflow = '';
+      if(restore && this._opener && this._opener.isConnected) this._opener.focus();
+    },
+    get drawerTitle(){ return {song:'Rediger sang', rep:'Rediger repertoar', mem:'Rediger medlem'}[this.drawer] || '' },
+    get drawerSub(){
+      if(this.drawer==='song') return (this.songById(this.songEdit.id)||{}).t || '';
+      if(this.drawer==='rep') return (this.reps.find(r=>r.id===this.repEdit.id)||{}).name || '';
+      if(this.drawer==='mem'){ const m=this.members.find(m=>m.id===this.memEdit.id); return m ? m.fn+' '+m.ln : ''; }
+      return '';
+    },
+
+    /* ---------- admin: songs ---------- */
+    blankSong(){ return {id:null, name:'', genres:[], secret:false, lyrics:'', choreo:'', files:[], tried:false} },
+    addFile(F){ F.files.push({key:++this._k, name:'', voice:'Tutti', type:'audio', file:''}); },
+    createSong(){
+      const F = this.songNew; F.tried = true;
+      if(!F.name.trim()){ this.focusFirstInvalid(); return; }
+      const id = Math.max(-1, ...this.songs.map(s=>s.id)) + 1;
+      this.songs.push({id, t:F.name.trim(), g:[...F.genres], pitch:[], k:'ikke', secret:F.secret, lyrics:F.lyrics, choreo:F.choreo,
+        files:F.files.map(({key, ...f}) => ({...f, name: f.name || this.voiceName(f.voice)}))});
+      this.songNew = this.blankSong();
+      this.say(`«${F.name.trim()}» er lagt til` + (F.secret ? ' som hemmelig.' : '.'));
+    },
+    editSong(s, e){
+      this.songEdit = {id:s.id, name:s.t, genres:[...s.g], secret:s.secret, lyrics:s.lyrics, choreo:s.choreo, tried:false,
+        files:s.files.map(f => ({...f, key:++this._k}))};
+      this.openDrawer('song', e);
+    },
+    saveSong(){
+      const F = this.songEdit; F.tried = true;
+      if(!F.name.trim()){ this.focusFirstInvalid(); return; }
+      const s = this.songById(F.id);
+      Object.assign(s, {t:F.name.trim(), g:[...F.genres], secret:F.secret, lyrics:F.lyrics, choreo:F.choreo,
+        files:F.files.map(({key, ...f}) => ({...f, name: f.name || this.voiceName(f.voice)}))});
+      this.closeDrawer(); this.say(`Endringene i «${s.t}» er lagret.`);
+    },
+    deleteSong(){
+      const id = this.songEdit.id, name = (this.songById(id)||{}).t;
+      this.songs = this.songs.filter(s => s.id!==id);
+      this.reps.forEach(r => { r.songs = r.songs.filter(x => x!==id); });
+      this._opener = null; this.closeDrawer(); this.say(`«${name}» er slettet.`);
+      this.$nextTick(() => { const h = document.querySelector('.page-h'); h && h.focus(); });
+    },
+
+    /* ---------- admin: repertoires ---------- */
+    createRep(){
+      const F = this.repNew; F.tried = true;
+      if(!F.name.trim()){ this.focusFirstInvalid(); return; }
+      const id = Math.max(0, ...this.reps.map(r=>r.id)) + 1;
+      this.reps.push({id, name:F.name.trim(), visible:F.visible, note:'', songs:[]});
+      this.repNew = {name:'', visible:false, tried:false};
+      this.say(`«${F.name.trim()}» er opprettet. Trykk Rediger for å legge til sanger.`);
+    },
+    editRep(r, e){ this.repEdit = {id:r.id, name:r.name, visible:r.visible, songs:[...r.songs], add:'', tried:false}; this.openDrawer('rep', e); },
+    moveSong(i, d){ const a = this.repEdit.songs, j = i + d; if(j<0 || j>=a.length) return; const [x] = a.splice(i,1); a.splice(j,0,x); },
+    addToRep(){ if(this.repEdit.add==='') return; this.repEdit.songs.push(+this.repEdit.add); this.repEdit.add=''; },
+    saveRep(){
+      const F = this.repEdit; F.tried = true;
+      if(!F.name.trim()){ this.focusFirstInvalid(); return; }
+      const r = this.reps.find(r=>r.id===F.id);
+      Object.assign(r, {name:F.name.trim(), visible:F.visible, songs:[...F.songs]});
+      this.closeDrawer(); this.say(`«${r.name}» er lagret.`);
+    },
+    deleteRep(r){
+      this.reps = this.reps.filter(x => x.id!==r.id); this.repDel = null;
+      this.say(`«${r.name}» er slettet.`);
+      this.$nextTick(() => { const h = document.querySelector('.page-h'); h && h.focus(); });
+    },
+
+    /* ---------- admin: members ---------- */
+    blankMem(){ return {id:null, fn:'', ln:'', email:'', phone:'', voice:'T1', rank:'aspirant', status:'active', jt:'H', jy:2026, lt:'', ly:'', roles:[], tried:false} },
+    memErr(F){
+      const e = {};
+      if(!F.fn.trim()) e.fn = 'Skriv inn fornavn.';
+      if(!F.ln.trim()) e.ln = 'Skriv inn etternavn.';
+      if(!/^\S+@\S+\.\S+$/.test(F.email.trim())) e.email = 'Skriv inn en gyldig e-postadresse.';
+      if(!(+F.jy >= 1950 && +F.jy <= 2030)) e.jy = 'Skriv inn året medlemmet begynte.';
+      if(F.status==='former' && (!F.lt || !(+F.ly >= 1950 && +F.ly <= 2030))) e.left = 'Velg semester og år medlemmet sluttet. Det må med når status er ypp.com.';
+      return e;
+    },
+    pickMem(F){ return {fn:F.fn.trim(), ln:F.ln.trim(), email:F.email.trim(), phone:F.phone.trim(), voice:F.voice, rank:F.rank, status:F.status,
+      jt:F.jt, jy:+F.jy, lt:F.status==='former' ? F.lt : '', ly:F.status==='former' ? +F.ly : '', roles:[...F.roles]} },
+    createMem(){
+      const F = this.memNew; F.tried = true;
+      if(Object.keys(this.memErr(F)).length){ this.focusFirstInvalid(); return; }
+      const id = Math.max(0, ...this.members.map(m=>m.id)) + 1;
+      this.members.push({id, ...this.pickMem(F)});
+      this.memNew = this.blankMem();
+      this.say(`${F.fn.trim()} ${F.ln.trim()} er lagt til. Invitasjonen er sendt til ${F.email.trim()}.`);
+    },
+    editMem(m, e){ this.memEdit = {...m, roles:[...m.roles], tried:false}; this.openDrawer('mem', e); },
+    saveMem(){
+      const F = this.memEdit; F.tried = true;
+      if(Object.keys(this.memErr(F)).length){ this.focusFirstInvalid(); return; }
+      const m = this.members.find(m=>m.id===F.id);
+      Object.assign(m, this.pickMem(F));
+      if(m.id===1){ this.roles = [...m.roles]; this.status = m.status==='active' ? 'aktiv' : 'tidligere'; }
+      this.closeDrawer(); this.say(`Endringene for ${m.fn} ${m.ln} er lagret.`);
+    },
+    deleteMem(){
+      const m = this.members.find(m=>m.id===this.memEdit.id);
+      this.members = this.members.filter(x => x.id!==m.id);
+      this._opener = null; this.closeDrawer(); this.say(`${m.fn} ${m.ln} er fjernet fra medlemslista.`);
+      this.$nextTick(() => { const h = document.querySelector('.page-h'); h && h.focus(); });
+    },
+    get activeMembers(){ return this.members.filter(m => m.status==='active') },
+    get adminMembers(){
+      const q = this.q.trim().toLowerCase();
+      return this.members.filter(m => !q || (m.fn+' '+m.ln+' '+m.email).toLowerCase().includes(q));
+    },
+
+    /* ---------- document reader ---------- */
+    openDoc(e){
+      this._opener = e && e.currentTarget;
+      this.readerOpen = true; this.meOpen = false; this.demoOpen = false;
+      document.documentElement.style.overflow = 'hidden';
+      this.$nextTick(() => requestAnimationFrame(() => this.$refs.closeBtn.focus()));
+    },
+    closeDoc(restore = true){
+      this.readerOpen = false; this.docRead = true;
+      document.documentElement.style.overflow = '';
+      if(restore && this._opener && this._opener.isConnected) this._opener.focus();
+    },
+    trap(e, box){
+      const f = [...box.querySelectorAll('a[href],button:not([disabled]),input:not([type=file]),select,textarea,[tabindex="0"]')].filter(el => el.offsetParent || el.getClientRects().length);
+      if(!f.length) return;
+      const first = f[0], last = f[f.length-1];
+      if(e.shiftKey && document.activeElement===first){ e.preventDefault(); last.focus(); }
+      else if(!e.shiftKey && document.activeElement===last){ e.preventDefault(); first.focus(); }
+      else if(!box.contains(document.activeElement)){ e.preventDefault(); first.focus(); }
+    },
+
+    /* ---------- toneangiver (WebAudio) ---------- */
+    freq(n){
+      const m = /^([A-G])([♭b♯#]?)(\d)$/.exec(n); if(!m) return 220;
+      const semi = {C:0,D:2,E:4,F:5,G:7,A:9,B:11}[m[1]] + (m[2]==='♭'||m[2]==='b' ? -1 : m[2] ? 1 : 0);
+      const midi = 12 * (+m[3] + 1) + semi;
+      return 440 * Math.pow(2, (midi - 69) / 12);
+    },
+    stopAudio(){
+      (this._osc || []).forEach(o => { try{ o.stop(); }catch(_){} });
+      (this._tm || []).forEach(clearTimeout);
+      this._osc = []; this._tm = [];
+      this.playing = {s:null, i:null};
+    },
+    playSeq(s, idxs){
+      this.stopAudio();
+      const step = .8, dur = 1.1;
+      try{
+        this.ac = this.ac || new (window.AudioContext || window.webkitAudioContext)();
+        if(this.ac.state==='suspended') this.ac.resume();
+        const t0 = this.ac.currentTime + .03;
+        idxs.forEach((i, n) => {
+          const t = t0 + n*step, o = this.ac.createOscillator(), g = this.ac.createGain();
+          o.type = 'triangle'; o.frequency.value = this.freq(s.pitch[i].n);
+          g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(.25, t+.04); g.gain.exponentialRampToValueAtTime(.001, t+dur);
+          o.connect(g).connect(this.ac.destination); o.start(t); o.stop(t+dur+.05);
+          this._osc.push(o);
+        });
+      }catch(_){}
+      this.playing = {s:s.id, i:idxs[0]};
+      idxs.forEach((i, n) => { if(n) this._tm.push(setTimeout(() => { this.playing = {s:s.id, i}; }, n*step*1000)); });
+      this._tm.push(setTimeout(() => { this.playing = {s:null, i:null}; }, ((idxs.length-1)*step + dur) * 1000));
+    },
+    playSong(s){ this.playSeq(s, s.pitch.map((_, i) => i)); },
+    playNote(s, i){ this.playSeq(s, [i]); },
+
+    /* ---------- menus ---------- */
+    onEsc(){
+      if(this.readerOpen){ this.closeDoc(); return; }
+      if(this.drawer){ this.confirmDel ? (this.confirmDel=false) : this.closeDrawer(); return; }
+      if(this.meOpen){ this.meOpen=false; this.$refs.meBtn.focus(); return; }
+      if(this.demoOpen){ this.demoOpen=false; }
+    },
+    toggleMe(){ this.meOpen ? (this.meOpen=false) : this.openMe() },
+    openMe(){
+      this.meOpen = true;
+      this.$nextTick(() => this.$refs.meMenu.querySelector('a').focus());
+    },
+    moveMenu(d){
+      const items = [...this.$refs.meMenu.querySelectorAll('a')];
+      const i = items.indexOf(document.activeElement);
+      items[(i + d + items.length) % items.length].focus();
+    },
+  }
+}
+</script>
+</body>
+</html>
