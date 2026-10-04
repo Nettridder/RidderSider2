@@ -22,8 +22,9 @@
 .member { text-align: center; margin-bottom: 20px; width: 25%; padding: 0 15px; }
 @media (max-width: 991px) { .member { width: 50%; } }
 @media (max-width: 480px) { .member { width: 100%; } }
-.member .pic { margin-bottom: 15px; overflow: hidden; height: 260px; background: var(--off-white); display: flex; align-items: center; justify-content: center; }
-.member .pic img { max-width: 100%; max-height: 100%; object-fit: contain; }
+/* Square photo box: every photo fills it and is zoomed/cropped (object-fit: cover), so no background shows */
+.member .pic { margin-bottom: 15px; overflow: hidden; aspect-ratio: 1 / 1; }
+.member .pic img { display: block; width: 100%; height: 100%; box-sizing: border-box; object-fit: cover; object-position: center top; }
 .member h4 { font-weight: 700; margin-bottom: 2px; font-size: 18px; }
 .member span { font-style: italic; display: block; font-size: 13px; }
 /* Coloured frame around the photo for the highest ranks. */
@@ -58,7 +59,7 @@
         <div class="member-row">
           <template x-for="member in section.members" :key="member.id">
             <div class="member">
-              <div class="pic"><img :class="RANK_BORDERS[member.rank]" :src="mediaUrl('images/profile/' + member.image_file)" :alt="name(member)" loading="lazy" @error="$el.src = '/images/MARlogo.png'"></div>
+              <div class="pic"><img :class="RANK_BORDERS[member.rank]" :src="mediaUrl('images/profile/' + member.image_file)" :alt="name(member)" loading="lazy" @error="$el.src = '/images/UkjendRidder.jpg'"></div>
               <h4 x-text="name(member)"></h4>
               <span x-text="RANK_LABELS[member.rank]"></span>
             </div>
@@ -73,7 +74,7 @@
       <div class="member-row">
         <template x-for="member in formerMembers" :key="member.id">
           <div class="member">
-            <div class="pic"><img :class="RANK_BORDERS[member.rank]" :src="mediaUrl('images/profile/' + member.image_file)" :alt="name(member)" loading="lazy" @error="$el.src = '/images/MARlogo.png'"></div>
+            <div class="pic"><img :class="RANK_BORDERS[member.rank]" :src="mediaUrl('images/profile/' + member.image_file)" :alt="name(member)" loading="lazy" @error="$el.src = '/images/UkjendRidder.jpg'"></div>
             <h4 x-text="name(member)"></h4>
             <span x-text="formerDetails(member)"></span>
           </div>

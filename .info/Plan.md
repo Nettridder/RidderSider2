@@ -479,3 +479,4 @@ Still open / needs Kristian:
 - `api/public.php` now also sends `former_members`: members with `status = 'former'` and `show_public = 1`. It sends the same columns as for active members, plus `joined_year` and `left_year`. The newest leavers come first.
 - Each card shows the rank and the years, e.g. "Storridder · 2015–2021". The years are left out when unknown. Photos are slightly greyed.
 - To hide a former member from the public page, turn off `show_public`.
+- Member photos on the public page (current and former) are square boxes. Every photo fills its box and is cropped to fit (`object-fit: cover`), so no background shows. Wide photos lose the sides. Tall photos keep the top and lose the bottom, as on the old site. The rank frames (Storridder etc.) stay around the photo. A missing photo shows `images/UkjendRidder.jpg`.
