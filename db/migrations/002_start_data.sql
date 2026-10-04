@@ -11,7 +11,7 @@
 -- │ Same name as 'name' in private/config.php. Then copy everything and paste it in the        │
 -- │ Domeneshop database browser (SQL), and run it.                                             │
 -- └──────────────────────────────────────────────────────────────────────────────────────────┘
-USE `CHANGE_ME_dev_database`;
+USE `armeriddereno05`;
 
 SET NAMES utf8mb4;
 
@@ -21,21 +21,21 @@ SET @STOP_old_site_tables_found_choose_the_dev_database = IF(EXISTS(SELECT 1 FRO
 
 -- ==================== The first member: owner and admin ====================
 -- is_owner = 1: always full access, and other admins cannot change this account (see "Eier-tilgang").
--- roles ["master"]: the Admin pages + Note-admin.
+-- roles ["admin"]: Admin (all Admin pages) + Note Admin.
 -- Started this semester; rank Ridder as in the example in DatabaseStrukture.md.
 -- No password yet (NULL = cannot log in until a password is set, see the bottom of this file).
 INSERT INTO members
   (email, first_name, last_name, voice_group, status, `rank`, roles, is_owner,
    joined_year, joined_term, email_level, show_public, image_file)
 VALUES
-  ('kristianhafell@gmail.com', 'Kristian', 'Hafell', 'T2', 'active', 'ridder', '["master"]', 1,
+  ('kristianhafell@gmail.com', 'Kristian', 'Hafell', 'T2', 'active', 'ridder', '["admin"]', 1,
    YEAR(CURDATE()), IF(MONTH(CURDATE()) >= 7, 'autumn', 'spring'), 'all', 1, 'portrett-kristian-1x1-1-scaled.jpg');
 
 SET @owner = LAST_INSERT_ID();
 UPDATE members SET created_by = @owner, updated_by = @owner WHERE id = @owner;
 
 -- ==================== Settings the app reads ====================
--- weekly_practice_goal_minutes: "Ukemål" on the front page of the app (Note-admin can change it).
+-- weekly_practice_goal_minutes: "Ukemål" on the front page of the app (Note Admin can change it).
 -- app_background / attendance_background: fixed background images, chosen on Admin -> Bakgrunnsbilete.
 INSERT INTO settings (created_by, updated_by, `key`, value) VALUES
   (@owner, @owner, 'weekly_practice_goal_minutes', '60'),

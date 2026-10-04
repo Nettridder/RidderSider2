@@ -6,8 +6,8 @@ Usage (from the www/ folder):
 Then import /tmp/dev_seed.sql in phpMyAdmin AFTER db/migrations/001_schema.sql.
 
 - Keeps all ids, so links between tables stay correct.
-- Media paths become paths inside storage/ (the media rule in .info/Plan.md):
-  song files get "songs/" in front, documents get "documents/" in front. URLs (http...) are kept as-is.
+- Song files: only the file name is stored (the app knows the folders). PDF and pitch-pipe rows become
+  songs.sheet_file / songs.pitch_notes. Documents get "documents/" in front. URLs (http...) are kept as-is.
 - Nobody gets a password. Members set one with "Glemt passord" on the login page.
 """
 import json
@@ -29,11 +29,7 @@ def storage_path(folder, value):
 
 
 def fix_paths(table, row):
-    if table == 'song_voice_files':
-        row['file'] = storage_path('songs', row.get('file'))
-    elif table == 'songs':
-        row['choreography_url'] = storage_path('songs', row.get('choreography_url'))
-    elif table == 'documents':
+    if table == 'documents':
         row['file'] = storage_path('documents', row.get('file'))
     return row
 
@@ -50,8 +46,34 @@ def sql_value(column, value):
     return "'" + str(value).replace('\\', '\\\\').replace("'", "''") + "'"
 
 
+def to_new_song_files(data):
+    """Old sample layout -> new: PDF and pitch tones become columns on songs; only sound files stay, file name only."""
+    files = data.get('song_voice_files', [])
+    by_song = {}
+    for row in sorted(files, key=lambda r: (r['song_id'], r.get('sort_order', 0), r['id'])):
+        by_song.setdefault(row['song_id'], []).append(row)
+    for song in data.get('songs', []):
+        rows = by_song.get(song['id'], [])
+        sheet = next((r for r in rows if r.get('type') == 'sheet' and r.get('file')), None)
+        song['sheet_file'] = sheet['file'].split('/')[-1] if sheet else None
+        tones = [r['start_note'] for r in rows if r.get('type') == 'pitch' and r.get('start_note')]
+        song['pitch_notes'] = ' '.join(tones) or None
+        video = song.get('choreography_url')
+        if video and not video.startswith(('http://', 'https://')):
+            song['choreography_url'] = video.split('/')[-1]
+    sounds = []
+    for song_id, rows in by_song.items():
+        for order, r in enumerate([r for r in rows if r.get('type', 'audio') == 'audio' and r.get('file')], start=1):
+            sounds.append({'id': r['id'], 'created_at': r.get('created_at'), 'created_by': r.get('created_by'),
+                           'song_id': song_id, 'name': r['name'], 'file': r['file'].split('/')[-1], 'sort_order': order})
+    data['song_voice_files'] = sounds
+
+
 def main(path):
     data = json.load(open(path, encoding='utf-8'))
+    to_new_song_files(data)
+    for member in data.get('members', []):   # role keys were renamed: master -> admin, notes -> noteadmin
+        member['roles'] = [{'master': 'admin', 'notes': 'noteadmin'}.get(role, role) for role in member.get('roles', [])]
     print('SET NAMES utf8mb4;\nSET FOREIGN_KEY_CHECKS = 0;\n')
     for table in TABLE_ORDER:
         rows = [fix_paths(table, dict(row)) for row in data.get(table, [])]

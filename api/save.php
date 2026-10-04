@@ -136,11 +136,11 @@ function check_member_change(string $action, array &$values, ?array $existing, a
   }
   if ($action === 'delete' && $isSelf) json_error(409, 'Du kan ikke fjerne deg selv.');
 
-  $wasMaster = in_array('master', json_decode($existing['roles'], true) ?: [], true);
-  $staysMaster = $action === 'update' && in_array('master', json_decode($values['roles'] ?? $existing['roles'], true) ?: [], true);
-  if ($wasMaster && !$staysMaster) {
-    $masters = (int) query('SELECT COUNT(*) FROM members WHERE JSON_CONTAINS(roles, \'"master"\')')->fetchColumn();
-    if ($masters <= 1) json_error(409, 'Dette er den siste med rollen Mester. Gi rollen til noen andre først.');
+  $wasAdmin = in_array('admin', json_decode($existing['roles'], true) ?: [], true);
+  $staysAdmin = $action === 'update' && in_array('admin', json_decode($values['roles'] ?? $existing['roles'], true) ?: [], true);
+  if ($wasAdmin && !$staysAdmin) {
+    $admins = (int) query('SELECT COUNT(*) FROM members WHERE JSON_CONTAINS(roles, \'"admin"\')')->fetchColumn();
+    if ($admins <= 1) json_error(409, 'Dette er den siste med rollen Admin. Gi rollen til noen andre først.');
   }
 }
 

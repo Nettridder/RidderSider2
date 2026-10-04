@@ -404,9 +404,58 @@ Still open / needs Kristian:
 - **Fixed:** the app home page crashed when there were no documents yet. The "Nytt dokument" box is now `x-if`.
 - **Tested** on an empty MariaDB 10.11: both guards; 21 tables created; login; admin can save; nothing secret in `bootstrap.php`; all 24 app pages without errors, both empty and with data.
 
+### 2026-10-05: song files simplified, Note-admin editor, repertoire for ypp.com., search instead of dropdowns
+(This replaces the "song file paths" note that followed here.)
+
+**Song files**
+- **`song_voice_files` = sound files only:** `name` (Stemme, free text), `file` (file name only) and `sort_order` (set by Note-admin).
+  - This matches old `Stemmefiler` (`Stemme`, `Mp3filnamn`), so importing is a straight copy.
+  - There is no default voice per voice group any more: everyone gets Note-admin's order, and the first track plays by default.
+- **On `songs`:**
+  - `sheet_file`: one PDF per song, file name only (old `Notefilnamn`).
+  - `pitch_notes`: tones like `"E4 C4 G3"`.
+  - `pitch_gap_ms`: time between tones.
+  - If `pitch_notes` is empty, the pitch pipe is hidden in the app.
+- **Folders are not stored.** `SONG_FOLDERS` in `app/js/global.js` knows them: sound is in `storage/songs/melody/`, PDF in `storage/songs/pdf/`, video in `storage/songs/video/`.
+- **Migrations:**
+  - `003_simplify_song_files.sql` converts a database made with the old `001`. Already run on the dev database? Skip it.
+  - `010_import_old.sql` imports `Songar`, `Stemmefiler`, `Sjangrar` and `SongarSjangrar`. It was tested with messy `Stemme` names.
+
+**Note-admin → Sanger**
+- One "Legg til sang" button opens the same editor as "Rediger". Nothing is saved before you press save: "Avbryt" or "Slett sang" on a new song creates nothing.
+- The editor has:
+  - a PDF file name (with a file picker)
+  - the Toneangiver: tones + seconds between them, with preview and wrong tones in red
+  - "Legg til lydfil" rows: Stemme + file name (audio only) + up/down arrows for the order
+
+**Repertoires**
+- `repertoires.hidden_for_former` ("Skjult for ypp.com.") is on by default. When it is off, former members also see that visible repertoire, and its secret songs.
+- `bootstrap.php` enforces this on the server.
+- Repertoar appears in the menu for former members only when at least one repertoire is shown to them.
+
+**No dropdowns for long lists**
+- `searchSelect()` + the `search-select` piece in `app/js/global.js` give a search field instead.
+- Used for:
+  - the song in Sangkunnskap
+  - adding songs to a repertoire (its own search list)
+  - members in Styret
+  - "Gi til medlem" in Achievements
+- Short fixed lists (term, rank, speed, sort order, genre) are still dropdowns.
+- **Fixed:** picking a member on the Styret form crashed (`renumber(FORM, …)` was never filled in by the form template). Now `renumberPosition(key, FORM)`.
+
 ### 2026-10-04: song file paths
 - Song files on the server are in `storage/songs/melody/` (sound and pitch) and `storage/songs/pdf/` (sheet music). These are the folder names already in use; the earlier plan said `songs/audio` / `songs/sheets`.
 - Note-admin only shows the file name. When the song is saved, `SONG_FOLDERS` in `app/js/songs.js` adds the folder, so the database always holds the full path (e.g. `songs/melody/Bromance_Mix.mp3`).
 - `db/migrations/003_fix_song_file_paths.sql` adds the folder to rows saved before this fix. Run it once; running it twice is safe.
 - A missing PDF shows "Fant ikke notefilen" instead of an error.
 - The app no longer requests the sample `database/google-calendar.json`, so the calendar is empty until `api/calendar.php` exists.
+
+### 2026-10-05: role names
+- `members.roles` now uses `"admin"` (shown as **Admin**) and `"noteadmin"` (shown as **Note Admin**), instead of `"master"` / `"notes"`. Admin can do everything Note Admin can.
+- The code uses the new names everywhere: `permissions.php`, `has_role()`, `bootstrap.php`, the last-Admin check in `save.php`, `LABELS.roles`/`hasRole()`/`MENU` in `app/js/global.js`, and the role boxes in Admin → Medlemmer.
+- `004_rename_roles.sql` converts a database that still has the old names. It is safe to run twice.
+- Tested:
+  - A Note Admin can edit songs, but not Admin tables or pages.
+  - Admin gets both.
+  - The last Admin cannot lose the role.
+  - The old name `master` is now refused ("Ukjent rolle.").

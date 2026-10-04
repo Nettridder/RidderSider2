@@ -7,7 +7,7 @@
 
    Endpoints use:
      $me = require_login();          // 401 if not logged in
-     require_role($me, 'notes');     // 403 without the role ('master' and owner pass every role) */
+     require_role($me, 'noteadmin'); // 403 without the role ('admin' and owner pass every role) */
 
 declare(strict_types=1);
 
@@ -118,11 +118,12 @@ function require_login(): array
   return $member;
 }
 
-/* Same rule as hasRole() in app/js/global.js: owner and 'master' have every role. */
+/* Same rule as hasRole() in app/js/global.js: owner and 'admin' have every role.
+   Roles in members.roles: 'admin' = Admin, 'noteadmin' = Note Admin. */
 function has_role(array $member, string $role): bool
 {
   return !empty($member['is_owner'])
-    || in_array('master', $member['roles'], true)
+    || in_array('admin', $member['roles'], true)
     || in_array($role, $member['roles'], true);
 }
 

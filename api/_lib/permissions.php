@@ -7,7 +7,7 @@
    For each table:
      'owner' => column that holds the member a row belongs to (used by the 'self' role).
      'rules' => role => what that role may do. The first rule that fits is used, so put the strongest role first.
-       Roles:  'master' and 'notes' (members.roles; the owner and 'master' pass every role check),
+       Roles:  'admin' (Admin) and 'noteadmin' (Note Admin), from members.roles; the owner and 'admin' pass every role check,
                'self'   = any logged-in member, but only rows where owner column = their own id.
                           On insert the owner column is filled in by the server, the browser can't choose it.
        'ops'      => which of insert / update / delete are allowed.
@@ -24,7 +24,7 @@ declare(strict_types=1);
 const ALL_OPS = ['insert', 'update', 'delete'];
 
 /* Values allowed in members.roles. */
-const ROLE_KEYS = ['master', 'notes'];
+const ROLE_KEYS = ['admin', 'noteadmin'];
 
 const BOARD_COLUMNS = [
   'year', 'term',
@@ -38,7 +38,7 @@ const WRITE_RULES = [
   'members' => [
     'owner' => 'id',
     'rules' => [
-      'master' => ['ops' => ALL_OPS, 'columns' => [
+      'admin' => ['ops' => ALL_OPS, 'columns' => [
         'first_name', 'last_name', 'email', 'phone', 'voice_group', 'rank', 'status', 'roles',
         'joined_year', 'joined_term', 'left_year', 'left_term', 'email_level',
         'show_public', 'show_streak', 'show_songs', 'show_achievements',
@@ -49,46 +49,46 @@ const WRITE_RULES = [
       ]],
     ],
   ],
-  'boards' => ['rules' => ['master' => ['ops' => ALL_OPS, 'columns' => BOARD_COLUMNS]]],
-  'attendance' => ['rules' => ['master' => ['ops' => ALL_OPS, 'columns' => ['rehearsal_date', 'present_member_ids']]]],
-  'achievements' => ['rules' => ['master' => ['ops' => ['update'], 'columns' => ['title', 'description', 'image', 'is_secret']]]],
-  'member_achievements' => ['rules' => ['master' => ['ops' => ['insert', 'delete'], 'columns' => ['member_id', 'achievement_id']]]],
+  'boards' => ['rules' => ['admin' => ['ops' => ALL_OPS, 'columns' => BOARD_COLUMNS]]],
+  'attendance' => ['rules' => ['admin' => ['ops' => ALL_OPS, 'columns' => ['rehearsal_date', 'present_member_ids']]]],
+  'achievements' => ['rules' => ['admin' => ['ops' => ['update'], 'columns' => ['title', 'description', 'image', 'is_secret']]]],
+  'member_achievements' => ['rules' => ['admin' => ['ops' => ['insert', 'delete'], 'columns' => ['member_id', 'achievement_id']]]],
 
-  /* ---------- songs (Note-admin) ---------- */
-  'songs' => ['rules' => ['notes' => [
+  /* ---------- songs (Note Admin) ---------- */
+  'songs' => ['rules' => ['noteadmin' => [
     'ops' => ALL_OPS,
-    'columns' => ['name', 'lyrics', 'choreography_url', 'is_secret'],
+    'columns' => ['name', 'lyrics', 'choreography_url', 'sheet_file', 'pitch_notes', 'pitch_gap_ms', 'is_secret'],
     'children' => [
       'song_genres' => ['fk' => 'song_id', 'columns' => ['genre_id']],
-      'song_voice_files' => ['fk' => 'song_id', 'columns' => ['name', 'file', 'voice', 'type', 'start_note', 'sort_order']],
+      'song_voice_files' => ['fk' => 'song_id', 'columns' => ['name', 'file', 'sort_order']],
     ],
   ]]],
-  'genres' => ['rules' => ['notes' => ['ops' => ALL_OPS, 'columns' => ['name', 'sort_order']]]],
-  'repertoires' => ['rules' => ['notes' => [
+  'genres' => ['rules' => ['noteadmin' => ['ops' => ALL_OPS, 'columns' => ['name', 'sort_order']]]],
+  'repertoires' => ['rules' => ['noteadmin' => [
     'ops' => ALL_OPS,
-    'columns' => ['name', 'is_visible'],
+    'columns' => ['name', 'is_visible', 'hidden_for_former'],
     'children' => ['repertoire_songs' => ['fk' => 'repertoire_id', 'columns' => ['song_id', 'sort_order']]],
   ]]],
   // Song knowledge and favourites: every member sets their own.
   'member_songs' => ['owner' => 'member_id', 'rules' => ['self' => ['ops' => ALL_OPS, 'columns' => ['song_id', 'knowledge', 'is_favorite']]]],
 
   /* ---------- practice ---------- */
-  'practice_plans' => ['rules' => ['notes' => ['ops' => ALL_OPS, 'columns' => ['date', 'title', 'description']]]],
-  'practice_competitions' => ['rules' => ['notes' => ['ops' => ALL_OPS, 'columns' => ['name', 'start_date', 'end_date']]]],
+  'practice_plans' => ['rules' => ['noteadmin' => ['ops' => ALL_OPS, 'columns' => ['date', 'title', 'description']]]],
+  'practice_competitions' => ['rules' => ['noteadmin' => ['ops' => ALL_OPS, 'columns' => ['name', 'start_date', 'end_date']]]],
   'practice_logs' => [
     'owner' => 'member_id',
     'rules' => [
-      'notes' => ['ops' => ['delete'], 'columns' => []],                         // remove wrong registrations
+      'noteadmin' => ['ops' => ['delete'], 'columns' => []],                         // remove wrong registrations
       'self' => ['ops' => ['insert', 'delete'], 'columns' => ['date', 'minutes']],
     ],
   ],
 
   /* ---------- documents and look ---------- */
-  'documents' => ['rules' => ['master' => ['ops' => ALL_OPS, 'columns' => ['title', 'file']]]],
-  'resolutions' => ['rules' => ['master' => ['ops' => ALL_OPS, 'columns' => ['year', 'term', 'text', 'wiki_url']]]],
-  'login_backgrounds' => ['rules' => ['master' => ['ops' => ALL_OPS, 'columns' => ['file', 'is_active']]]],
+  'documents' => ['rules' => ['admin' => ['ops' => ALL_OPS, 'columns' => ['title', 'file']]]],
+  'resolutions' => ['rules' => ['admin' => ['ops' => ALL_OPS, 'columns' => ['year', 'term', 'text', 'wiki_url']]]],
+  'login_backgrounds' => ['rules' => ['admin' => ['ops' => ALL_OPS, 'columns' => ['file', 'is_active']]]],
   'settings' => ['rules' => [
-    'master' => ['ops' => ['insert', 'update'], 'columns' => ['key', 'value']],
-    'notes' => ['ops' => ['insert', 'update'], 'columns' => ['key', 'value'], 'only' => ['key' => ['weekly_practice_goal_minutes']]],
+    'admin' => ['ops' => ['insert', 'update'], 'columns' => ['key', 'value']],
+    'noteadmin' => ['ops' => ['insert', 'update'], 'columns' => ['key', 'value'], 'only' => ['key' => ['weekly_practice_goal_minutes']]],
   ]],
 ];

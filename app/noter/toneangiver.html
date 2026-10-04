@@ -24,18 +24,16 @@
     <ul class="list pitch-list">
       <template x-for="song in songs" :key="song.id">
         <li class="list__row pitch-list__row" :class="playingSongId === song.id && 'is-playing'">
-          <button type="button" class="pitch-list__song" @click="playNotes(song.id, app.songStartNotes(song.id))"
+          <button type="button" class="pitch-list__song" @click="playSong(song)"
                   :aria-label="'Spill starttonene for ' + song.name">
             <span class="pitch-list__play" aria-hidden="true"><svg><use href="#icon-play"/></svg></span>
             <span class="list__title"><span x-text="song.name"></span><span class="sound-bars" x-show="playingSongId === song.id" aria-hidden="true"><i></i><i></i><i></i></span>
               <span class="list__meta" x-text="playingSongId === song.id ? 'Spiller' : app.songGenreNames(song.id)"></span></span>
           </button>
           <div class="start-notes pitch-list__notes">
-            <template x-for="(note, index) in app.songStartNotes(song.id)" :key="note.id">
-              <button type="button" class="start-note" :class="isPlayingNote(song.id, index) && 'is-playing'" @click="playNote(song.id, app.songStartNotes(song.id), index)"
-                      :aria-label="'Spill ' + (note.voice ? LABELS.voices[note.voice] : 'tutti') + ', ' + note.start_note">
-                <span class="start-note__voice" x-text="note.voice || 'Tutti'"></span>
-                <span class="start-note__pitch"><span x-text="noteParts(note.start_note).letter"></span><span class="start-note__accidental" x-show="noteParts(note.start_note).accidental" x-text="noteParts(note.start_note).accidental"></span><span x-text="noteParts(note.start_note).octave"></span></span>
+            <template x-for="(note, index) in app.songStartNotes(song.id)" :key="index">
+              <button type="button" class="start-note" :class="isPlayingNote(song.id, index) && 'is-playing'" @click="playOne(song, index)" :aria-label="'Spill ' + note">
+                <span class="start-note__pitch"><span x-text="noteParts(note).letter"></span><span class="start-note__accidental" x-show="noteParts(note).accidental" x-text="noteParts(note).accidental"></span><span x-text="noteParts(note).octave"></span></span>
               </button>
             </template>
           </div>

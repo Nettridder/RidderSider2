@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Note-admin: Sanger – Mannskoret Arme Riddere</title>
+<title>Note Admin: Sanger – Mannskoret Arme Riddere</title>
 <link rel="stylesheet" href="../../css/global.css">
 <link rel="stylesheet" href="../../css/songs.css">
 <script defer src="../../js/global.js"></script>
@@ -17,18 +17,11 @@
     <div class="page-header">
       <div>
         <h1 class="page-header__title" tabindex="-1">Administrer sanger</h1>
-        <p class="page-header__intro">Legg til sanger med tekst, noter og lydfiler, og rediger det som finnes.</p>
+        <p class="page-header__intro">Legg til sanger med tekst, noter, toneangiver og lydfiler, og rediger det som finnes.</p>
       </div>
+      <!-- Opens the same editor as "Rediger". The song is only made when it is saved there. -->
+      <button class="button" type="button" @click="newSong($event)">Legg til sang</button>
     </div>
-
-    <form class="admin-form" @submit.prevent="addSong()" novalidate aria-labelledby="add-song-title">
-      <h2 id="add-song-title" class="section-title">Legg til sang</h2>
-      <div data-form-template="template-song:newSong:new-song"></div>
-      <div class="admin-form__actions">
-        <button class="button" type="submit">Legg til sang</button>
-        <button class="button button--secondary" type="button" @click="newSong = emptySongForm()">Tøm skjemaet</button>
-      </div>
-    </form>
 
     <div class="admin-list-header">
       <div>
@@ -104,10 +97,11 @@
         <div class="drawer__body"><div data-form-template="template-song:editedSong:edited-song"></div></div>
         <div class="drawer__footer">
           <div class="drawer__footer-group" x-show="!confirmingDelete">
-            <button class="button" type="submit">Lagre endringer</button>
-            <button class="button button--secondary" type="button" @click="closeDrawer()">Avbryt</button>
+            <button class="button" type="submit" x-text="isNewSong ? 'Legg til sang' : 'Lagre endringer'"></button>
+            <button class="button button--secondary" type="button" @click="stopNotes(); closeDrawer()">Avbryt</button>
           </div>
-          <button class="button button--danger" type="button" x-show="!confirmingDelete" @click="confirmingDelete = true">Slett sang</button>
+          <!-- A new, unsaved song: "Slett sang" just closes the editor (nothing has been made yet) -->
+          <button class="button button--danger" type="button" x-show="!confirmingDelete" @click="isNewSong ? deleteSong() : (confirmingDelete = true)">Slett sang</button>
           <div class="drawer__footer-group" x-show="confirmingDelete">
             <span class="drawer__question" x-text="'Slette «' + editedSong.name + '» med alle filene?'"></span>
             <button class="button button--danger-filled button--small" type="button" @click="deleteSong()">Ja, slett sangen</button>
@@ -122,8 +116,8 @@
 <template id="template-song">
   <div class="form-grid">
     <label class="field form-grid__full" for="ID-name">Navn
-      <input id="ID-name" class="input" type="text" x-model="FORM.name" placeholder="For eksempel Nidelven" :aria-invalid="FORM.showErrors && !FORM.name.trim() ? 'true' : null">
-      <span class="field-error" x-show="FORM.showErrors && !FORM.name.trim()">Skriv inn navnet på sangen.</span>
+      <input id="ID-name" class="input" type="text" x-model="FORM.name" placeholder="For eksempel Nidelven" :aria-invalid="FORM.showErrors && songProblems(FORM).name ? 'true' : null">
+      <span class="field-error" x-show="FORM.showErrors && songProblems(FORM).name" x-text="songProblems(FORM).name"></span>
     </label>
     <fieldset class="field form-grid__full">
       <legend>Sjangere</legend>
@@ -142,45 +136,75 @@
     <label class="field form-grid__full" for="ID-lyrics">Tekst
       <textarea id="ID-lyrics" class="input" rows="4" x-model="FORM.lyrics" placeholder="Lim inn sangteksten"></textarea>
     </label>
-    <label class="field form-grid__full" for="ID-choreography">Koreografilenke
-      <input id="ID-choreography" class="input" type="text" inputmode="url" x-model="FORM.choreographyUrl" placeholder="https://youtube.com/watch?v=… eller video/filnavn.mp4">
+    <label class="field form-grid__full" for="ID-choreography">Koreografi (video)
+      <input id="ID-choreography" class="input" type="text" inputmode="url" x-model="FORM.choreographyUrl" placeholder="https://youtube.com/watch?v=… eller filnavn.mp4">
     </label>
+
+    <!-- One PDF per song. Only the file name is saved; the file goes in storage/songs/pdf/. -->
+    <div class="field form-grid__full"><span>Noter (PDF)</span>
+      <div class="file-picker song-sheet-picker">
+        <label class="file-picker__button">
+          <input type="file" class="visually-hidden" accept=".pdf,application/pdf" @change="pickSheet($event, FORM)">
+          <span>Velg PDF</span>
+        </label>
+        <input class="input" type="text" x-model="FORM.sheetFile" placeholder="Filnavn, for eksempel Bromance.pdf" aria-label="Filnavn for notene">
+      </div>
+    </div>
+
+    <!-- Pitch pipe: one per song. Empty = no pitch pipe shown in the app. -->
+    <fieldset class="field form-grid__full song-pitch">
+      <legend>Toneangiver</legend>
+      <div class="song-pitch__inputs">
+        <label class="field" for="ID-pitch-notes">Toner, i rekkefølgen de spilles
+          <input id="ID-pitch-notes" class="input" type="text" x-model="FORM.pitchNotes" placeholder="E4 C4 G3 E3" :aria-invalid="FORM.showErrors && songProblems(FORM).tones ? 'true' : null">
+        </label>
+        <label class="field song-pitch__gap" for="ID-pitch-gap">Sekunder mellom
+          <input id="ID-pitch-gap" class="input" type="text" inputmode="decimal" x-model="FORM.pitchGap" :aria-invalid="FORM.showErrors && songProblems(FORM).gap ? 'true' : null">
+        </label>
+        <button class="button button--secondary song-pitch__play" type="button" @click="previewTones(FORM)" :disabled="!pitchTones(FORM).length">
+          <svg aria-hidden="true"><use href="#icon-play"/></svg>Spill av
+        </button>
+      </div>
+      <div class="start-notes" x-show="pitchTones(FORM).length">
+        <template x-for="(note, index) in pitchTones(FORM)" :key="index">
+          <span class="start-note" :class="[NOTE_PATTERN.test(note) ? '' : 'start-note--bad', isPlayingNote('preview', pitchTones(FORM).filter(tone => NOTE_PATTERN.test(tone)).indexOf(note)) && 'is-playing']">
+            <span class="start-note__pitch" x-text="note"></span>
+          </span>
+        </template>
+      </div>
+      <p class="hint">Skriv tonene med mellomrom, for eksempel <code>E4 C4 G3</code>. Bruk b eller ♭ for b, # eller ♯ for kryss: <code>Bb3</code>, <code>F#4</code>. La feltet stå tomt hvis sangen ikke har toneangiver.</p>
+      <span class="field-error" x-show="FORM.showErrors && songProblems(FORM).tones" x-text="songProblems(FORM).tones"></span>
+      <span class="field-error" x-show="FORM.showErrors && songProblems(FORM).gap" x-text="songProblems(FORM).gap"></span>
+    </fieldset>
+
+    <!-- Sound files, in the order everyone sees them in the player (the first one plays by default). -->
     <fieldset class="field form-grid__full">
-      <legend>Filer</legend>
+      <legend>Lydfiler</legend>
       <div class="repeatable-rows">
         <template x-for="(fileRow, index) in FORM.files" :key="fileRow.rowKey">
           <div class="repeatable-row song-file-row">
-            <label class="field song-file-row__name" :for="'ID-file-name-' + fileRow.rowKey">Visningsnavn
-              <input :id="'ID-file-name-' + fileRow.rowKey" class="input" type="text" x-model="fileRow.name" placeholder="1. tenor">
+            <label class="field song-file-row__name" :for="'ID-file-name-' + fileRow.rowKey">Stemme
+              <input :id="'ID-file-name-' + fileRow.rowKey" class="input" type="text" x-model="fileRow.name" placeholder="For eksempel 1. tenor eller Mix">
             </label>
-            <label class="field" :for="'ID-file-voice-' + fileRow.rowKey">Stemme
-              <select :id="'ID-file-voice-' + fileRow.rowKey" class="input" x-model="fileRow.voice">
-                <option value="">Tutti</option>
-                <template x-for="voice in LABELS.songVoices" :key="voice"><option :value="voice" x-text="voice" :selected="fileRow.voice === voice"></option></template>
-              </select>
-            </label>
-            <label class="field" :for="'ID-file-type-' + fileRow.rowKey">Type
-              <select :id="'ID-file-type-' + fileRow.rowKey" class="input" x-model="fileRow.type">
-                <option value="audio">Lyd</option><option value="sheet">Noter</option><option value="pitch">Toneangiver</option>
-              </select>
-            </label>
-            <label class="field song-file-row__note" :for="'ID-file-note-' + fileRow.rowKey" x-show="fileRow.type === 'pitch'">Starttone
-              <input :id="'ID-file-note-' + fileRow.rowKey" class="input" type="text" x-model="fileRow.startNote" placeholder="E4 eller B♭3">
-            </label>
+            <div class="song-file-row__order">
+              <button type="button" class="icon-button" @click="moveSoundRow(index, -1, FORM)" :disabled="index === 0" :aria-label="'Flytt ' + (fileRow.name || 'lydfilen') + ' opp'"><svg aria-hidden="true"><use href="#icon-up"/></svg></button>
+              <button type="button" class="icon-button" @click="moveSoundRow(index, 1, FORM)" :disabled="index === FORM.files.length - 1" :aria-label="'Flytt ' + (fileRow.name || 'lydfilen') + ' ned'"><svg aria-hidden="true"><use href="#icon-down"/></svg></button>
+            </div>
+            <button type="button" class="icon-button song-file-row__remove" @click="FORM.files.splice(index, 1)" :aria-label="'Fjern ' + (fileRow.name || 'lydfilen')"><svg aria-hidden="true"><use href="#icon-close"/></svg></button>
             <div class="field song-file-row__file"><span>Fil</span>
               <div class="file-picker">
                 <label class="file-picker__button">
-                  <input type="file" class="visually-hidden" accept=".pdf,application/pdf,audio/*" @change="pickSongFile(fileRow, $event)">
+                  <input type="file" class="visually-hidden" accept="audio/*" @change="pickSound(fileRow, $event)">
                   <span x-text="fileRow.file ? 'Bytt fil' : 'Velg fil'"></span>
                 </label>
-                <span class="file-picker__name" x-text="fileRow.file ? fileRow.file.split('/').pop() : (fileRow.type === 'pitch' ? 'Ingen fil, spilles som tone' : 'Ingen fil valgt')"></span>
+                <input class="input" type="text" x-model="fileRow.file" placeholder="Filnavn, for eksempel Bromance_Mix.mp3" aria-label="Filnavn" :aria-invalid="FORM.showErrors && !fileRow.file.trim() ? 'true' : null">
               </div>
             </div>
-            <button type="button" class="icon-button song-file-row__remove" @click="FORM.files.splice(index, 1)" :aria-label="'Fjern filen ' + (fileRow.name || (index + 1))"><svg aria-hidden="true"><use href="#icon-close"/></svg></button>
           </div>
         </template>
-        <p class="hint" x-show="!FORM.files.length">Ingen filer ennå. Legg til noter, lydfiler per stemme eller starttoner.</p>
-        <div><button class="button button--secondary button--small" type="button" @click="addFileRow(FORM)">Legg til fil</button></div>
+        <p class="hint" x-show="!FORM.files.length">Ingen lydfiler ennå. Den øverste spilles først i spilleren; bruk pilene for å endre rekkefølgen.</p>
+        <span class="field-error" x-show="FORM.showErrors && songProblems(FORM).files" x-text="songProblems(FORM).files"></span>
+        <div><button class="button button--secondary button--small" type="button" @click="addSoundRow(FORM)">Legg til lydfil</button></div>
       </div>
     </fieldset>
   </div>

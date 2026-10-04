@@ -46,6 +46,7 @@ CREATE TABLE members (
   voice_group       enum('T1','T2','B1','B2') NOT NULL,
   status            enum('active','former') NOT NULL DEFAULT 'active',
   `rank`            enum('aspirant','knekt','ridder','ridder_1st_class','kommandorridder','storridder') NOT NULL DEFAULT 'aspirant',
+  -- Access: JSON list. [] = normal member, "admin" = Admin (everything), "noteadmin" = Note Admin. Both may be set.
   roles             longtext     NOT NULL DEFAULT '[]' CHECK (json_valid(roles)),
   -- Only changeable with SQL directly in the database. No API ever writes it.
   is_owner          tinyint(1)   NOT NULL DEFAULT 0,
@@ -148,8 +149,15 @@ CREATE TABLE songs (
   updated_by       int(11)      NULL,
   name             varchar(255) NOT NULL,
   lyrics           text         NULL,
-  -- "http..." = external URL (YouTube), anything else = path inside storage/.
+  -- Choreography video: "http..." = web address (YouTube), anything else = file name in storage/songs/video/.
   choreography_url varchar(512) NULL,
+  -- Sheet music: one PDF per song, file name in storage/songs/pdf/ (old Songar.Notefilnamn).
+  sheet_file       varchar(256) NULL,
+  -- Pitch pipe (Toneangiver): the starting tones in the order they are played, separated by spaces,
+  -- e.g. "E4 C4 G3 E3" (♭/b and ♯/# allowed). NULL = no pitch pipe for this song (hidden in the app).
+  pitch_notes      varchar(255) NULL,
+  -- Time between the tones in milliseconds. NULL = 800.
+  pitch_gap_ms     smallint     NULL,
   is_secret        tinyint(1)   NOT NULL DEFAULT 0,
   PRIMARY KEY (id),
   KEY ix_songs_name (name),
@@ -157,6 +165,7 @@ CREATE TABLE songs (
   CONSTRAINT fk_songs_updated_by FOREIGN KEY (updated_by) REFERENCES members (id) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+-- Sound files for a song (old table Stemmefiler). Only sound: the PDF and the pitch pipe are columns on songs.
 CREATE TABLE song_voice_files (
   id          int(11)      NOT NULL AUTO_INCREMENT,
   created_at  timestamp    NOT NULL DEFAULT current_timestamp(),
@@ -164,14 +173,12 @@ CREATE TABLE song_voice_files (
   created_by  int(11)      NULL,
   updated_by  int(11)      NULL,
   song_id     int(11)      NOT NULL,
+  -- What the track is called in the player, free text (old Stemmefiler.Stemme), e.g. "1. tenor", "Mix".
   name        varchar(128) NOT NULL,
-  -- "http..." = external URL, anything else = path inside storage/ (e.g. songs/audio/28_bass.mp3).
-  file        varchar(255) NULL,
-  voice       enum('T1','T2','T3','B1','B2') NULL,
-  type        enum('audio','sheet','pitch') NOT NULL DEFAULT 'audio',
-  -- Pitch-pipe start note for type = 'pitch', e.g. "C4".
-  start_note  varchar(8)   NULL,
-  sort_order  tinyint      NOT NULL DEFAULT 0,
+  -- File name in storage/songs/melody/ (old Stemmefiler.Mp3filnamn). "http..." = web address.
+  file        varchar(256) NOT NULL,
+  -- Order in the player, set by Note Admin. Everyone sees the same order; the first one is chosen by default.
+  sort_order  smallint     NOT NULL DEFAULT 0,
   PRIMARY KEY (id),
   KEY ix_song_voice_files_song (song_id),
   CONSTRAINT fk_song_voice_files_song       FOREIGN KEY (song_id)    REFERENCES songs (id)   ON DELETE CASCADE,
@@ -240,6 +247,8 @@ CREATE TABLE repertoires (
   updated_by  int(11)      NULL,
   name        varchar(128) NOT NULL,
   is_visible  tinyint(1)   NOT NULL DEFAULT 0,
+  -- 1 = former members (ypp.com.) don't see it even when it is visible. Turn off to show it to them too.
+  hidden_for_former tinyint(1) NOT NULL DEFAULT 1,
   PRIMARY KEY (id),
   CONSTRAINT fk_repertoires_created_by FOREIGN KEY (created_by) REFERENCES members (id) ON DELETE SET NULL,
   CONSTRAINT fk_repertoires_updated_by FOREIGN KEY (updated_by) REFERENCES members (id) ON DELETE SET NULL

@@ -91,14 +91,12 @@
       <div class="board-form__positions">
         <template x-for="position in LABELS.boardPositions" :key="position.key">
           <div class="board-form__position">
-            <label class="field" :for="'ID-' + position.key"><span x-text="position.label"></span>
-              <select :id="'ID-' + position.key" class="input" x-model.number="FORM.positions[position.key].member_id" @change="renumber(FORM, position.key)">
-                <option value="">Ikke satt</option>
-                <template x-for="member in memberOptions(FORM.positions[position.key].member_id)" :key="member.id">
-                  <option :value="member.id" x-text="app.memberName(member) + (member.status === 'former' ? ' (ypp.com.)' : '')" :selected="member.id === FORM.positions[position.key].member_id"></option>
-                </template>
-              </select>
-            </label>
+            <!-- Search for the member (no dropdown). Choosing someone fills in the number (renumberPosition). -->
+            <div class="field"><span x-text="position.label"></span>
+              <div x-data="searchSelect({ items: () => memberOptions(FORM.positions[position.key].member_id), get: () => FORM.positions[position.key].member_id,
+                                          set: id => { FORM.positions[position.key].member_id = id; renumberPosition(position.key, FORM) },
+                                          label: member => app.memberName(member) + (member.status === 'former' ? ' (ypp.com.)' : ''), empty: 'Ikke satt', placeholder: 'Ikke satt' })"><div data-piece="search-select"></div></div>
+            </div>
             <label class="field board-form__number" :for="'ID-' + position.key + '-number'">Nr.
               <input :id="'ID-' + position.key + '-number'" class="input" type="number" inputmode="numeric" min="1" x-model.number="FORM.positions[position.key].number" :disabled="!FORM.positions[position.key].member_id">
             </label>

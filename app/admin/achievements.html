@@ -84,11 +84,9 @@
             </ul>
             <p class="hint" x-show="!holders.length">Ingen har denne ennå.</p>
             <div class="achievement-holders__grant">
-              <label class="visually-hidden" for="grant-member">Gi til medlem</label>
-              <select id="grant-member" class="input" x-model.number="grantMemberId">
-                <option value="">Velg medlem</option>
-                <template x-for="member in membersWithout" :key="member.id"><option :value="member.id" x-text="app.memberName(member) + (member.status === 'former' ? ' (ypp.com.)' : '')"></option></template>
-              </select>
+              <!-- Search for the member (no dropdown) -->
+              <div x-data="searchSelect({ items: () => membersWithout, get: () => grantMemberId, set: id => grantMemberId = id,
+                                          label: member => app.memberName(member) + (member.status === 'former' ? ' (ypp.com.)' : ''), placeholder: 'Søk etter medlem' })"><div data-piece="search-select"></div></div>
               <button class="button button--secondary button--small" type="button" @click="grant()" :disabled="!grantMemberId">Gi til medlem</button>
             </div>
           </section>

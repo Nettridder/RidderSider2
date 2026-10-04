@@ -4,23 +4,27 @@
    The app loads this once per page and does all joins and filtering in JavaScript (Alpine store),
    exactly like it did with database.json. This file decides what is safe to send:
      - password_hash and the auth tables are never sent.
-     - Secret songs (and their files, genres, knowledge rows) are only sent to members allowed to see
-       them: active members when the song is in a visible repertoire, and the 'notes' role always.
-     - Hidden repertoires are only sent to the 'notes' role. */
+     - Repertoires: Note Admin ('noteadmin') gets all; active members the visible ones; former members (ypp.com.)
+       only visible ones where "Skjult for ypp.com." (hidden_for_former) is off.
+     - Secret songs (and their files, genres, knowledge rows) are only sent when the song is in a
+       repertoire this member gets (see above), and to Note Admin always. */
 
 require __DIR__ . '/_lib/core.php';
 require __DIR__ . '/_lib/auth.php';
 
 require_method('GET');
 $me = require_login();
-$isNotes = has_role($me, 'notes');
+$isNoteAdmin = has_role($me, 'noteadmin');
 $isActive = $me['status'] === 'active';
 
+/* Which repertoires this member gets. Same rule as visibleRepertoires in app/js/global.js. */
+$myRepertoires = $isNoteAdmin ? 'TRUE' : ($isActive ? 'r.is_visible = 1' : 'r.is_visible = 1 AND r.hidden_for_former = 0');
+
 /* Same rule as canSeeSong() in app/js/global.js. */
-$visibleSongs = $isNotes ? 'SELECT id FROM songs' : (
-  'SELECT s.id FROM songs s WHERE s.is_secret = 0' . ($isActive ? '
+$visibleSongs = $isNoteAdmin ? 'SELECT id FROM songs' : (
+  "SELECT s.id FROM songs s WHERE s.is_secret = 0
      OR EXISTS (SELECT 1 FROM repertoire_songs rs JOIN repertoires r ON r.id = rs.repertoire_id
-                WHERE rs.song_id = s.id AND r.is_visible = 1)' : '')
+                WHERE rs.song_id = s.id AND $myRepertoires)"
 );
 
 $tables = [
@@ -31,9 +35,9 @@ $tables = [
   'genres' => 'SELECT * FROM genres',
   'song_genres' => "SELECT * FROM song_genres WHERE song_id IN ($visibleSongs)",
   'member_songs' => "SELECT * FROM member_songs WHERE song_id IN ($visibleSongs)",
-  'repertoires' => 'SELECT * FROM repertoires' . ($isNotes ? '' : ' WHERE is_visible = 1'),
-  'repertoire_songs' => 'SELECT rs.* FROM repertoire_songs rs JOIN repertoires r ON r.id = rs.repertoire_id'
-    . ($isNotes ? '' : " WHERE r.is_visible = 1 AND rs.song_id IN ($visibleSongs)"),
+  'repertoires' => "SELECT r.* FROM repertoires r WHERE $myRepertoires",
+  'repertoire_songs' => "SELECT rs.* FROM repertoire_songs rs JOIN repertoires r ON r.id = rs.repertoire_id
+                         WHERE $myRepertoires AND rs.song_id IN ($visibleSongs)",
   'practice_plans' => 'SELECT * FROM practice_plans',
   'practice_logs' => 'SELECT * FROM practice_logs',
   'practice_competitions' => 'SELECT * FROM practice_competitions',

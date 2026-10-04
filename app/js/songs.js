@@ -1,4 +1,4 @@
-/* Songs: song list, knowledge colours, starting notes, the note player, and the Noter / Note-admin pages. */
+/* Songs: song list, knowledge colours, starting notes, the note player, and the Noter / Note Admin pages. */
 
 /* ==================== Shared: pitch player ==================== */
 
@@ -10,8 +10,9 @@ function noteFrequency(note) {
   return 440 * Math.pow(2, (midiNumber - 69) / 12);
 }
 
+/* Plays pitch-pipe tones. `notes` is a list like ['E4', 'C4'], `gap` the seconds between tones in a sequence. */
 function pitchPlayer() {
-  const NOTE_GAP_SECONDS = 0.8, NOTE_LENGTH_SECONDS = 1.1;
+  const NOTE_LENGTH_SECONDS = 1.1;
   return {
     playingSongId: null,
     playingNoteIndex: null,
@@ -24,17 +25,17 @@ function pitchPlayer() {
       this.scheduledOscillators = []; this.scheduledTimers = [];
       this.playingSongId = null; this.playingNoteIndex = null;
     },
-    playSequence(songId, notes, indexes) {
+    playSequence(songId, notes, indexes, gap = 0.8) {
       this.stopNotes();
       try {
         this.audioContext = this.audioContext || new (window.AudioContext || window.webkitAudioContext)();
         if (this.audioContext.state === 'suspended') this.audioContext.resume();
         const startTime = this.audioContext.currentTime + 0.03;
         indexes.forEach((noteIndex, position) => {
-          const time = startTime + position * NOTE_GAP_SECONDS;
+          const time = startTime + position * gap;
           const oscillator = this.audioContext.createOscillator(), volume = this.audioContext.createGain();
           oscillator.type = 'triangle';
-          oscillator.frequency.value = noteFrequency(notes[noteIndex].start_note);
+          oscillator.frequency.value = noteFrequency(notes[noteIndex]);
           volume.gain.setValueAtTime(0, time);
           volume.gain.linearRampToValueAtTime(0.25, time + 0.04);
           volume.gain.exponentialRampToValueAtTime(0.001, time + NOTE_LENGTH_SECONDS);
@@ -45,11 +46,11 @@ function pitchPlayer() {
       } catch (error) { /* no audio available: still show the playing state */ }
       this.playingSongId = songId; this.playingNoteIndex = indexes[0];
       indexes.forEach((noteIndex, position) => {
-        if (position) this.scheduledTimers.push(setTimeout(() => { this.playingNoteIndex = noteIndex; }, position * NOTE_GAP_SECONDS * 1000));
+        if (position) this.scheduledTimers.push(setTimeout(() => { this.playingNoteIndex = noteIndex; }, position * gap * 1000));
       });
-      this.scheduledTimers.push(setTimeout(() => { this.playingSongId = null; this.playingNoteIndex = null; }, ((indexes.length - 1) * NOTE_GAP_SECONDS + NOTE_LENGTH_SECONDS) * 1000));
+      this.scheduledTimers.push(setTimeout(() => { this.playingSongId = null; this.playingNoteIndex = null; }, ((indexes.length - 1) * gap + NOTE_LENGTH_SECONDS) * 1000));
     },
-    playNotes(songId, notes) { this.playSequence(songId, notes, notes.map((note, index) => index)); },
+    playNotes(songId, notes, gap) { this.playSequence(songId, notes, notes.map((note, index) => index), gap); },
     playNote(songId, notes, index) { this.playSequence(songId, notes, [index]); },
     isPlayingNote(songId, index) { return this.playingSongId === songId && this.playingNoteIndex === index },
   };
@@ -71,7 +72,7 @@ registerPiece('song-list', `
         <span class="list__meta">
           <span x-text="$store.app.songGenreNames(song.id)"></span>
           <span class="song-list__media">
-            <svg x-show="$store.app.songSheetFile(song.id)" aria-label="Noter"><use href="#icon-sheet"/></svg>
+            <svg x-show="song.sheet_file" aria-label="Noter"><use href="#icon-sheet"/></svg>
             <svg x-show="$store.app.songAudioFiles(song.id).length" aria-label="Lydfiler"><use href="#icon-audio"/></svg>
             <svg x-show="song.choreography_url" aria-label="Video"><use href="#icon-video"/></svg>
           </span>
@@ -140,15 +141,12 @@ function songPage() {
   const audioByTrackId = new Map();
   const gainByTrackId = new Map();
   let audioContext = null;
-  let startToneIndex = 0;
-  let startToneAutoPlay = false;
 
   return {
     ...pitchPlayer(),
     songId: Number(new URLSearchParams(location.search).get('id')),
     tracks: [],
-    mode: 'mix',
-    selectedVoiceTrack: null,
+    selectedTrack: null,     // the sound file playing; the first in Note Admin's order by default
     showVoiceMenu: false,
     isPlaying: false,
     currentTime: 0,
@@ -160,17 +158,12 @@ function songPage() {
     get app() { return this.$store.app },
     get song() { const song = this.app.song(this.songId); return this.app.canSeeSong(song) ? song : null },
     get startNotes() { return this.app.songStartNotes(this.songId) },
-    get mixTrack() { return this.tracks.find(track => !track.voice) },
-    get voiceTracks() { return this.tracks.filter(track => track.voice) },
-    get myVoiceTrack() { return this.voiceTracks.find(track => track.voice === this.app.me.voice_group) },
-    get playingTracks() {
-      if (this.mode === 'mix') return [this.mixTrack].filter(Boolean);
-      return this.selectedVoiceTrack ? [this.selectedVoiceTrack] : this.voiceTracks;
-    },
+    get noteGap() { return this.app.songNoteGap(this.songId) },
+    get playingTracks() { return this.selectedTrack ? [this.selectedTrack] : [] },
     get leadAudio() { return this.playingTracks.length ? audioByTrackId.get(this.playingTracks[0].id) : null },
-    get sheetUrl() { const sheet = this.song && this.app.songSheetFile(this.song.id); return sheet ? storageUrl(sheet.file) : '' },
+    get sheetUrl() { return this.song ? songFileUrl('sheet', this.song.sheet_file) : '' },
     get youtubeId() { const match = /(?:youtube\.com\/watch\?v=|youtu\.be\/)([\w-]{6,})/.exec((this.song && this.song.choreography_url) || ''); return match ? match[1] : '' },
-    get videoFileUrl() { const url = this.song && this.song.choreography_url; return url && !/^https?:/.test(url) ? storageUrl(url) : '' },
+    get videoFileUrl() { const url = this.song && this.song.choreography_url; return url && !/^https?:/.test(url) ? songFileUrl('video', url) : '' },
     get tabs() {
       return [
         { key: 'sheet', label: 'Noter' },
@@ -178,19 +171,12 @@ function songPage() {
         { key: 'lyrics', label: 'Tekst' },
       ];
     },
-    voiceAbbr(voice) {
-      const map = { tenor1: 'T1', tenor2: 'T2', baritone: 'BAR', bass1: 'B1', bass2: 'B2' };
-      return map[voice] || voice;
-    },
 
     init() {
       if (!this.song) return;
       document.title = `${this.song.name} – Mannskoret Arme Riddere`;
-      this.tracks = this.app.songAudioFiles(this.song.id).map(file => ({
-        id: file.id, name: file.voice ? LABELS.voices[file.voice] : file.name, voice: file.voice, url: storageUrl(file.file),
-      }));
-      this.mode = this.mixTrack ? 'mix' : 'voices';
-      if (this.mode === 'voices' && this.myVoiceTrack) this.selectedVoiceTrack = this.myVoiceTrack;
+      this.tracks = this.app.songAudioFiles(this.song.id).map(file => ({ id: file.id, name: file.name, url: songFileUrl('audio', file.file) }));
+      this.selectedTrack = this.tracks[0] || null;
       if (!this.sheetUrl && this.song.choreography_url) this.activeTab = 'video';
       else if (!this.sheetUrl && this.song.lyrics) this.activeTab = 'lyrics';
       this.tracks.forEach(track => {
@@ -215,7 +201,7 @@ function songPage() {
       try {
         pdf = await pdfjsLib.getDocument(url).promise;
       } catch (error) {
-        container.innerHTML = '<p class="empty-state">Fant ikke notefilen. Si fra til Note-admin.</p>';
+        container.innerHTML = '<p class="empty-state">Fant ikke notefilen. Si fra til Note Admin.</p>';
         return;
       }
       container.innerHTML = '';
@@ -265,31 +251,17 @@ function songPage() {
       this.playingTracks.forEach(track => { audioByTrackId.get(track.id).currentTime = this.currentTime; });
     },
     seekBy(seconds) { this.seekTo(this.currentTime + seconds) },
-    setMode(mode) {
-      if (this.mode === mode) return;
+    toggleVoiceMenu() { this.showVoiceMenu = !this.showVoiceMenu; },
+    /* Switch to another sound file; keeps the position and keeps playing if it was playing. */
+    selectTrack(track) {
+      if (track === this.selectedTrack) return;
       const wasPlaying = this.isPlaying;
       this.pause();
-      this.mode = mode;
-      if (this.mode === 'voices' && !this.selectedVoiceTrack && this.myVoiceTrack) this.selectedVoiceTrack = this.myVoiceTrack;
+      this.selectedTrack = track;
       if (this.leadAudio && this.leadAudio.duration) this.duration = this.leadAudio.duration;
       if (wasPlaying) this.play();
     },
-    toggleVoiceMenu() { this.showVoiceMenu = !this.showVoiceMenu; },
-    selectVoice(track) { this.selectedVoiceTrack = track; this.mode = 'voices'; },
-    playStartTones() {
-      startToneIndex = 0;
-      startToneAutoPlay = true;
-      this.playNextStartTone();
-    },
-    playNextStartTone() {
-      if (!startToneAutoPlay || startToneIndex >= this.startNotes.length) {
-        startToneAutoPlay = false;
-        return;
-      }
-      this.playNote(this.song.id, this.startNotes, startToneIndex);
-      startToneIndex++;
-      setTimeout(() => this.playNextStartTone(), 1500);
-    },
+    playStartTones() { this.playNotes(this.song.id, this.startNotes, this.noteGap) },
     onLeadTimeUpdate(lead) {
       this.currentTime = lead.currentTime;
       if (!this.isPlaying) return;
@@ -334,21 +306,21 @@ function pitchPipePage() {
       const query = this.search.trim().toLowerCase();
       return this.app.visibleSongs.filter(song => this.app.songStartNotes(song.id).length && (!query || song.name.toLowerCase().includes(query)));
     },
+    playSong(song) { this.playNotes(song.id, this.app.songStartNotes(song.id), this.app.songNoteGap(song.id)) },
+    playOne(song, index) { this.playNote(song.id, this.app.songStartNotes(song.id), index) },
   };
 }
 
-/* ==================== Note-admin: Sanger (noter/admin/sanger) ==================== */
+/* ==================== Note Admin: Sanger (noter/admin/sanger) ==================== */
 
-/* Where song files live inside storage/ (the folders on the server). The database stores the full path,
-   e.g. "songs/melody/Bromance_Mix.mp3"; the form only shows the file name. */
-const SONG_FOLDERS = { audio: 'songs/melody/', pitch: 'songs/melody/', sheet: 'songs/pdf/' };
-const songFilePath = (file, type) => !file || file.includes('/') ? file : SONG_FOLDERS[type] + file;
-
-const emptySongForm = () => ({ id: null, name: '', genreIds: [], isSecret: false, lyrics: '', choreographyUrl: '', files: [], showErrors: false });
+const emptySongForm = () => ({
+  id: null, name: '', genreIds: [], isSecret: false, lyrics: '', choreographyUrl: '',
+  sheetFile: '', pitchNotes: '', pitchGap: '0.8', files: [], showErrors: false,
+});
 
 function adminSongsPage() {
   return withAdminTools({
-    newSong: emptySongForm(),
+    ...pitchPlayer(),
     editedSong: emptySongForm(),
     newGenreName: '',
     genreError: '',
@@ -361,63 +333,95 @@ function adminSongsPage() {
         .filter(song => this.matchesSearch(song.name, this.app.songGenreNames(song.id)));
     },
     fileSummary(songId) {
-      const files = this.app.songFiles(songId);
-      const count = type => files.filter(file => file.type === type).length;
-      const parts = [['Lyd', count('audio')], ['Noter', count('sheet')], ['Toner', count('pitch')]].filter(([, number]) => number);
-      return parts.length ? parts.map(([label, number]) => `${label} ${number}`).join(' · ') : 'Ingen filer';
+      const song = this.app.song(songId), sounds = this.app.songAudioFiles(songId).length;
+      const parts = [sounds && `Lyd ${sounds}`, song.sheet_file && 'Noter', this.app.songStartNotes(songId).length && 'Toner'].filter(Boolean);
+      return parts.length ? parts.join(' · ') : 'Ingen filer';
     },
     songCountForGenre(genreId) { return this.db.song_genres.filter(link => link.genre_id === genreId).length },
-    emptySongForm,
-    /* File picked for a row: a PDF is always sheet music, so the type follows the file. */
-    pickSongFile(row, event) {
-      const file = event.target.files[0];
-      if (!file) return;
-      row.file = file.name;
-      if (/\.pdf$/i.test(file.name)) row.type = 'sheet';
-      else if (row.type === 'sheet') row.type = 'audio';
-    },
-    addFileRow(form) { form.files.push({ rowKey: ++this.rowKey, id: null, name: '', voice: '', type: 'audio', startNote: '', file: '' }) },
+
+    /* ---------- the song editor (same drawer for a new song and for editing) ---------- */
+    get isNewSong() { return !this.editedSong.id },
     songFormFromRow(song) {
       return {
         id: song.id, name: song.name, genreIds: this.app.songGenreIds(song.id), isSecret: song.is_secret,
-        lyrics: song.lyrics || '', choreographyUrl: song.choreography_url || '', showErrors: false,
-        files: this.app.songFiles(song.id).map(file => ({ rowKey: ++this.rowKey, id: file.id, name: file.name, voice: file.voice || '', type: file.type, startNote: file.start_note || '', file: file.file || '' })),
+        lyrics: song.lyrics || '', choreographyUrl: song.choreography_url || '', sheetFile: song.sheet_file || '',
+        pitchNotes: song.pitch_notes || '', pitchGap: String((song.pitch_gap_ms || 800) / 1000), showErrors: false,
+        files: this.app.songFiles(song.id).map(file => ({ rowKey: ++this.rowKey, id: file.id, name: file.name, file: file.file })),
       };
     },
-    isValidSong(form) { form.showErrors = true; if (!form.name.trim()) { this.focusFirstInvalidField(); return false; } return true; },
-    /* Saves the song together with its genres and files (they replace the old ones). */
-    saveSongToServer(form) {
-      return this.app.save('songs', form.id, {
-        name: form.name.trim(), lyrics: form.lyrics || null, choreography_url: form.choreographyUrl.trim() || null, is_secret: form.isSecret,
-      }, {
-        song_genres: form.genreIds.map(genreId => ({ genre_id: genreId })),
-        song_voice_files: form.files.map((row, index) => ({
-          name: row.name.trim() || (row.voice ? LABELS.voices[row.voice] : LABELS.fileTypes[row.type]),
-          file: songFilePath(row.file, row.type) || null, voice: row.voice || null, type: row.type,
-          start_note: row.type === 'pitch' ? (row.startNote.trim() || null) : null, sort_order: index + 1,
-        })),
-      });
-    },
-    async addSong() {
-      const form = this.newSong;
-      if (!this.isValidSong(form)) return;
-      try { await this.saveSongToServer(form); } catch (error) { this.fail(error); return; }
-      this.notify(`«${form.name.trim()}» er lagt til` + (form.isSecret ? ' som hemmelig.' : '.'));
-      this.newSong = this.emptySongForm();
+    /* "Legg til sang": opens the editor empty. Nothing is saved until "Legg til sang" in the editor is pressed. */
+    newSong(event) {
+      this.editedSong = emptySongForm();
+      this.openDrawer('Ny sang', '', event);
     },
     editSong(song, event) {
       this.editedSong = this.songFormFromRow(song);
       this.openDrawer('Rediger sang', song.name, event);
     },
+
+    /* Only the file name is stored; the file itself goes in storage/songs/pdf/ or storage/songs/melody/. */
+    pickFileName(event) { const file = event.target.files[0]; event.target.value = ''; return file ? file.name : null },
+    pickSheet(event, form) { const name = this.pickFileName(event); if (name) form.sheetFile = name; },
+    pickSound(row, event) {
+      const name = this.pickFileName(event);
+      if (!name) return;
+      row.file = name;
+      if (!row.name.trim()) row.name = name.replace(/\.[^.]+$/, '').replace(/[_-]+/g, ' ');
+    },
+    addSoundRow(form) { form.files.push({ rowKey: ++this.rowKey, id: null, name: '', file: '' }) },
+    moveSoundRow(index, step, form) {
+      const target = index + step;
+      if (target < 0 || target >= form.files.length) return;
+      const [row] = form.files.splice(index, 1);
+      form.files.splice(target, 0, row);
+    },
+
+    /* Pitch pipe: tones typed as "E4 C4 G3"; a wrong tone is shown in red and stops saving. */
+    pitchTones(form) { return parseNotes(form.pitchNotes) },
+    badTones(form) { return this.pitchTones(form).filter(note => !NOTE_PATTERN.test(note)) },
+    pitchGapMs(form) { const seconds = Number(String(form.pitchGap).replace(',', '.')); return seconds > 0 && seconds <= 10 ? Math.round(seconds * 1000) : null },
+    previewTones(form) { this.playNotes('preview', this.pitchTones(form).filter(note => NOTE_PATTERN.test(note)), (this.pitchGapMs(form) || 800) / 1000) },
+
+    songProblems(form) {
+      const problems = {};
+      if (!form.name.trim()) problems.name = 'Skriv inn navnet på sangen.';
+      if (this.badTones(form).length) problems.tones = 'Ukjent tone: ' + this.badTones(form).join(', ') + '. Skriv for eksempel E4, Bb3 eller F#4.';
+      if (this.pitchTones(form).length && !this.pitchGapMs(form)) problems.gap = 'Skriv antall sekunder mellom tonene, for eksempel 0.8.';
+      if (form.files.some(row => !row.file.trim())) problems.files = 'Hver lydfil trenger et filnavn. Velg fil eller fjern raden.';
+      return problems;
+    },
+    isValidSong(form) {
+      form.showErrors = true;
+      if (Object.keys(this.songProblems(form)).length) { this.focusFirstInvalidField(); return false; }
+      return true;
+    },
+    /* Saves the song with its genres and sound files (the sound files replace the old ones, in this order). */
+    saveSongToServer(form) {
+      const tones = this.pitchTones(form);
+      return this.app.save('songs', form.id, {
+        name: form.name.trim(), lyrics: form.lyrics || null, choreography_url: form.choreographyUrl.trim() || null,
+        sheet_file: form.sheetFile.trim() || null, is_secret: form.isSecret,
+        pitch_notes: tones.length ? tones.join(' ') : null, pitch_gap_ms: tones.length ? this.pitchGapMs(form) : null,
+      }, {
+        song_genres: form.genreIds.map(genreId => ({ genre_id: genreId })),
+        song_voice_files: form.files.map((row, index) => ({
+          name: row.name.trim() || row.file.trim().replace(/\.[^.]+$/, ''), file: row.file.trim(), sort_order: index + 1,
+        })),
+      });
+    },
     async saveSong() {
-      const form = this.editedSong;
+      const form = this.editedSong, isNew = this.isNewSong;
       if (!this.isValidSong(form)) return;
       let song;
       try { song = await this.saveSongToServer(form); } catch (error) { this.fail(error); return; }
+      this.stopNotes();
       this.closeDrawer();
-      this.notify(`Endringene i «${song.name}» er lagret.`);
+      this.notify(isNew ? `«${song.name}» er lagt til` + (song.is_secret ? ' som hemmelig.' : '.') : `Endringene i «${song.name}» er lagret.`);
     },
+    /* "Slett sang" on a song that was never saved just closes the editor — nothing is created. */
     async deleteSong() {
+      this.stopNotes();
+      if (this.isNewSong) { this.closeDrawer(); return; }
       const songId = this.editedSong.id, name = this.app.song(songId).name;
       try { await this.app.remove('songs', songId); } catch (error) { this.fail(error); return; }
       // The database removed the linked rows too (ON DELETE CASCADE); do the same in the store.
@@ -457,15 +461,21 @@ function adminSongsPage() {
   });
 }
 
-/* ==================== Note-admin: Repertoar (noter/admin/repertoar) ==================== */
+/* ==================== Note Admin: Repertoar (noter/admin/repertoar) ==================== */
 
 function adminRepertoiresPage() {
   return withAdminTools({
-    newRepertoire: { name: '', isVisible: false, showErrors: false },
-    editedRepertoire: { id: null, name: '', isVisible: false, songIds: [], showErrors: false },
-    songToAdd: '',
-    get songsNotInRepertoire() {
-      return [...this.db.songs].filter(song => !this.editedRepertoire.songIds.includes(song.id)).sort((a, b) => a.name.localeCompare(b.name, 'nb'));
+    newRepertoire: { name: '', isVisible: false, hiddenForFormer: true, showErrors: false },
+    editedRepertoire: { id: null, name: '', isVisible: false, hiddenForFormer: true, songIds: [], showErrors: false },
+    songSearch: '',
+    /* Search to add a song: up to 8 matches that are not in the repertoire yet. */
+    get songMatches() {
+      const query = this.songSearch.trim().toLowerCase();
+      if (!query) return [];
+      return [...this.db.songs]
+        .filter(song => !this.editedRepertoire.songIds.includes(song.id) && song.name.toLowerCase().includes(query))
+        .sort((a, b) => a.name.toLowerCase().indexOf(query) - b.name.toLowerCase().indexOf(query) || a.name.localeCompare(b.name, 'nb'))
+        .slice(0, 8);
     },
     songName(songId) { return (this.app.song(songId) || {}).name },
     songCountText(repertoireId) { const count = this.app.repertoireSongIds(repertoireId).length; return count + (count === 1 ? ' sang' : ' sanger'); },
@@ -473,13 +483,13 @@ function adminRepertoiresPage() {
       const form = this.newRepertoire;
       form.showErrors = true;
       if (!form.name.trim()) { this.focusFirstInvalidField(); return; }
-      try { await this.app.save('repertoires', null, { name: form.name.trim(), is_visible: form.isVisible }); } catch (error) { this.fail(error); return; }
+      try { await this.app.save('repertoires', null, { name: form.name.trim(), is_visible: form.isVisible, hidden_for_former: form.hiddenForFormer }); } catch (error) { this.fail(error); return; }
       this.notify(`«${form.name.trim()}» er opprettet. Trykk Rediger for å legge til sanger.`);
-      this.newRepertoire = { name: '', isVisible: false, showErrors: false };
+      this.newRepertoire = { name: '', isVisible: false, hiddenForFormer: true, showErrors: false };
     },
     editRepertoire(repertoire, event) {
-      this.editedRepertoire = { id: repertoire.id, name: repertoire.name, isVisible: repertoire.is_visible, songIds: this.app.repertoireSongIds(repertoire.id), showErrors: false };
-      this.songToAdd = '';
+      this.editedRepertoire = { id: repertoire.id, name: repertoire.name, isVisible: repertoire.is_visible, hiddenForFormer: repertoire.hidden_for_former, songIds: this.app.repertoireSongIds(repertoire.id), showErrors: false };
+      this.songSearch = '';
       this.openDrawer('Rediger repertoar', repertoire.name, event);
     },
     moveSong(index, step) {
@@ -488,10 +498,12 @@ function adminRepertoiresPage() {
       const [songId] = songIds.splice(index, 1);
       songIds.splice(target, 0, songId);
     },
-    addSongToRepertoire() {
-      if (!this.songToAdd) return;
-      this.editedRepertoire.songIds.push(Number(this.songToAdd));
-      this.songToAdd = '';
+    /* Adds the song at the end; Enter in the search field adds the first match. */
+    addSongToRepertoire(song) {
+      if (!song) return;
+      this.editedRepertoire.songIds.push(song.id);
+      this.songSearch = '';
+      this.$nextTick(() => this.$refs.songSearch && this.$refs.songSearch.focus());
     },
     async saveRepertoire() {
       const form = this.editedRepertoire;
@@ -499,7 +511,7 @@ function adminRepertoiresPage() {
       if (!form.name.trim()) { this.focusFirstInvalidField(); return; }
       let repertoire;
       try {
-        repertoire = await this.app.save('repertoires', form.id, { name: form.name.trim(), is_visible: form.isVisible }, {
+        repertoire = await this.app.save('repertoires', form.id, { name: form.name.trim(), is_visible: form.isVisible, hidden_for_former: form.hiddenForFormer }, {
           repertoire_songs: form.songIds.map((songId, index) => ({ song_id: songId, sort_order: index + 1 })),
         });
       } catch (error) { this.fail(error); return; }
@@ -515,27 +527,19 @@ function adminRepertoiresPage() {
   });
 }
 
-/* ==================== Note-admin: Sangkunnskap (noter/admin/sangkunnskap) ==================== */
+/* ==================== Note Admin: Sangkunnskap (noter/admin/sangkunnskap) ==================== */
 
 function songKnowledgePage() {
   return {
-    search: '',
     selectedSongId: null,
     get app() { return this.$store.app },
     init() {
       const firstRepertoire = this.app.db.repertoires.find(repertoire => repertoire.is_visible);
       const firstSongId = firstRepertoire && this.app.repertoireSongIds(firstRepertoire.id)[0];
       this.selectedSongId = firstSongId || (this.sortedSongs[0] || {}).id;
-      this.$watch('search', () => {
-        if (!this.matchingSongs.some(song => song.id === this.selectedSongId) && this.matchingSongs.length) this.selectedSongId = this.matchingSongs[0].id;
-      });
     },
     get sortedSongs() { return [...this.app.db.songs].sort((a, b) => a.name.localeCompare(b.name, 'nb')) },
-    get matchingSongs() {
-      const query = this.search.trim().toLowerCase();
-      return this.sortedSongs.filter(song => !query || song.name.toLowerCase().includes(query));
-    },
-    get selectedSong() { return this.matchingSongs.find(song => song.id === this.selectedSongId) },
+    get selectedSong() { return this.sortedSongs.find(song => song.id === this.selectedSongId) },
     membersInVoice(voice) {
       return this.app.activeMembers.filter(member => member.voice_group === voice)
         .sort((a, b) => this.app.knowledgeOf(this.selectedSongId, b.id) - this.app.knowledgeOf(this.selectedSongId, a.id) || this.app.memberName(a).localeCompare(this.app.memberName(b), 'nb'));
@@ -544,7 +548,7 @@ function songKnowledgePage() {
   };
 }
 
-/* ==================== Note-admin: Øvingsplan (noter/admin/ovingsplan) ==================== */
+/* ==================== Note Admin: Øvingsplan (noter/admin/ovingsplan) ==================== */
 
 const emptyPlanForm = () => ({ id: null, date: '', title: '', description: '', showErrors: false });
 
@@ -591,7 +595,7 @@ function adminPracticePlanPage() {
   });
 }
 
-/* ==================== Note-admin: Øvingskonkurranse (noter/admin/ovingskonkurranse) ==================== */
+/* ==================== Note Admin: Øvingskonkurranse (noter/admin/ovingskonkurranse) ==================== */
 
 const emptyCompetitionForm = () => ({ id: null, name: '', startDate: '', endDate: '', showErrors: false });
 

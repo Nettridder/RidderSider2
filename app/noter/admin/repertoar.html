@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Note-admin: Repertoar – Mannskoret Arme Riddere</title>
+<title>Note Admin: Repertoar – Mannskoret Arme Riddere</title>
 <link rel="stylesheet" href="../../css/global.css">
 <link rel="stylesheet" href="../../css/songs.css">
 <script defer src="../../js/global.js"></script>
@@ -30,8 +30,9 @@
         </label>
         <div class="field repertoire-visibility-field">
           <label class="switch"><input type="checkbox" x-model="newRepertoire.isVisible"><span class="switch__track" aria-hidden="true"></span>Synlig for medlemmer</label>
+          <label class="switch"><input type="checkbox" x-model="newRepertoire.hiddenForFormer"><span class="switch__track" aria-hidden="true"></span>Skjult for ypp.com.</label>
         </div>
-        <p class="hint form-grid__full">Nye repertoarer er skjult til du slår på Synlig, så du kan bygge dem ferdig først.</p>
+        <p class="hint form-grid__full">Nye repertoarer er skjult til du slår på Synlig, så du kan bygge dem ferdig først. Slå av «Skjult for ypp.com.» for å vise repertoaret til tidligere medlemmer også.</p>
       </div>
       <div class="admin-form__actions"><button class="button" type="submit">Opprett repertoar</button></div>
     </form>
@@ -47,10 +48,10 @@
         <li class="admin-list__row">
           <span class="admin-list__name">
             <span x-text="repertoire.name"></span>
-            <small class="admin-list__narrow-summary" x-text="songCountText(repertoire.id) + ' · ' + (repertoire.is_visible ? 'synlig' : 'utkast')"></small>
+            <small class="admin-list__narrow-summary" x-text="songCountText(repertoire.id) + ' · ' + (repertoire.is_visible ? 'synlig' : 'utkast') + (repertoire.hidden_for_former ? '' : ' · også ypp.com.')"></small>
           </span>
           <span class="admin-list__cell admin-list__wide-only" x-text="songCountText(repertoire.id)"></span>
-          <span class="admin-list__wide-only"><span class="badge" :class="repertoire.is_visible ? 'badge--success' : 'badge--muted'" x-text="repertoire.is_visible ? 'Synlig' : 'Utkast'"></span></span>
+          <span class="admin-list__wide-only"><span class="badge" :class="repertoire.is_visible ? 'badge--success' : 'badge--muted'" x-text="repertoire.is_visible ? 'Synlig' : 'Utkast'"></span> <span class="badge" x-show="!repertoire.hidden_for_former">Også ypp.com.</span></span>
           <span class="admin-list__actions" x-show="confirmingDeleteId !== repertoire.id">
             <button class="button button--secondary button--small" type="button" @click="editRepertoire(repertoire, $event)" :aria-label="'Rediger ' + repertoire.name">Rediger</button>
             <button class="button button--danger button--small" type="button" @click="confirmingDeleteId = repertoire.id" :aria-label="'Slett ' + repertoire.name">Slett</button>
@@ -73,6 +74,7 @@
               <span class="field-error" x-show="editedRepertoire.showErrors && !editedRepertoire.name.trim()">Gi repertoaret et navn.</span>
             </label>
             <label class="switch form-grid__full"><input type="checkbox" x-model="editedRepertoire.isVisible"><span class="switch__track" aria-hidden="true"></span>Synlig for medlemmer</label>
+            <label class="switch form-grid__full"><input type="checkbox" x-model="editedRepertoire.hiddenForFormer"><span class="switch__track" aria-hidden="true"></span>Skjult for ypp.com. (tidligere medlemmer)</label>
             <div class="field form-grid__full">
               <span x-text="'Sanger i rekkefølge (' + editedRepertoire.songIds.length + ')'"></span>
               <ol class="ordered-picker">
@@ -89,15 +91,20 @@
                 </template>
               </ol>
               <p class="hint" x-show="!editedRepertoire.songIds.length">Ingen sanger ennå. Legg til den første under.</p>
-              <div class="add-song-row">
-                <label class="visually-hidden" for="song-to-add">Legg til sang</label>
-                <select id="song-to-add" class="input" x-model="songToAdd">
-                  <option value="">Velg sang å legge til</option>
-                  <template x-for="song in songsNotInRepertoire" :key="song.id">
-                    <option :value="song.id" x-text="song.name + (song.is_secret ? ' (hemmelig)' : '')"></option>
+              <!-- Search to add: type part of the name, click a match (or Enter for the first one) -->
+              <div class="song-search">
+                <label class="visually-hidden" for="song-search">Søk etter sang å legge til</label>
+                <input id="song-search" class="input" type="search" x-ref="songSearch" x-model="songSearch" placeholder="Søk etter sang å legge til" autocomplete="off"
+                       @keydown.enter.prevent="addSongToRepertoire(songMatches[0])" @keydown.escape.stop="songSearch = ''">
+                <ul class="song-search__results" x-show="songMatches.length">
+                  <template x-for="song in songMatches" :key="song.id">
+                    <li><button type="button" class="song-search__result" @click="addSongToRepertoire(song)">
+                      <span x-text="song.name"></span> <span class="badge badge--muted" x-show="song.is_secret">Hemmelig</span>
+                      <svg aria-hidden="true"><use href="#icon-check"/></svg>
+                    </button></li>
                   </template>
-                </select>
-                <button class="button button--secondary button--small" type="button" @click="addSongToRepertoire()" :disabled="!songToAdd">Legg til</button>
+                </ul>
+                <p class="hint" x-show="songSearch.trim() && !songMatches.length">Ingen sanger passer, eller de er allerede med.</p>
               </div>
             </div>
           </div>

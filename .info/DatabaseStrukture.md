@@ -45,7 +45,7 @@ Trenger ingen tabell:
 
 ## members
 
-Eksempel: *Kristian Hafell, epost, tlf, 2. tenor, aktiv, ridder, `["master"]`, begynte V25, ikke sluttet, `kristian.png`.* Styreverv (f.eks. Noteridder) lagres **ikke** her — se `boards`.
+Eksempel: *Kristian Hafell, epost, tlf, 2. tenor, aktiv, ridder, `["admin"]`, begynte V25, ikke sluttet, `kristian.png`.* Styreverv (f.eks. Noteridder) lagres **ikke** her — se `boards`.
 
 | Field | Type | Null | Key | Default | Extra |
 | - | - | - | - | - | - |
@@ -62,7 +62,7 @@ Eksempel: *Kristian Hafell, epost, tlf, 2. tenor, aktiv, ridder, `["master"]`, b
 | voice_group | enum('T1','T2','B1','B2') | NO | | | Fast stemmegruppe. T3 er ikke en fast gruppe (kun en stemme i femstemte sanger) |
 | status | enum('active','former') | NO | | 'active' | `former` vises som "ypp.com." |
 | rank | enum('aspirant','knekt','ridder','ridder_1st_class','kommandorridder','storridder') | NO | | 'aspirant' | Rekkefølge = rangorden. Visningsnavn i `RANKS` i koden |
-| roles | JSON | NO | | '[]' | `CHECK (JSON_VALID(roles))`, f.eks. `["notes"]` — se *Roller* |
+| roles | JSON | NO | | '[]' | `CHECK (JSON_VALID(roles))`, f.eks. `["noteadmin"]` — se *Roller* |
 | is_owner | bool | NO | | 0 | Eier/utvikler av appen. Alltid full tilgang. **Kan kun endres direkte i databasen** — se *Eier-tilgang* |
 | joined_year | smallint | NO | | | V25 → 2025 |
 | joined_term | enum('spring','autumn') | NO | | | V25 → 'spring' |
@@ -95,7 +95,7 @@ Notater:
 
 ## auth_tokens
 
-Engangslenker for å sette eller bytte passord. **Ingen selvregistrering:** kun medlemmer som finnes i `members` kan få token. Nye medlemmer legges til av en admin med rollen `master`.
+Engangslenker for å sette eller bytte passord. **Ingen selvregistrering:** kun medlemmer som finnes i `members` kan få token. Nye medlemmer legges til av en medlem med rollen `admin` (Admin).
 
 | Field | Type | Null | Key | Default | Extra |
 | - | - | - | - | - | - |
@@ -109,13 +109,13 @@ Engangslenker for å sette eller bytte passord. **Ingen selvregistrering:** kun 
 | expires_at | datetime | NO | | | `reset`: 1 time. `invite`: 7 dager |
 | used_at | datetime | YES | | NULL | Satt = brukt, kan ikke brukes igjen |
 
-### Flyt: nytt medlem (kun `master`)
-1. Admin med `master` oppretter medlemmet på Admin-siden → Medlemmer. `members.password_hash` = NULL (ikke aktivert).
+### Flyt: nytt medlem (kun `admin`)
+1. Et medlem med `admin` oppretter medlemmet på Admin-siden → Medlemmer. `members.password_hash` = NULL (ikke aktivert).
 2. Systemet lager token med `purpose = 'invite'`, `created_by` = admin, og sender lenke til medlemmets e-post.
 3. Medlemmet åpner lenken og velger passord. `password_hash` settes, `used_at` settes.
 4. Utløpt invitasjon: admin sender ny fra Admin-siden.
 
-Serveren sjekker `hasRole(admin, "master")` før medlem opprettes eller invitasjon sendes.
+Serveren sjekker `hasRole(member, "admin")` før medlem opprettes eller invitasjon sendes.
 
 ### Flyt: bytte passord (eksisterende medlem)
 1. Medlemmet skriver e-post på "glemt passord", eller trykker "tilbakestill passord" i Profilinnstillinger.
@@ -229,7 +229,7 @@ songs >──< members         (via member_songs — kunnskap/favoritt)
 | name | varchar(255) | NO | MUL | | Sangens navn, søkbar |
 | lyrics | text | YES | | NULL | Tekst |
 | choreography_url | varchar(512) | YES | | NULL | Koreografivideo, som regel YouTube-lenke. Maks én per sang. NULL = ingen |
-| is_secret | bool | NO | | 0 | Hemmelig. Settes ved opprettelse i Note-admin |
+| is_secret | bool | NO | | 0 | Hemmelig. Settes ved opprettelse i Note Admin |
 
 Synlighet i *Sanger*: `is_secret = 0` **eller** sangen ligger i minst ett repertoar med `is_visible = 1`.
 
@@ -365,7 +365,7 @@ Notater:
 
 ## practice_plans (Øvingsplan)
 
-Vises kun for aktive medlemmer. Redigeres i Note-admin. Hva som skal øves (inkl. sanger) skrives i beskrivelsen — ingen kobling til `songs`.
+Vises kun for aktive medlemmer. Redigeres i Note Admin. Hva som skal øves (inkl. sanger) skrives i beskrivelsen — ingen kobling til `songs`.
 
 | Field | Type | Null | Key | Default | Extra |
 | - | - | - | - | - | - |
@@ -605,14 +605,14 @@ Enkeltverdier som ikke fortjener egen tabell. Ny innstilling = ny rad, ingen mig
 
 ```
 member.roles = []                     -- vanlig medlem, ingen admin-sider
-member.roles = ["notes"]              -- Note-admin (under Noter)
-member.roles = ["master"]             -- alt: Admin (/app/admin) + Note-admin
-member.roles = ["notes", "master"]    -- flere roller samtidig er lov
+member.roles = ["noteadmin"]          -- Note Admin (under Noter)
+member.roles = ["admin"]              -- alt: Admin (/app/admin) + Note Admin
+member.roles = ["noteadmin", "admin"] -- flere roller samtidig er lov
 ```
 
-Nøklene er engelske (kode). Visningsnavn på nettsiden er norske ("Mester", "Note") og settes i `ROLES`.
+Nøklene er engelske (kode). Visningsnavn på nettsiden er "Admin" og "Note Admin" og settes i `ROLES`.
 
-**Hvorfor liste og ikke objekt** (`{notes: false, master: true}`):
+**Hvorfor liste og ikke objekt** (`{noteadmin: false, admin: true}`):
 - Mangler rollen i lista = ingen tilgang. Med objekt må hver rad ha `false` for alle roller den ikke har, eller koden må uansett tolke manglende nøkkel som `false` — da er objektet bare en mer støyete liste.
 - Kun sanne verdier lagres. Ingen tvetydighet mellom `false` og manglende nøkkel.
 - Enkel å lese og vise i admin (avkrysningsbokser = elementene i lista).
@@ -630,7 +630,7 @@ ALTER TABLE members
 Finn alle med en rolle:
 
 ```sql
-SELECT * FROM members WHERE JSON_CONTAINS(roles, '"notes"');
+SELECT * FROM members WHERE JSON_CONTAINS(roles, '"noteadmin"');
 ```
 
 ## Rolleregister — én kilde i koden
@@ -640,17 +640,17 @@ Selve rolledefinisjonene (visningsnavn, side) ligger i koden, ikke i databasen. 
 ```js
 // roles.js — eneste sted roller defineres
 export const ROLES = {
-  master: { label: "Mester", page: "/app/admin", all: true },   // Admin
-  notes:  { label: "Note",   page: "/app/noter/admin" },        // Note-admin under Noter
+  admin:     { label: "Admin",      page: "/app/admin", all: true },   // Admin
+  noteadmin: { label: "Note Admin", page: "/app/noter/admin" },        // Note Admin under Noter
 };
 
 export function hasRole(user, role) {
   return user.is_owner                    // eier: alltid alt, uavhengig av roles
-      || user.roles.includes("master")
+      || user.roles.includes("admin")
       || user.roles.includes(role);
 }
 
-// Lenker til admin-sidene medlemmet har tilgang til (Note-admin i Noter-menyen, Admin i hovedmenyen)
+// Lenker til admin-sidene medlemmet har tilgang til (Note Admin i Noter-menyen, Admin i hovedmenyen)
 export function adminPages(user) {
   return Object.entries(ROLES)
     .filter(([key]) => hasRole(user, key))
@@ -658,14 +658,14 @@ export function adminPages(user) {
 }
 ```
 
-Kun to admin-sider: Admin (`/app/admin`) og Note-admin (under Noter; URL `/app/noter/admin` er et forslag). URL-er er norske der de vises i nettleseren.
+Kun to admin-sider: Admin (`/app/admin`) og Note Admin (under Noter; URL `/app/noter/admin` er et forslag). URL-er er norske der de vises i nettleseren.
 
 ## Regler
 
 - **Sjekk på serveren.** Hver admin-rute (sider og API-kall) sjekker `hasRole(user, "<rolle>")`. Å skjule menyen er ikke nok.
 - **Valider ved lagring.** Når Admin-siden lagrer roller, avvis nøkler som ikke finnes i `ROLES`.
-- **`master` er implisitt alt.** Aldri legg `master` inn i andre roller sine lister eller sjekk for den ved siden av; `hasRole` håndterer det.
-- **Siste mester.** Admin-siden skal ikke tillate å fjerne `master` fra det siste medlemmet som har den. Eieren (`is_owner`) er i tillegg en sikkerhetsventil hvis alle andre mister tilgang.
+- **`admin` er implisitt alt.** Aldri legg `admin` inn i andre roller sine lister eller sjekk for den ved siden av; `hasRole` håndterer det.
+- **Siste Admin.** Admin-siden skal ikke tillate å fjerne `admin` fra det siste medlemmet som har den. Eieren (`is_owner`) er i tillegg en sikkerhetsventil hvis alle andre mister tilgang.
 - **Øktdata.** Les roller fra databasen ved innlogging (eller per forespørsel), så endringer får effekt uten at medlemmet må gjøre noe spesielt. Hvis rollene caches i økten, oppdater økten når roller endres.
 - **Ingen automatikk fra styret.** Nytt styre på Admin-siden endrer aldri `members.roles`. Roller endres kun manuelt på Admin-siden → Medlemmer.
 

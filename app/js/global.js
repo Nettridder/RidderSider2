@@ -21,15 +21,13 @@ const PUBLIC_PAGES = ['logg-inn', 'nytt-passord'];
 const LABELS = {
   voices: { T1: '1. tenor', T2: '2. tenor', T3: '3. tenor', B1: '1. bass', B2: '2. bass' },
   voiceGroups: ['T1', 'T2', 'B1', 'B2'],
-  songVoices: ['T1', 'T2', 'T3', 'B1', 'B2'],
   ranks: {
     aspirant: 'Aspirant', knekt: 'Knekt', ridder: 'Ridder', ridder_1st_class: 'Ridder av 1. klasse',
     kommandorridder: 'Kommandørridder', storridder: 'Storridder',
   },
-  roles: { master: 'Mester', notes: 'Note' },
+  roles: { admin: 'Admin', noteadmin: 'Note Admin' },   // members.roles keys -> names shown
   statuses: { active: 'Aktiv', former: 'ypp.com.' },
   terms: { spring: 'Vår', autumn: 'Høst' },
-  fileTypes: { audio: 'Lyd', sheet: 'Noter', pitch: 'Toneangiver' },
   boardPositions: [
     { key: 'rittmester', label: 'Rittmester' },
     { key: 'paragrafrytter', label: 'Paragrafrytter' },
@@ -79,6 +77,14 @@ const isoWeekNumber = date => {
 /* Media rule (same everywhere): a value starting with http is an external URL (YouTube, SmugMug) and is used
    as-is. Anything else is a path inside storage/, which lives outside the web root and is served by api/media.php. */
 const storageUrl = path => /^https?:\/\//.test(path) ? path : API_URL + 'media.php?path=' + encodeURIComponent(path);
+
+/* Song files: the database stores only the file name; these are the folders in storage/ they live in. */
+const SONG_FOLDERS = { audio: 'songs/melody/', sheet: 'songs/pdf/', video: 'songs/video/' };
+const songFileUrl = (kind, file) => !file ? '' : /^https?:\/\//.test(file) ? file : storageUrl(SONG_FOLDERS[kind] + file);
+
+/* Pitch pipe: "E4 C4 G3" -> ['E4', 'C4', 'G3']. Accepts b/♭ and #/♯, e.g. "Bb3", "F#4". */
+const NOTE_PATTERN = /^[A-G][♭b♯#]?\d$/;
+const parseNotes = text => (text || '').split(/[\s,]+/).filter(Boolean);
 
 /* ==================== Server API (PHP endpoints in /api) ==================== */
 
@@ -191,11 +197,12 @@ document.addEventListener('alpine:init', () => {
     get isActiveMember() { return this.me.status === 'active' },
     hasRole(role) {
       const roles = this.me.roles || [];
-      return roles.includes('master') || roles.includes(role);
+      return roles.includes('admin') || roles.includes(role);   // Admin can do everything Note Admin can
     },
     canSee(access) {
       if (!access || access === 'all') return true;
       if (access === 'active') return this.isActiveMember;
+      if (access === 'repertoire') return this.visibleRepertoires.length > 0;   // former members only when one is shown to them
       return this.hasRole(access);
     },
 
@@ -213,17 +220,20 @@ document.addEventListener('alpine:init', () => {
     songGenreIds(songId) { return this.db.song_genres.filter(link => link.song_id === songId).map(link => link.genre_id) },
     songGenreNames(songId) { return this.songGenreIds(songId).map(id => (this.genre(id) || {}).name).filter(Boolean).join(', ') },
     songFiles(songId) { return this.db.song_voice_files.filter(file => file.song_id === songId).sort((a, b) => a.sort_order - b.sort_order) },
-    songAudioFiles(songId) { return this.songFiles(songId).filter(file => file.type === 'audio' && file.file) },
-    songSheetFile(songId) { return this.songFiles(songId).find(file => file.type === 'sheet' && file.file) },
-    songStartNotes(songId) { return this.songFiles(songId).filter(file => file.type === 'pitch' && file.start_note) },
+    /* Sound files in the order Note Admin chose. */
+    songAudioFiles(songId) { return this.songFiles(songId).filter(file => file.file) },
+    /* The pitch pipe: the tones in playing order, and the time between them in seconds. */
+    songStartNotes(songId) { return parseNotes((this.song(songId) || {}).pitch_notes).filter(note => NOTE_PATTERN.test(note)) },
+    songNoteGap(songId) { return ((this.song(songId) || {}).pitch_gap_ms || 800) / 1000 },
+    /* Songs in the repertoires this member can open (for former members: only those not hidden for ypp.com.). */
     get songIdsInVisibleRepertoires() {
-      const visibleIds = this.db.repertoires.filter(repertoire => repertoire.is_visible).map(repertoire => repertoire.id);
-      return new Set(this.db.repertoire_songs.filter(link => visibleIds.includes(link.repertoire_id)).map(link => link.song_id));
+      const visibleIds = (this.db.repertoires || []).filter(repertoire => repertoire.is_visible && (this.isActiveMember || !repertoire.hidden_for_former)).map(repertoire => repertoire.id);
+      return new Set((this.db.repertoire_songs || []).filter(link => visibleIds.includes(link.repertoire_id)).map(link => link.song_id));
     },
     canSeeSong(song) {
       if (!song) return false;
       if (!song.is_secret) return true;
-      return this.isActiveMember && this.songIdsInVisibleRepertoires.has(song.id);
+      return this.songIdsInVisibleRepertoires.has(song.id);
     },
     get visibleSongs() {
       return this.db.songs.filter(song => this.canSeeSong(song)).sort((a, b) => a.name.localeCompare(b.name, 'nb'));
@@ -253,9 +263,11 @@ document.addEventListener('alpine:init', () => {
     },
 
     /* ---------- repertoires ---------- */
+    /* Active members: the visible ones (Note Admin: all). Former members (ypp.com.): visible ones not hidden for them. */
     get visibleRepertoires() {
-      if (!this.isActiveMember) return [];
-      return this.db.repertoires.filter(repertoire => repertoire.is_visible || this.hasRole('notes'));
+      if (!this.ready) return [];   // the menu asks before the data has loaded
+      if (!this.isActiveMember) return this.db.repertoires.filter(repertoire => repertoire.is_visible && !repertoire.hidden_for_former);
+      return this.db.repertoires.filter(repertoire => repertoire.is_visible || this.hasRole('noteadmin'));
     },
     repertoireSongIds(repertoireId) {
       return this.db.repertoire_songs.filter(link => link.repertoire_id === repertoireId).sort((a, b) => a.sort_order - b.sort_order).map(link => link.song_id);
@@ -327,12 +339,12 @@ const MENU = [
     key: 'noter', label: 'Noter',
     items: [
       { page: 'noter/sanger', label: 'Sanger' },
-      { page: 'noter/repertoar', label: 'Repertoar', access: 'active' },
+      { page: 'noter/repertoar', label: 'Repertoar', access: 'repertoire' },
       { page: 'noter/ovingsplan', label: 'Øvingsplan', access: 'active' },
       { page: 'noter/toneangiver', label: 'Toneangiver' },
     ],
     admin: {
-      label: 'Note-admin', access: 'notes',
+      label: 'Note Admin', access: 'noteadmin',
       items: [
         { page: 'noter/admin/sanger', label: 'Sanger' },
         { page: 'noter/admin/repertoar', label: 'Repertoar' },
@@ -349,7 +361,7 @@ const MENU = [
       { page: 'medlemmer/styret', label: 'Styret' },
     ],
     admin: {
-      label: 'Admin', access: 'master',
+      label: 'Admin', access: 'admin',
       items: [
         { page: 'admin/medlemmer', label: 'Medlemmer' },
         { page: 'admin/styret', label: 'Styret' },
@@ -711,11 +723,58 @@ function withAdminTools(page) {
   return Object.defineProperties(component, Object.getOwnPropertyDescriptors(page));
 }
 
+/* ==================== Search field instead of a dropdown ==================== */
+
+/* For choosing one item from a long list (songs, members). Use it like this:
+     <div x-data="searchSelect({ items: () => listOfItems, get: () => currentId, set: id => currentId = id,
+                                label: item => item.name, empty: 'Ikke satt' })"><div data-piece="search-select"></div></div>
+   - Type to filter; click a match or press Enter for the first one.
+   - empty (optional): adds a choice for "none" at the top, e.g. 'Ikke satt'. Without it there is no empty choice.
+   - The field shows the chosen item's name when you are not typing. */
+function searchSelect({ items, get, set, label, empty = null, placeholder = 'Søk …' }) {
+  return {
+    query: '',
+    open: false,
+    placeholder,
+    get selected() { return items().find(item => item.id === get()) || null },
+    get selectedLabel() { return this.selected ? label(this.selected) : '' },
+    get matches() {
+      const query = this.query.trim().toLowerCase();
+      const found = items().filter(item => !query || label(item).toLowerCase().includes(query)).slice(0, 30);
+      return empty !== null && !query ? [{ id: '', isEmpty: true }, ...found] : found;
+    },
+    itemLabel(item) { return item.isEmpty ? empty : label(item) },
+    focus() { this.query = ''; this.open = true; },
+    pick(item) {
+      if (!item) return;
+      set(item.isEmpty ? '' : item.id);
+      this.query = '';
+      this.open = false;
+    },
+    close() { this.open = false; this.query = ''; },
+  };
+}
+
+const SEARCH_SELECT_PIECE = `
+<div class="search-select" @click.outside="close()" @keydown.escape.stop="close()">
+  <input class="input search-select__input" type="search" autocomplete="off" x-model="query"
+         :placeholder="selectedLabel || placeholder" :class="selectedLabel && 'search-select__input--chosen'"
+         @focus="focus()" @click="open = true" @input="open = true" @keydown.enter.prevent="pick(matches.find(item => !item.isEmpty) || matches[0])"
+         :aria-label="'Søk og velg' + (selectedLabel ? ', valgt: ' + selectedLabel : '')">
+  <ul class="search-select__results" x-show="open" x-cloak>
+    <template x-for="item in matches" :key="item.id">
+      <li><button type="button" class="search-select__result" :class="item.id === (selected && selected.id) && 'is-chosen'" @mousedown.prevent @click="pick(item)" x-text="itemLabel(item)"></button></li>
+    </template>
+    <li class="search-select__none" x-show="!matches.length">Ingen treff</li>
+  </ul>
+</div>`;
+
 /* ==================== Pieces and page start ==================== */
 
 /* Reusable markup: a category file registers a piece, a page uses it with <div data-piece="name"></div>. */
 const PAGE_PIECES = {};
 function registerPiece(name, markup) { PAGE_PIECES[name] = markup; }
+registerPiece('search-select', SEARCH_SELECT_PIECE);
 function insertPieces(root = document) {
   root.querySelectorAll('template').forEach(template => insertPieces(template.content));
   root.querySelectorAll('[data-piece]').forEach(element => {

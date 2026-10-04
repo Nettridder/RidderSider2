@@ -49,16 +49,16 @@
           </div>
         </header>
 
+        <!-- Pitch pipe: hidden when Note Admin has not entered any tones for this song -->
         <div class="start-notes-row" x-show="startNotes.length">
           <span class="label">Starttoner</span>
           <button type="button" class="button button--secondary button--small" @click="playStartTones()">
             <svg aria-hidden="true"><use href="#icon-play"/></svg>Spill alle
           </button>
           <div class="start-notes">
-            <template x-for="(note, index) in startNotes" :key="note.id">
-              <button type="button" class="start-note" :class="isPlayingNote(song.id, index) && 'is-playing'" @click="playNote(song.id, startNotes, index)" :aria-label="'Spill ' + (note.voice ? LABELS.voices[note.voice] : 'tutti') + ', ' + note.start_note">
-                <span class="start-note__voice" x-text="note.voice || 'Tutti'"></span>
-                <span class="start-note__pitch"><span x-text="noteParts(note.start_note).letter"></span><span class="start-note__accidental" x-show="noteParts(note.start_note).accidental" x-text="noteParts(note.start_note).accidental"></span><span x-text="noteParts(note.start_note).octave"></span></span>
+            <template x-for="(note, index) in startNotes" :key="index">
+              <button type="button" class="start-note" :class="isPlayingNote(song.id, index) && 'is-playing'" @click="playNote(song.id, startNotes, index)" :aria-label="'Spill ' + note">
+                <span class="start-note__pitch"><span x-text="noteParts(note).letter"></span><span class="start-note__accidental" x-show="noteParts(note).accidental" x-text="noteParts(note).accidental"></span><span x-text="noteParts(note).octave"></span></span>
               </button>
             </template>
           </div>
@@ -90,19 +90,14 @@
 
               <div class="player__voice-dropdown">
                 <div class="player__voice-select" @click.away="showVoiceMenu = false">
-                  <button type="button" class="button button--secondary" @click="toggleVoiceMenu()" :aria-label="mode === 'mix' ? 'Miks valgt' : 'Stemme valgt'">
-                    <span x-text="mode === 'mix' ? 'MIX' : (selectedVoiceTrack ? voiceAbbr(selectedVoiceTrack.voice) : 'Stemmer')"></span>
+                  <button type="button" class="button button--secondary" @click="toggleVoiceMenu()" :aria-label="'Stemme: ' + (selectedTrack ? selectedTrack.name : '')">
+                    <span x-text="selectedTrack ? selectedTrack.name : 'Stemme'"></span>
                   </button>
+                  <!-- The sound files in the order Note Admin set -->
                   <div class="dropdown" x-show="showVoiceMenu">
-                    <template x-if="mixTrack">
-                      <button type="button" class="dropdown-item" @click="setMode('mix'); showVoiceMenu = false" :class="mode === 'mix' && 'dropdown-item--active'">
-                        <span>MIX</span>
-                      </button>
-                    </template>
-                    <template x-for="track in voiceTracks" :key="track.id">
-                      <button type="button" class="dropdown-item" @click="selectVoice(track); showVoiceMenu = false" :class="mode === 'voices' && selectedVoiceTrack === track && 'dropdown-item--active'">
-                        <span x-text="voiceAbbr(track.voice)"></span>
-                        <span x-show="track.voice === app.me.voice_group" class="badge">Din stemme</span>
+                    <template x-for="track in tracks" :key="track.id">
+                      <button type="button" class="dropdown-item" @click="selectTrack(track); showVoiceMenu = false" :class="selectedTrack === track && 'dropdown-item--active'">
+                        <span x-text="track.name"></span>
                       </button>
                     </template>
                   </div>

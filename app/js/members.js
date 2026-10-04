@@ -173,8 +173,8 @@ function adminMembersPage() {
       else if (this.db.members.some(member => member.id !== form.id && member.email.toLowerCase() === email)) errors.email = 'Et annet medlem bruker allerede denne e-postadressen.';
       if (!validYear(form.joined_year)) errors.joined_year = 'Skriv inn året medlemmet begynte.';
       if (form.status === 'former' && (!form.left_term || !validYear(form.left_year))) errors.left = 'Velg semester og år medlemmet sluttet. Det må med når status er ypp.com.';
-      const masters = this.db.members.filter(member => member.roles.includes('master'));
-      if (form.id && !form.roles.includes('master') && masters.length === 1 && masters[0].id === form.id) errors.roles = 'Dette er den siste med rollen Mester. Gi rollen til noen andre først.';
+      const admins = this.db.members.filter(member => member.roles.includes('admin'));
+      if (form.id && !form.roles.includes('admin') && admins.length === 1 && admins[0].id === form.id) errors.roles = 'Dette er den siste med rollen Admin. Gi rollen til noen andre først.';
       return errors;
     },
     hasErrors(form) { return Object.keys(this.memberErrors(form)).length > 0 },
@@ -224,8 +224,8 @@ function adminMembersPage() {
     deleteBlockedReason(form) {
       if (!form || !form.id) return '';
       if (form.id === this.app.currentMemberId) return 'Du kan ikke fjerne deg selv.';
-      const masters = this.db.members.filter(member => member.roles.includes('master'));
-      if (masters.length === 1 && masters[0].id === form.id) return 'Den siste med rollen Mester kan ikke fjernes.';
+      const admins = this.db.members.filter(member => member.roles.includes('admin'));
+      if (admins.length === 1 && admins[0].id === form.id) return 'Den siste med rollen Admin kan ikke fjernes.';
       return '';
     },
     async deleteMember() {
@@ -284,6 +284,8 @@ function adminBoardPage() {
       if (!previous || !previous[key + '_number']) { position.number = position.number || 1; return; }
       position.number = previous[key + '_id'] === position.member_id ? previous[key + '_number'] : previous[key + '_number'] + 1;
     },
+    /* Called by the member search on the Styret form (FORM must come last for the form templates). */
+    renumberPosition(key, form) { this.renumber(form, key) },
     renumberAll(form) { LABELS.boardPositions.forEach(({ key }) => this.renumber(form, key)); },
     boardErrors(form) {
       const errors = {};

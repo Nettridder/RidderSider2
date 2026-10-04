@@ -158,11 +158,11 @@
     <fieldset class="field">
       <legend>Tilgangsroller</legend>
       <div class="checkbox-row">
-        <label class="checkbox"><input type="checkbox" value="master" x-model="FORM.roles"> Mester</label>
-        <label class="checkbox"><input type="checkbox" value="notes" x-model="FORM.roles"> Note</label>
+        <label class="checkbox"><input type="checkbox" value="admin" x-model="FORM.roles"> Admin</label>
+        <label class="checkbox"><input type="checkbox" value="noteadmin" x-model="FORM.roles"> Note Admin</label>
       </div>
       <span class="field-error" x-show="memberErrors(FORM).roles" x-text="memberErrors(FORM).roles"></span>
-      <span class="hint">Mester gir tilgang til Admin og Note-admin. Note gir tilgang til Note-admin.</span>
+      <span class="hint">Admin gir tilgang til Admin og Note Admin. Note Admin gir tilgang til Note Admin.</span>
     </fieldset>
     <div class="field">
       <span>Profilbilde</span>
