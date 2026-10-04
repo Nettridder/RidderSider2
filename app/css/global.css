@@ -484,12 +484,14 @@ select.input option { background: var(--color-surface); }
 }
 :root:not([data-theme="light"]) { color-scheme: dark; }
 
-/* Orange header with white text and a white logo, like the old site's coloured header */
-[data-theme="light"] .site-header { background: var(--color-accent); color: #ffffff; }
-[data-theme="light"] .brand__logo { filter: brightness(0) invert(1); }
-[data-theme="light"] .profile-button__details { color: rgba(255, 255, 255, 0.85); }
-[data-theme="light"] .profile-button:hover { background: rgba(255, 255, 255, 0.16); }
-[data-theme="light"] .profile-button:focus-visible { outline-color: #ffffff; }
+/* Orange header with black text, like the old site's coloured header.
+   The orange logo gets a thin dark outline so it shows on the orange background. */
+[data-theme="light"] .site-header { background: var(--color-accent); color: var(--color-text); }
+[data-theme="light"] .brand__logo { filter: drop-shadow(0 0 0.6px #1c1a18) drop-shadow(0 0 0.6px #1c1a18); }
+[data-theme="light"] .profile-button__details { color: rgba(28, 26, 24, 0.75); }
+[data-theme="light"] .profile-button:hover { background: rgba(0, 0, 0, 0.08); }
+[data-theme="light"] .profile-button:focus-visible { outline-color: var(--color-text); }
+[data-theme="light"] .profile-menu { background: #ffffff; box-shadow: 0 10px 30px rgba(0, 0, 0, 0.14); }
 
 /* Menus at the bottom: white with an orange marker on the active item */
 [data-theme="light"] .main-menu { background: #ffffff; }

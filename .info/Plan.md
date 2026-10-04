@@ -465,6 +465,7 @@ Still open / needs Kristian:
 - Light mode looks like the old site: white background, orange header and orange details. The colours are the `:root[data-theme="light"]` tokens at the end of `app/css/global.css`.
 - Each app page has a small inline script at the top of `<head>`. It sets the theme before anything is drawn, so light mode does not flash dark. The `THEME` helper in `app/js/global.js` reads and changes the theme.
 - The login page has its own fix for light mode: its inputs used a white border that could not be seen on white.
+- Light mode header (fixed after review): the text in the orange header is black, not white. The profile menu links are black on white. The orange logo keeps its colours and gets a thin dark outline so it shows on the orange background.
 
 ### 2026-10-05: gold shine on the logo (public front page)
 - `www/index.html` now uses the old site's shine exactly: the same image (`/images/MARlogo.png`), the same `.gold::after` CSS (mask `/images/logo.jpg`), and the same maths as the old `js/glare.js` + `refreshGold()`:
@@ -472,3 +473,9 @@ Still open / needs Kristian:
   - `--background-size` = the window size in px
 - It updates at most once per frame on scroll, resize and orientation change (`goldShine()` in the page script).
 - Checked against the old site side by side at three scroll positions: the values and the screenshots are the same.
+
+### 2026-10-05: former members on the public Medlemmer page
+- `medlemmer.html` has a button at the bottom, "Vis tidligere medlemmer". It shows a "Tidligere medlemmer" block under the current members, and "Skjul tidligere medlemmer" hides it again. The button is not shown when there are no former members.
+- `api/public.php` now also sends `former_members`: members with `status = 'former'` and `show_public = 1`. It sends the same columns as for active members, plus `joined_year` and `left_year`. The newest leavers come first.
+- Each card shows the rank and the years, e.g. "Storridder · 2015–2021". The years are left out when unknown. Photos are slightly greyed.
+- To hide a former member from the public page, turn off `show_public`.

@@ -31,6 +31,10 @@
 .storridder-border { background: linear-gradient(40deg, #f6dba6, #ffebc4, #f0be79, #8f653b, #673d22, #ba7f3b, #eebc70); }
 .kommandorridder-border { background: linear-gradient(40deg, #E7E7E7, #A1A19F, #706F6B, #4D4C49, #63625D, #95948F); }
 .rafk-border { background: linear-gradient(40deg, #F0CAB2, #A47C6C, #7F5B4A, #AC836D, #AB836E); }
+
+/* ---------- former members (hidden until the button at the bottom is pressed) ---------- */
+.former-toggle { text-align: center; margin-top: 10px; }
+.former .member .pic img { filter: grayscale(0.35); }
 </style>
 <script defer src="/js/global.js"></script>
 <script defer src="/js/confetti.js"></script>   <!-- confetti on ?confetti=true -->
@@ -62,11 +66,31 @@
         </div>
       </div>
     </template>
+
+    <!-- Former members (status 'former', show_public), under the current ones -->
+    <div class="container former" x-show="showFormer" x-cloak>
+      <div class="section-header"><h3 class="section-title">Tidligere medlemmer</h3><p class="section-description"></p></div>
+      <div class="member-row">
+        <template x-for="member in formerMembers" :key="member.id">
+          <div class="member">
+            <div class="pic"><img :class="RANK_BORDERS[member.rank]" :src="mediaUrl('images/profile/' + member.image_file)" :alt="name(member)" loading="lazy" @error="$el.src = '/images/MARlogo.png'"></div>
+            <h4 x-text="name(member)"></h4>
+            <span x-text="formerDetails(member)"></span>
+          </div>
+        </template>
+      </div>
+    </div>
+
+    <div class="former-toggle" x-show="formerMembers.length" x-cloak>
+      <button type="button" class="btn-hollow" :aria-expanded="showFormer" @click="showFormer = !showFormer"
+              x-text="showFormer ? 'Skjul tidligere medlemmer' : 'Vis tidligere medlemmer'"></button>
+    </div>
   </section>
 </main>
 
 <script>
-/* ---------- Medlemmer: active members shown publicly, grouped by voice; the current dirigent first ---------- */
+/* ---------- Medlemmer: active members shown publicly, grouped by voice; the current dirigent first.
+   A button at the bottom shows the former members under them. ---------- */
 const VOICE_SECTIONS = [
   { key: 'conductor', title: 'Dirigent' },
   { key: 'T1', title: '1.Tenor' },
@@ -83,8 +107,15 @@ const RANK_BORDERS = { storridder: 'storridder-border', kommandorridder: 'komman
 function membersSection() {
   return {
     sections: [],
+    formerMembers: [],
+    showFormer: false,
     failed: false,
     name: member => member.first_name + ' ' + member.last_name,
+    /* "Ridder · 2015–2021" (years left out when unknown) */
+    formerDetails(member) {
+      const years = [member.joined_year, member.left_year].filter(Boolean).join('–');
+      return [RANK_LABELS[member.rank], years].filter(Boolean).join(' · ');
+    },
     async init() {
       try {
         const response = await fetch(API_URL + 'public.php');
@@ -94,6 +125,7 @@ function membersSection() {
         this.sections = VOICE_SECTIONS
           .map(section => ({ ...section, members: data.members.filter(member => group(member) === section.key) }))
           .filter(section => section.members.length);
+        this.formerMembers = data.former_members || [];
         this.$nextTick(() => watchFadeIns(this.$el));
       } catch (error) {
         this.failed = true;

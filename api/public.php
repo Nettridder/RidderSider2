@@ -4,6 +4,7 @@
 
    {
      members:     active members with show_public = 1 (name, voice group, rank, image path),
+     former_members: former members with show_public = 1 (same columns + the years they sang), newest first,
      conductor_id: member id of the current board's dirigent (or null),
      login_backgrounds: image paths for the login page
    }
@@ -20,12 +21,19 @@ $members = query(
    ORDER BY first_name, last_name'
 )->fetchAll();
 
+$formerMembers = query(
+  'SELECT id, first_name, last_name, voice_group, `rank`, image_file, joined_year, left_year
+   FROM members WHERE status = \'former\' AND show_public = 1
+   ORDER BY left_year IS NULL, left_year DESC, first_name, last_name'
+)->fetchAll();
+
 $conductorId = query('SELECT dirigent_id FROM boards ORDER BY year DESC, term DESC LIMIT 1')->fetchColumn();
 
 $backgrounds = query('SELECT file FROM login_backgrounds WHERE is_active = 1')->fetchAll(PDO::FETCH_COLUMN);
 
 json_out([
   'members' => $members,
+  'former_members' => $formerMembers,
   'conductor_id' => $conductorId ?: null,
   'login_backgrounds' => $backgrounds,
 ]);
