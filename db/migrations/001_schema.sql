@@ -1,14 +1,22 @@
--- 001_schema.sql — creates every table for the new RidderSider2 database.
+-- 001_schema.sql — creates every table for the new RidderSider2 database. Run this FIRST, then 002_start_data.sql.
 --
 -- Source of truth for meaning of each column: .info/DatabaseStrukture.md.
--- Run by hand in phpMyAdmin on an EMPTY database (dev first). Re-running on a database
--- that already has these tables fails on purpose — drop the tables first if you want a clean start.
+-- For an EMPTY database (dev first). Re-running on a database that already has these tables
+-- fails on purpose — drop the tables first if you want a clean start.
 --
 -- Conventions (see .info/Plan.md):
 --   * English snake_case, plural table names, link tables named owner-first.
 --   * Every table: id, created_at, updated_at, created_by, updated_by.
 --     created_by / updated_by -> members.id, ON DELETE SET NULL. NULL = done by the system.
 --   * Semester = year smallint + term enum('spring','autumn').
+
+-- ┌──────────────────────────────────────────────────────────────────────────────────────────┐
+-- │ BEFORE YOU PASTE: put the name of the DEV database on the USE line below.                 │
+-- │ Never the old live database "armeriddere" (the safety check below stops if you try).      │
+-- │ Same name as 'name' in private/config.php. Then copy everything and paste it in the        │
+-- │ Domeneshop database browser (SQL), and run it.                                             │
+-- └──────────────────────────────────────────────────────────────────────────────────────────┘
+USE `armeriddereno05`;
 
 SET NAMES utf8mb4;
 

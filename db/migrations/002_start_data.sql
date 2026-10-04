@@ -1,11 +1,17 @@
 -- 002_start_data.sql — the first rows a new, empty database needs. Run once, right after 001_schema.sql.
 --
--- How (phpMyAdmin on Domeneshop):
---   1. Click the DEV database on the left (never the old "armeriddere" database).
---   2. Import -> choose 001_schema.sql -> Go. Then Import -> choose 002_start_data.sql -> Go.
---   3. Log in on https://dev.armeriddere.no/app/ — first set a password, see "Your password" at the bottom.
+-- How: paste 001_schema.sql first, then this file, in the Domeneshop database browser (SQL).
+-- Then log in on https://dev.armeriddere.no/app/ — first set a password, see "Your password" at the bottom.
 --
 -- Values follow .info/DatabaseStrukture.md.
+
+-- ┌──────────────────────────────────────────────────────────────────────────────────────────┐
+-- │ BEFORE YOU PASTE: put the name of the DEV database on the USE line below.                 │
+-- │ Never the old live database "armeriddere" (the safety check below stops if you try).      │
+-- │ Same name as 'name' in private/config.php. Then copy everything and paste it in the        │
+-- │ Domeneshop database browser (SQL), and run it.                                             │
+-- └──────────────────────────────────────────────────────────────────────────────────────────┘
+USE `CHANGE_ME_dev_database`;
 
 SET NAMES utf8mb4;
 
@@ -46,4 +52,4 @@ INSERT INTO achievements (created_by, updated_by, `key`, title, description, ima
 --   A) On the login page click "Glemt passord, eller ny bruker?" and type kristianhafell@gmail.com.
 --      You get an email with a link where you choose a password (needs mail to work on Domeneshop).
 --   B) Without email: on your own computer run   php www/db/tools/set_password.php
---      It asks for a password and prints one UPDATE line. Paste that line in phpMyAdmin -> SQL -> Go.
+--      It asks for a password and prints two lines (USE + UPDATE). Paste them in the database browser (SQL) and run.

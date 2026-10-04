@@ -392,3 +392,14 @@ Still open / needs Kristian:
 - The menu in `js/global.js`: Hjem, Om oss, Fakta and Kontakt scroll on the front page (and link to `/#...` from the other pages). Book Oss and Medlemmer open their pages. The current page or section is underlined.
 - `.htaccess`: `/book-oss.php` and `/medlemmer.php` go to the `.html` pages again.
 - Tested: both forms, carousel, the practical-info box, members, the menu between pages, and the mobile menu. No JS errors.
+
+### 2026-10-04: starting the dev database
+- Settings file: `RidderSider2/private/config.php`, outside git. Upload it by hand to `~/private/config.php`.
+- **`db/migrations/002_start_data.sql`** adds the first rows. Run it right after `001_schema.sql` in phpMyAdmin.
+  - The owner: kristianhafell@gmail.com. 2. tenor, Ridder, `["master"]`, `is_owner = 1`, started this semester, no password yet.
+  - The settings `weekly_practice_goal_minutes` (60), `app_background` and `attendance_background`.
+  - The example achievement `practice_total_1_day`.
+- **Safety:** both scripts stop at once if they are run in the old live database (`armeriddere`), or in any database that has the old site's tables (`Songar`, `Sjangrar`, `mainwp_posts`). phpMyAdmin then shows "Subquery returns more than 1 row" on the `SET @STOP_...` line.
+- **First password:** use "Glemt passord" on the login page (needs mail), or run `php www/db/tools/set_password.php` and paste the printed `UPDATE` line in phpMyAdmin.
+- **Fixed:** the app home page crashed when there were no documents yet. The "Nytt dokument" box is now `x-if`.
+- **Tested** on an empty MariaDB 10.11: both guards; 21 tables created; login; admin can save; nothing secret in `bootstrap.php`; all 24 app pages without errors, both empty and with data.
