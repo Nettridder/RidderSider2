@@ -1,0 +1,44 @@
+name: Deploy to Domeneshop
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:   # lets you re-run manually from the Actions tab
+
+concurrency: deploy
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install lftp
+        run: sudo apt-get update && sudo apt-get install -y lftp
+
+      - name: Trust the server host key
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.SFTP_KNOWN_HOSTS }}" >> ~/.ssh/known_hosts
+
+      - name: Mirror repo to server (extras are deleted)
+        env:
+          LFTP_PASSWORD: ${{ secrets.SFTP_PASS }}
+        run: |
+          lftp --env-password -u "${{ secrets.SFTP_USER }}" sftp://ssh.domeneshop.no -e "
+            set cmd:fail-exit yes;
+            mirror -R --delete --verbose \
+              --exclude-glob .git* \
+              --exclude .github/ \
+              ./ dev/ ;
+            bye"
+
+      - name: Verify server matches repo
+        env:
+          LFTP_PASSWORD: ${{ secrets.SFTP_PASS }}
+        run: |
+          mkdir /tmp/live
+          lftp --env-password -u "${{ secrets.SFTP_USER }}" sftp://ssh.domeneshop.no -e "
+            set cmd:fail-exit yes;
+            mirror --verbose dev/ /tmp/live ;
+            bye"
+          diff -r -q --exclude=.git --exclude=.github . /tmp/live

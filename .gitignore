@@ -1,22 +1,11 @@
 # uploads
-storage/uploads/
-
-# sessions/cache
-storage/cache/
-storage/sessions/
+# storage/
 
 # secrets
 config/secrets/
 .env
-
-# wordpress uploads
-public/wordpress
-    
-# ridderwiki
-public/ridderwiki
-
-# mediawiki uploads
-storage/uploads/wiki/
+.env.local
+.env.*.local
 
 # logs
 *.log
