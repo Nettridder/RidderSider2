@@ -62,7 +62,7 @@
               <div class="pic"><img :class="RANK_BORDERS[member.rank]" :src="mediaUrl('images/profile/' + member.image_file)" :alt="name(member)" loading="lazy" @error="$el.src = '/images/UkjendRidder.jpg'"></div>
               <h4 x-text="name(member)"></h4>
               <span x-text="RANK_LABELS[member.rank]"></span>
-              <span x-text="member.description"></span>
+              <p x-text="member.description"></p>
             </div>
           </template>
         </div>
@@ -78,6 +78,7 @@
             <div class="pic"><img :class="RANK_BORDERS[member.rank]" :src="mediaUrl('images/profile/' + member.image_file)" :alt="name(member)" loading="lazy" @error="$el.src = '/images/UkjendRidder.jpg'"></div>
             <h4 x-text="name(member)"></h4>
             <span x-text="formerDetails(member)"></span>
+            <p x-text="member.description"></p>
           </div>
         </template>
       </div>
