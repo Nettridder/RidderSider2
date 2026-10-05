@@ -6,15 +6,19 @@
      kind=background  file=<image>                    -> storage/images/backgrounds/, adds a login_backgrounds row (switched on)
      kind=document    file=<PDF/Word>  title=...      -> storage/documents/,          adds a documents row
      kind=document    file=<PDF/Word>  document_id=7  -> storage/documents/,          replaces the file of document 7
+     kind=songpdf     file=<PDF>                      -> storage/songs/pdf/,          only stores the file (no DB change)
+     kind=songaudio   file=<audio>                    -> storage/songs/melody/,       only stores the file (no DB change)
    Response:
-     profile:              {member: {...the member as the browser sees it...}}
-     background, document: {row: {...the saved row...}}
+     profile:                        {member: {...the member as the browser sees it...}}
+     background, document:           {row: {...the saved row...}}
+     songpdf, songaudio:             {fileName: "name-3f9a1c.ext"}
 
    Who may upload:
      profile              Admin (any member), or a member for themself
      background, document Admin
+     songpdf, songaudio   Note Admin
    Safety: the file must really be what it claims (checked from its content, not its name):
-     images JPG, PNG or WebP, max 15 MB; documents PDF, DOCX or DOC, max 30 MB.
+     images JPG, PNG or WebP, max 15 MB; documents PDF, DOCX or DOC, max 30 MB; song files max 50 MB.
    It gets a new, safe file name (the original name cleaned + a random part), so nothing is ever overwritten.
    Database columns that hold file names are not writable through save.php, so files only change here.
    The app calls this from app/js/global.js: $store.app.upload(kind, file, extra). */
@@ -22,7 +26,7 @@
 require __DIR__ . '/_lib/core.php';
 require __DIR__ . '/_lib/auth.php';
 
-const UPLOAD_FOLDERS = ['profile' => 'images/profile', 'background' => 'images/backgrounds', 'document' => 'documents'];
+const UPLOAD_FOLDERS = ['profile' => 'images/profile', 'background' => 'images/backgrounds', 'document' => 'documents', 'songpdf' => 'songs/pdf', 'songaudio' => 'songs/melody'];
 /* Content type found by finfo -> extension the file gets. Word files are reported in several ways. */
 const IMAGE_TYPES = ['image/jpeg' => 'jpg', 'image/png' => 'png', 'image/webp' => 'webp'];
 const DOCUMENT_TYPES = [
@@ -33,8 +37,10 @@ const DOCUMENT_TYPES = [
   'application/x-ole-storage' => 'doc',
   'application/CDFV2' => 'doc',
 ];
+const AUDIO_TYPES = ['audio/mpeg' => 'mp3', 'audio/mp4' => 'm4a', 'audio/wav' => 'wav', 'audio/ogg' => 'ogg'];
 const MAX_IMAGE_BYTES = 15 * 1024 * 1024;
 const MAX_DOCUMENT_BYTES = 30 * 1024 * 1024;
+const MAX_SONG_FILE_BYTES = 50 * 1024 * 1024;
 
 require_method('POST');
 $me = require_login();
@@ -51,6 +57,8 @@ if ($kind === 'profile') {
   $memberId = (int) ($_POST['member_id'] ?? 0);
   if ($memberId !== $me['id']) require_role($me, 'admin');
   if (!query('SELECT 1 FROM members WHERE id = ?', [$memberId])->fetchColumn()) json_error(404, 'Fant ikke medlemmet.');
+} else if ($kind === 'songpdf' || $kind === 'songaudio') {
+  require_role($me, 'noteadmin');
 } else {
   require_role($me, 'admin');
 }
@@ -65,19 +73,27 @@ if ($kind === 'document') {
 /* ---------- 2. Check the file ---------- */
 
 $isDocument = $kind === 'document';
-$maxBytes = $isDocument ? MAX_DOCUMENT_BYTES : MAX_IMAGE_BYTES;
+$isSongFile = $kind === 'songpdf' || $kind === 'songaudio';
+$maxBytes = $isSongFile ? MAX_SONG_FILE_BYTES : ($isDocument ? MAX_DOCUMENT_BYTES : MAX_IMAGE_BYTES);
 $upload = $_FILES['file'] ?? null;
 if (!$upload || is_array($upload['error']) || $upload['error'] === UPLOAD_ERR_NO_FILE) {
-  json_error(400, $isDocument ? 'Velg en fil å laste opp.' : 'Velg et bilde å laste opp.');
+  json_error(400, $isSongFile ? 'Velg en fil å laste opp.' : ($isDocument ? 'Velg en fil å laste opp.' : 'Velg et bilde å laste opp.'));
 }
 if (in_array($upload['error'], [UPLOAD_ERR_INI_SIZE, UPLOAD_ERR_FORM_SIZE], true) || $upload['size'] > $maxBytes) {
-  json_error(413, $isDocument ? 'Filen er for stor. Maks 30 MB.' : 'Bildet er for stort. Maks 15 MB.');
+  $maxStr = $isSongFile ? '50 MB' : ($isDocument ? '30 MB' : '15 MB');
+  json_error(413, $isSongFile ? "Filen er for stor. Maks $maxStr." : ($isDocument ? "Filen er for stor. Maks $maxStr." : "Bildet er for stort. Maks $maxStr."));
 }
 if ($upload['error'] !== UPLOAD_ERR_OK || !is_uploaded_file($upload['tmp_name'])) json_error(400, 'Opplastingen feilet. Prøv igjen.');
 
 $type = (new finfo(FILEINFO_MIME_TYPE))->file($upload['tmp_name']);
 $nameExtension = strtolower(pathinfo((string) $upload['name'], PATHINFO_EXTENSION));
-if ($isDocument) {
+if ($kind === 'songpdf') {
+  if ($type !== 'application/pdf') json_error(400, 'Filen må være en PDF.');
+  $extension = 'pdf';
+} else if ($kind === 'songaudio') {
+  $extension = AUDIO_TYPES[$type] ?? null;
+  if (!$extension) json_error(400, 'Filen må være en lydfil (MP3, M4A, WAV eller OGG).');
+} else if ($isDocument) {
   $extension = DOCUMENT_TYPES[$type] ?? null;
   // Word files must also be named like one, so a random zip or Office file is not taken as a Word document.
   if (!$extension || ($extension !== 'pdf' && $nameExtension !== $extension)) json_error(400, 'Filen må være PDF eller Word (.docx eller .doc).');
@@ -106,6 +122,10 @@ try {
   if ($kind === 'profile') {
     query('UPDATE members SET image_file = ?, updated_by = ? WHERE id = ?', [$fileName, $me['id'], $memberId]);
     json_out(['member' => member_for_client(query('SELECT * FROM members WHERE id = ?', [$memberId])->fetch())]);
+  }
+  if ($isSongFile) {
+    // Song files (PDF and audio) are not stored in the database; just return the file name for the form.
+    json_out(['fileName' => $fileName]);
   }
   if ($isDocument) {
     $path = UPLOAD_FOLDERS['document'] . '/' . $fileName;   // documents.file holds the path inside storage/

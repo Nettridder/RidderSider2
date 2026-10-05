@@ -116,18 +116,17 @@
         <form class="card practice-card home-grid__practice" x-show="app.isActiveMember" @submit.prevent="registerPractice()" aria-labelledby="practice-title">
           <div class="practice-card__toppers" x-show="app.leaderboard.longestStreak.member">
             <span class="practice-card__topper-left">
-              <span x-text="app.memberName(app.leaderboard.longestStreak.member)"></span>: <b x-text="app.leaderboard.longestStreak.streak"></b> 🔥
+              <span x-text="app.leaderboard.longestStreak.member.first_name"></span>: <b x-text="app.leaderboard.longestStreak.streak"></b> 🔥
             </span>
             <span class="practice-card__topper-right">
-              <span x-text="format.number(app.totalMinutes(app.leaderboard.longestStreak.member)) + ' min'"></span> : <span x-text="app.memberName(app.leaderboard.longestStreak.member)"></span>
+              <span x-text="format.number(app.totalMinutes(app.leaderboard.longestStreak.member)) + ' min'"></span> : <span x-text="app.leaderboard.longestStreak.member.first_name"></span>
             </span>
           </div>
           <div class="practice-card__top">
             <div>
               <h2 id="practice-title" class="practice-card__title">Registrer øving</h2>
-              <p class="hint">Registreres for i dag</p>
             </div>
-            <span class="streak"><svg aria-hidden="true"><use href="#icon-flame"/></svg><b :class="streakBumped && 'streak--bumped'" x-text="app.currentStreak()"></b> dager på rad</span>
+            <span class="streak"><svg aria-hidden="true"><use href="#icon-flame"/></svg><b :class="streakBumped && 'streak--bumped'" x-text="app.currentStreak()"></b></span>
           </div>
           <div class="practice-card__row">
             <div class="minute-stepper" role="group" aria-label="Minutter øvd">

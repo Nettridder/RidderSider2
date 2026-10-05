@@ -210,13 +210,17 @@ document.addEventListener('alpine:init', () => {
        upload('profile', file, { member_id })        -> the member with the new image_file (storage/images/profile/)
        upload('background', file)                    -> the new login_backgrounds row (storage/images/backgrounds/)
        upload('document', file, { title })           -> the new documents row (storage/documents/)
-       upload('document', file, { document_id })     -> the document with its file replaced */
+       upload('document', file, { document_id })     -> the document with its file replaced
+       upload('songpdf', file)                       -> {fileName} (storage/songs/pdf/, no DB change)
+       upload('songaudio', file)                     -> {fileName} (storage/songs/melody/, no DB change) */
     async upload(kind, file, extra = {}) {
       const body = new FormData();
       body.append('kind', kind);
       body.append('file', file);
       Object.entries(extra).forEach(([key, value]) => body.append(key, value));
       const result = await api.request('upload.php', { method: 'POST', body });
+      // Song files don't update the database; just return the fileName
+      if (kind === 'songpdf' || kind === 'songaudio') return { fileName: result.fileName };
       const table = { profile: 'members', background: 'login_backgrounds', document: 'documents' }[kind];
       const row = result.member || result.row;
       const existing = this.db[table].find(entry => entry.id === row.id);

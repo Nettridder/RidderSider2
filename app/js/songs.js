@@ -360,13 +360,27 @@ function adminSongsPage() {
     },
 
     /* Only the file name is stored; the file itself goes in storage/songs/pdf/ or storage/songs/melody/. */
-    pickFileName(event) { const file = event.target.files[0]; event.target.value = ''; return file ? file.name : null },
-    pickSheet(event, form) { const name = this.pickFileName(event); if (name) form.sheetFile = name; },
-    pickSound(row, event) {
-      const name = this.pickFileName(event);
-      if (!name) return;
-      row.file = name;
-      if (!row.name.trim()) row.name = name.replace(/\.[^.]+$/, '').replace(/[_-]+/g, ' ');
+    pickFileName(event) { const file = event.target.files[0]; event.target.value = ''; return file ? file : null },
+    async pickSheet(event, form) {
+      const file = this.pickFileName(event);
+      if (!file) return;
+      try {
+        const result = await this.$store.app.upload('songpdf', file);
+        form.sheetFile = result.fileName;
+      } catch (error) {
+        this.$store.ui.fail(error);
+      }
+    },
+    async pickSound(row, event) {
+      const file = this.pickFileName(event);
+      if (!file) return;
+      try {
+        const result = await this.$store.app.upload('songaudio', file);
+        row.file = result.fileName;
+        if (!row.name.trim()) row.name = file.name.replace(/\.[^.]+$/, '').replace(/[_-]+/g, ' ');
+      } catch (error) {
+        this.$store.ui.fail(error);
+      }
     },
     addSoundRow(form) { form.files.push({ rowKey: ++this.rowKey, id: null, name: '', file: '' }) },
     moveSoundRow(index, step, form) {

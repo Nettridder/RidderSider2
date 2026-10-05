@@ -1,0 +1,1 @@
+- [PDF Upload Fix](PDF_UPLOAD_IMPLEMENTATION.md) — Song PDF and audio files now upload to storage instead of requiring manual file copy
