@@ -16,13 +16,13 @@ require_method('GET');
 header('Cache-Control: public, max-age=300');
 
 $members = query(
-  'SELECT id, first_name, last_name, voice_group, `rank`, image_file
+  'SELECT id, first_name, last_name, voice_group, `rank`, image_file, `description`
    FROM members WHERE status = \'active\' AND show_public = 1
    ORDER BY first_name, last_name'
 )->fetchAll();
 
 $formerMembers = query(
-  'SELECT id, first_name, last_name, voice_group, `rank`, image_file, joined_year, left_year
+  'SELECT id, first_name, last_name, voice_group, `rank`, image_file, joined_year, left_year, `description`
    FROM members WHERE status = \'former\' AND show_public = 1
    ORDER BY left_year IS NULL, left_year DESC, first_name, last_name'
 )->fetchAll();
