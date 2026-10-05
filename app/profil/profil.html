@@ -68,16 +68,6 @@
             <p class="empty-state" x-show="!recentPractice.length">Ingen øving registrert ennå.</p>
           </section>
 
-          <section class="profile-section" x-show="isOwnProfile" aria-labelledby="contact-form-title">
-            <h2 id="contact-form-title" class="section-title">Kontakt nettridder</h2>
-            <form @submit.prevent="sendEmailToNettridder()" class="contact-form">
-              <label for="message">Melding</label>
-              <textarea id="message" x-model="contactMessage" rows="4" class="input" required></textarea>
-              <input type="hidden" x-model="contactSubject">
-              <button type="submit" class="button">Send email</button>
-            </form>
-          </section>
-
           <section class="profile-section" x-show="!isOwnProfile" aria-labelledby="member-achievements-title">
             <h2 id="member-achievements-title" class="section-title">Achievements</h2>
             <ul class="list" x-show="earnedAchievements.length">
