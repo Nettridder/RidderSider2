@@ -156,3 +156,8 @@
 .achievement-holders__meta { display: block; font-size: 0.8rem; }
 .achievement-holders__grant { display: flex; gap: 0.5rem; margin-top: 0.75rem; }
 .achievement-holders__grant select { flex: 1; min-width: 0; }
+
+/* Innstillinger: box for telling Nettridder about an error on the site (inside "Satt av admin") */
+.report-problem { display: grid; gap: 0.75rem; margin-top: 1.25rem; padding-top: 1.25rem; border-top: 1px solid var(--color-border-soft); max-width: 40rem; }
+.report-problem__title { margin: 0; font-size: 1rem; font-weight: 600; }
+.report-problem textarea { resize: vertical; min-height: 6rem; }
