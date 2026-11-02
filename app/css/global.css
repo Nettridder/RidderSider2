@@ -324,6 +324,7 @@ select.input option { background: var(--color-surface); }
 
 /* ---------- narrow screens: main menu at the bottom, sub menu right above it ---------- */
 @media (max-width: 720px) {
+  .container { padding-left: 0.5rem; padding-right: 0.5rem; }
   .site-header { border-bottom: 1px solid var(--color-border-soft); }
   .site-header__inner { padding-top: 0.7rem; padding-bottom: 0.7rem; }
   .brand__name { font-size: 1.12rem; }
