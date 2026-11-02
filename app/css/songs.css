@@ -72,9 +72,12 @@
 /* One rounded box around both buttons; hovering a button shows a circle inside the box, so the circle follows the box */
 .player-overlay { position: fixed; top: 0.5rem; right: 1rem; z-index: 45; display: flex; align-items: center; gap: 2px; padding: 3px; border-radius: 999px; border: 1px solid var(--color-border); background: var(--color-surface); box-shadow: 0 2px 8px rgba(0, 0, 0, 0.18); }
 .player-overlay--following { box-shadow: none; border-color: transparent; }   /* while the player follows: no shadow and no border, so it reads as part of the controller (the border stays as an invisible 1px so nothing shifts) */
-.player-overlay > * { width: 2rem; height: 2rem; padding: 0; display: grid; place-items: center; border-radius: 50%; border: 0; background: none; color: var(--color-text); cursor: pointer; transition: background 0.15s; }
-.player-overlay > *:hover, .player-overlay > *:focus-visible { background: var(--color-surface-raised); }
-.player-overlay > *:focus-visible { outline-offset: 0; }
+.player-overlay__group > * { width: 2rem; height: 2rem; padding: 0; display: grid; place-items: center; border-radius: 50%; border: 0; background: none; color: var(--color-text); cursor: pointer; transition: background 0.15s; }
+.player-overlay__group { display: flex; align-items: center; gap: 2px; }
+.player-overlay__group > *:hover, .player-overlay__group > *:focus-visible { background: var(--color-surface-raised); }
+.player-overlay__group > *:focus-visible { outline-offset: 0; }
+.player-overlay__group > [aria-pressed="true"] { background: rgba(31, 79, 255, 0.2); color: #6b8cff; }   /* pen on, eraser on */
+.player-overlay__group > :disabled { opacity: 0.35; cursor: not-allowed; background: none; }
 .player-overlay button svg { width: 1.5rem; height: 1.5rem; }
 .player-overlay a svg { width: 1.55rem; height: 1.55rem; }
 .player__controls { display: flex; align-items: center; gap: 0.4rem; flex-wrap: nowrap; flex: 1; min-width: 0; }
@@ -135,7 +138,13 @@
 .song-materials__actions .icon-button svg { width: 1.25rem; height: 1.25rem; }
 .sheet-viewer { display: grid; gap: 0.75rem; position: relative; width: 100vw; margin-left: calc(50% - 50vw); }
 .sheet-pages { display: flex; flex-direction: column; }
-.sheet-page { display: block; width: 100%; height: auto; border: none; background: var(--color-paper); }.video-frame { display: block; width: 100%; aspect-ratio: 16 / 9; border: 0; border-radius: var(--radius-small); background: #000; overflow: hidden; }
+.sheet-page { display: block; width: 100%; height: auto; border: none; background: var(--color-paper); }
+.sheet-page-wrap { position: relative; }
+/* Marker drawing: a see-through canvas on every page. Only catches touches and clicks while the marker is on, so scrolling works as usual otherwise. */
+.sheet-ink { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
+.marker-on .sheet-ink { pointer-events: auto; touch-action: none; cursor: crosshair; }   /* touch-action none: the page scrolls from our own two-finger code */
+.song-materials__actions .icon-button[aria-pressed="true"] { color: #1f4fff; border-color: #1f4fff; background: rgba(31, 79, 255, 0.12); }
+.video-frame { display: block; width: 100%; aspect-ratio: 16 / 9; border: 0; border-radius: var(--radius-small); background: #000; overflow: hidden; }
 .video-frame iframe { width: 100%; height: 100%; border: 0; }
 .voice-files { list-style: none; margin: 0; padding: 0; display: grid; gap: 0.6rem; }
 .voice-files__row { display: flex; align-items: center; justify-content: space-between; gap: 1rem; padding: 0.6rem 0; border-bottom: 1px solid var(--color-border-soft); }

@@ -26,7 +26,7 @@
 
     <template x-if="song">
       <div class="song-page">
-        <section class="player" :class="!playerOpen && 'player--fixed'" aria-label="Lydspiller">
+        <section class="player" :class="(!playerOpen || marker) && 'player--fixed'" aria-label="Lydspiller">
           <!-- Top line of the song view: knowledge and favorite on the left, the song name centered, follow toggle and X (back to the song list) on the right -->
           <div class="player__head">
             <div class="player__head-left song-header__actions">
@@ -92,9 +92,22 @@
         </section>
 
         <!-- Always on top of the page, in the empty spot at the right of the player's top line: follow toggle and X (back to the song list) -->
-        <div class="player-overlay" :class="playerOpen && 'player-overlay--following'">
-          <button type="button" @click="togglePlayer()" :aria-label="playerOpen ? 'Slutt å følge' : 'Fest spilleren'" :title="playerOpen ? 'Slutt å følge' : 'Fest spilleren'"><svg aria-hidden="true"><use :href="playerOpen ? '#icon-up' : '#icon-down'"/></svg></button>
-          <a href="sanger.html" aria-label="Tilbake til alle sanger" title="Alle sanger"><svg aria-hidden="true"><use href="#icon-close-bold"/></svg></a>
+        <div class="player-overlay" :class="playerOpen && !marker && 'player-overlay--following'">
+          <template x-if="!marker">
+            <div class="player-overlay__group">
+              <button type="button" @click="togglePlayer()" :aria-label="playerOpen ? 'Slutt å følge' : 'Fest spilleren'" :title="playerOpen ? 'Slutt å følge' : 'Fest spilleren'"><svg aria-hidden="true"><use :href="playerOpen ? '#icon-up' : '#icon-down'"/></svg></button>
+              <a href="sanger.html" aria-label="Tilbake til alle sanger" title="Alle sanger"><svg aria-hidden="true"><use href="#icon-close-bold"/></svg></a>
+            </div>
+          </template>
+          <!-- Drawing mode (experimental): the drawing tools take the place of the toggle and X, so the note view can only be left after the pen is switched off -->
+          <template x-if="marker">
+            <div class="player-overlay__group">
+              <button type="button" aria-pressed="true" @click="marker = false; eraser = false" aria-label="Slå av tegning" title="Slå av tegning"><svg aria-hidden="true"><use href="#icon-marker"/></svg></button>
+              <button type="button" :disabled="!historyCount" @click="undoInk()" aria-label="Angre" title="Angre"><svg aria-hidden="true"><use href="#icon-undo"/></svg></button>
+              <button type="button" :aria-pressed="eraser" @click="eraser = !eraser" aria-label="Viskelær" title="Viskelær"><svg aria-hidden="true"><use href="#icon-eraser"/></svg></button>
+              <button type="button" :disabled="!strokeCount" @click="clearInk()" aria-label="Slett hele tegningen" title="Slett hele tegningen"><svg aria-hidden="true"><use href="#icon-trash"/></svg></button>
+            </div>
+          </template>
         </div>
 
         <section class="song-materials" aria-label="Noter, video og tekst">
@@ -106,6 +119,8 @@
             </div>
             <!-- PDF actions: icons only, to the right of the tabs (under them when there is no room) -->
             <div class="song-materials__actions" x-show="activeTab === 'sheet' && sheetUrl">
+              <!-- Marker (experimental): draw on the notes in blue. One finger or the mouse draws, two fingers scroll. Saved on your user. -->
+              <button type="button" class="icon-button" :aria-pressed="marker" @click="marker = !marker; if (!marker) eraser = false" aria-label="Markør: tegn på notene" title="Markør: tegn på notene"><svg aria-hidden="true"><use href="#icon-marker"/></svg></button>
               <a class="icon-button" :href="sheetUrl" target="_blank" rel="noopener" aria-label="Åpne i ny fane" title="Åpne i ny fane"><svg aria-hidden="true"><use href="#icon-external"/></svg></a>
               <a class="icon-button" :href="sheetUrl" download aria-label="Last ned PDF" title="Last ned PDF"><svg aria-hidden="true"><use href="#icon-download"/></svg></a>
             </div>
@@ -114,7 +129,7 @@
           <div x-show="activeTab === 'sheet'" role="tabpanel">
             <template x-if="sheetUrl">
               <div class="sheet-viewer">
-                <div class="sheet-pages" id="sheet-pages"></div>
+                <div class="sheet-pages" id="sheet-pages" :class="marker && 'marker-on'"></div>
               </div>
             </template>
             <p class="empty-state" x-show="!sheetUrl">Notene er ikke lagt ut ennå.</p>

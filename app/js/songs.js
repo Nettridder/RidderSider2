@@ -139,6 +139,9 @@ function songPage() {
   const audioByTrackId = new Map();
   const gainByTrackId = new Map();
   let audioContext = null;
+  /* marker drawing: blue, a fixed thin line (as a fraction of the page width) so every note is small and neat */
+  const INK_COLOR = '#1f4fff', INK_WIDTH = 0.0032, INK_MIN_STEP = 0.0012, INK_ERASER_RADIUS = 0.014;
+  let inkStrokes = [], inkCanvases = [], inkSaveTimer = null, inkHistory = [];
 
   return {
     ...pitchPlayer(),
@@ -149,6 +152,10 @@ function songPage() {
     groupIds: null,          // ids playing together after "Spill valgte" / "Spill alle"; null = just selectedTrack
     showVoiceMenu: false,
     showSpeedMenu: false,
+    marker: false,           // drawing mode is on: the overlay shows the drawing tools, and the player is closed
+    eraser: false,           // in drawing mode: erase lines instead of drawing
+    strokeCount: 0,          // how many lines are drawn, for the delete button
+    historyCount: 0,         // how many steps can be undone
     SPEED_OPTIONS: [0.5, 0.75, 0.8, 0.9, 1, 1.1, 1.25, 1.5, 2],
     isPlaying: false,
     currentTime: 0,
@@ -197,7 +204,10 @@ function songPage() {
         audio.addEventListener('ended', () => { if (audio === this.leadAudio) this.onEnded(); });
         audioByTrackId.set(track.id, audio);
       });
-      window.addEventListener('pagehide', () => this.pause());
+      window.addEventListener('pagehide', () => {
+        this.pause();
+        if (inkSaveTimer) navigator.sendBeacon(API_URL + 'drawing.php', new Blob([JSON.stringify({ song_id: this.song.id, strokes: inkStrokes })], { type: 'application/json' }));   // a drawing not saved yet
+      });
       this.$watch('chosenIds', () => this.applyAudible());
       if (this.sheetUrl) this.renderPdf(this.sheetUrl);
     },
@@ -224,8 +234,161 @@ function songPage() {
         canvas.height = viewport.height;
         await page.render({ canvasContext: context, viewport }).promise;
         canvas.className = 'sheet-page';
-        container.appendChild(canvas);
+        // each page gets a see-through canvas on top for the marker drawing
+        const wrap = document.createElement('div');
+        wrap.className = 'sheet-page-wrap';
+        const ink = document.createElement('canvas');
+        ink.className = 'sheet-ink';
+        ink.width = canvas.width;
+        ink.height = canvas.height;
+        wrap.append(canvas, ink);
+        container.appendChild(wrap);
+        this.attachInk(ink, i - 1);
+        inkCanvases.push(ink);
       }
+      this.loadDrawing();
+    },
+
+    /* ---------- marker drawing (experimental) ----------
+       The drawing is saved on the server per member and song (api/drawing.php), so it is the same on every device
+       the member signs in on and nobody else sees it. Points are saved as fractions of the page width, so it fits any
+       screen size. With the marker on: one finger (or the mouse) draws; a second finger scrolls the page instead. */
+    attachInk(canvas, pageIndex) {
+      const pointers = new Map();   // finger or mouse id -> last position
+      let stroke = null;            // the line being drawn
+      let gesture = null;           // the eraser gesture in progress: { snapshot: history saved, changed: something was erased }
+      const toFraction = event => {
+        const rect = canvas.getBoundingClientRect();
+        return [(event.clientX - rect.left) / rect.width, (event.clientY - rect.top) / rect.width];   // y is also divided by the width
+      };
+      const drawSegment = (from, to) => {
+        const context = canvas.getContext('2d');
+        context.strokeStyle = INK_COLOR; context.lineWidth = INK_WIDTH * canvas.width; context.lineCap = 'round'; context.lineJoin = 'round';
+        context.beginPath(); context.moveTo(from[0] * canvas.width, from[1] * canvas.width); context.lineTo(to[0] * canvas.width, to[1] * canvas.width); context.stroke();
+      };
+      canvas.addEventListener('pointerdown', event => {
+        if (!this.marker || (event.pointerType === 'mouse' && event.button !== 0)) return;
+        event.preventDefault();
+        canvas.setPointerCapture(event.pointerId);
+        pointers.set(event.pointerId, { x: event.clientX, y: event.clientY });
+        if (pointers.size === 1) {
+          if (this.eraser) { gesture = { snapshot: false, changed: false }; this.eraseAt(pageIndex, toFraction(event), gesture); return; }
+          stroke = { p: pageIndex, pts: toFraction(event) };
+          drawSegment(stroke.pts, stroke.pts);   // a dot
+        } else if (stroke) {   // a second finger: this is a scroll, not a drawing; remove what was drawn so far
+          stroke = null;
+          this.redrawInk();
+        }
+      });
+      canvas.addEventListener('pointermove', event => {
+        const last = pointers.get(event.pointerId);
+        if (!last) return;
+        if (pointers.size >= 2) {   // two fingers: scroll the page by the average movement of the fingers
+          window.scrollBy((last.x - event.clientX) / pointers.size, (last.y - event.clientY) / pointers.size);
+        } else if (gesture) {
+          this.eraseAt(pageIndex, toFraction(event), gesture);
+        } else if (stroke) {
+          const point = toFraction(event), n = stroke.pts.length;
+          if (Math.hypot(point[0] - stroke.pts[n - 2], point[1] - stroke.pts[n - 1]) >= INK_MIN_STEP) {
+            drawSegment([stroke.pts[n - 2], stroke.pts[n - 1]], point);
+            stroke.pts.push(...point);
+          }
+        }
+        pointers.set(event.pointerId, { x: event.clientX, y: event.clientY });
+      });
+      const finish = event => {
+        if (!pointers.delete(event.pointerId)) return;
+        if (stroke && pointers.size === 0) {
+          if (stroke.pts.length === 2) stroke.pts.push(stroke.pts[0], stroke.pts[1]);   // a single tap is a dot
+          this.pushHistory();
+          inkStrokes = [...inkStrokes, { p: stroke.p, pts: stroke.pts.map(number => Math.round(number * 10000) / 10000) }];
+          this.strokeCount = inkStrokes.length;
+          this.scheduleInkSave();
+        }
+        if (gesture && gesture.changed) this.scheduleInkSave();
+        if (pointers.size === 0) gesture = null;
+        stroke = null;
+      };
+      canvas.addEventListener('pointerup', finish);
+      canvas.addEventListener('pointercancel', finish);
+    },
+    redrawInk() {
+      inkCanvases.forEach((canvas, pageIndex) => {
+        const context = canvas.getContext('2d');
+        context.clearRect(0, 0, canvas.width, canvas.height);
+        context.strokeStyle = INK_COLOR; context.lineWidth = INK_WIDTH * canvas.width; context.lineCap = 'round'; context.lineJoin = 'round';
+        inkStrokes.filter(stroke => stroke.p === pageIndex).forEach(stroke => {
+          context.beginPath();
+          for (let i = 0; i < stroke.pts.length; i += 2) {
+            const x = stroke.pts[i] * canvas.width, y = stroke.pts[i + 1] * canvas.width;
+            i ? context.lineTo(x, y) : context.moveTo(x, y);
+          }
+          context.stroke();
+        });
+      });
+    },
+    async loadDrawing() {
+      try {
+        const result = await api.get('drawing.php?song_id=' + this.song.id);
+        inkStrokes = Array.isArray(result.strokes) ? result.strokes : [];
+        inkHistory = [];
+        this.historyCount = 0;
+        this.strokeCount = inkStrokes.length;
+        this.redrawInk();
+      } catch (error) { /* no drawing available: the notes still work */ }
+    },
+    scheduleInkSave() {
+      clearTimeout(inkSaveTimer);
+      inkSaveTimer = setTimeout(() => this.saveDrawing(), 700);
+    },
+    async saveDrawing() {
+      clearTimeout(inkSaveTimer);
+      inkSaveTimer = null;
+      try { await api.post('drawing.php', { song_id: this.song.id, strokes: inkStrokes }); }
+      catch (error) { this.$store.ui.notify('Tegningen ble ikke lagret.', error.message); }
+    },
+    /* Undo: every change (a line, an erase, delete all) first saves how the drawing looked, so each can be taken back. */
+    pushHistory() {
+      inkHistory.push(inkStrokes);
+      if (inkHistory.length > 60) inkHistory.shift();
+      this.historyCount = inkHistory.length;
+    },
+    undoInk() {
+      if (!inkHistory.length) return;
+      inkStrokes = inkHistory.pop();
+      this.historyCount = inkHistory.length;
+      this.strokeCount = inkStrokes.length;
+      this.redrawInk();
+      this.scheduleInkSave();
+    },
+    clearInk() {
+      if (!inkStrokes.length || !confirm('Slette hele tegningen din på denne sangen?')) return;
+      this.pushHistory();
+      inkStrokes = [];
+      this.strokeCount = 0;
+      this.redrawInk();
+      this.scheduleInkSave();
+    },
+    /* Eraser: removes every line on this page that passes close to the point. */
+    eraseAt(pageIndex, point, gesture) {
+      const near = stroke => {
+        if (stroke.p !== pageIndex) return false;
+        for (let i = 0; i + 3 < stroke.pts.length + 2; i += 2) {
+          const ax = stroke.pts[i], ay = stroke.pts[i + 1];
+          const bx = stroke.pts[i + 2] ?? ax, by = stroke.pts[i + 3] ?? ay;
+          const dx = bx - ax, dy = by - ay, length = dx * dx + dy * dy;
+          const t = length ? Math.max(0, Math.min(1, ((point[0] - ax) * dx + (point[1] - ay) * dy) / length)) : 0;
+          if (Math.hypot(point[0] - (ax + t * dx), point[1] - (ay + t * dy)) < INK_ERASER_RADIUS) return true;
+        }
+        return false;
+      };
+      const kept = inkStrokes.filter(stroke => !near(stroke));
+      if (kept.length === inkStrokes.length) return;
+      if (!gesture.snapshot) { this.pushHistory(); gesture.snapshot = true; }
+      inkStrokes = kept;
+      gesture.changed = true;
+      this.strokeCount = inkStrokes.length;
+      this.redrawInk();
     },
 
     connectAudioGraph() {

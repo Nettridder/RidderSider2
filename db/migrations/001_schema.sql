@@ -94,6 +94,20 @@ CREATE TABLE auth_tokens (
 
 -- Failed logins, reset requests and contact-form posts, used only for rate limiting.
 -- Rows older than a day are deleted by the API.
+-- Each member's own marker drawing on a song's sheet music (experimental). See 006_song_drawings.sql.
+CREATE TABLE song_drawings (
+  id          int(11)    NOT NULL AUTO_INCREMENT,
+  created_at  timestamp  NOT NULL DEFAULT current_timestamp(),
+  updated_at  timestamp  NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
+  member_id   int(11)    NOT NULL,
+  song_id     int(11)    NOT NULL,
+  strokes     mediumtext NOT NULL,
+  PRIMARY KEY (id),
+  UNIQUE KEY uq_song_drawings_member_song (member_id, song_id),
+  CONSTRAINT fk_song_drawings_member FOREIGN KEY (member_id) REFERENCES members (id) ON DELETE CASCADE,
+  CONSTRAINT fk_song_drawings_song FOREIGN KEY (song_id) REFERENCES songs (id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
 CREATE TABLE auth_attempts (
   id          int(11)      NOT NULL AUTO_INCREMENT,
   created_at  timestamp    NOT NULL DEFAULT current_timestamp(),
