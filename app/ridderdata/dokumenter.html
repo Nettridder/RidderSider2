@@ -17,13 +17,20 @@
   <div class="content" x-data="documentsPage()">
     <div class="page-header">
       <div>
-        <h1 class="page-header__title" tabindex="-1">Dokumenter</h1>
-        <p class="page-header__intro">Styrereferater, vedtekter og resolusjonar.</p>
+        <h1 class="page-header__title" tabindex="-1">Arkiv</h1>
+        <p class="page-header__intro">Styrereferater, vedtekter og resolusjonar, og lenker til wiki, video og bilder.</p>
       </div>
       <div class="segmented" role="group" aria-label="Vis">
         <button type="button" :aria-pressed="tab === 'documents'" @click="tab = 'documents'">Dokumenter</button>
         <button type="button" :aria-pressed="tab === 'resolutions'" @click="tab = 'resolutions'">Resolusjonar</button>
       </div>
+    </div>
+
+    <!-- Other archives (open in a new tab) -->
+    <div class="button-row archive-links">
+      <a class="button button--secondary" href="/ridderwiki" target="_blank" rel="noopener"><svg aria-hidden="true"><use href="#icon-external"/></svg>RidderWiki</a>
+      <a class="button button--secondary" href="/ridderwiki/Videoarkiv" target="_blank" rel="noopener"><svg aria-hidden="true"><use href="#icon-external"/></svg>Videoarkiv</a>
+      <a class="button button--secondary" href="https://armeriddere.smugmug.com" target="_blank" rel="noopener"><svg aria-hidden="true"><use href="#icon-external"/></svg>Bildearkiv</a>
     </div>
 
     <div x-show="tab === 'documents'">

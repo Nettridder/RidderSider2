@@ -27,20 +27,8 @@
     <template x-if="song">
       <div class="song-page">
         <section class="player" :class="(!playerOpen || marker) && 'player--fixed'" aria-label="Lydspiller">
-          <!-- Top line of the song view: knowledge and favorite on the left, the song name centered, follow toggle and X (back to the song list) on the right -->
+          <!-- Top line of the song view: the song name, centered. The follow toggle and X are in the corner pill. -->
           <div class="player__head">
-            <div class="player__head-left song-header__actions">
-              <div class="knowledge-picker" role="group" aria-label="Hvor godt kan du sangen">
-                <template x-for="level in KNOWLEDGE_LEVELS" :key="level.value">
-                  <button type="button" :aria-pressed="app.knowledgeOf(song.id) === level.value" @click="app.setKnowledge(song.id, level.value)" :aria-label="level.label" :title="level.label">
-                    <span class="knowledge-dot" :class="'knowledge-dot--' + level.key"></span>
-                  </button>
-                </template>
-              </div>
-              <button class="favorite-button" type="button" :aria-pressed="app.isFavorite(song.id)" @click="app.toggleFavorite(song.id)" :aria-label="app.isFavorite(song.id) ? 'Fjern fra favoritter' : 'Legg til i favoritter'">
-                <svg aria-hidden="true"><use :href="app.isFavorite(song.id) ? '#icon-star-fill' : '#icon-star'"/></svg>
-              </button>
-            </div>
             <p class="player__title" x-text="song.name"></p>
           </div>
           <template x-if="!tracks.length">
@@ -117,12 +105,27 @@
                 <button type="button" role="tab" :aria-selected="activeTab === tab.key" :aria-pressed="activeTab === tab.key" @click="activeTab = tab.key" x-text="tab.label"></button>
               </template>
             </div>
-            <!-- PDF actions: icons only, to the right of the tabs (under them when there is no room) -->
+            <!-- Right of the tabs, and under them when there is no room: all together as one group -->
+            <div class="song-materials__tools">
+            <!-- How well you know the song and the star (favorite): on every tab. After them the PDF icons (icons only, Noter tab). -->
+            <div class="song-materials__rating">
+              <div class="knowledge-picker" role="group" aria-label="Hvor godt kan du sangen">
+                <template x-for="level in KNOWLEDGE_LEVELS" :key="level.value">
+                  <button type="button" :aria-pressed="app.knowledgeOf(song.id) === level.value" @click="app.setKnowledge(song.id, level.value)" :aria-label="level.label" :title="level.label">
+                    <span class="knowledge-dot" :class="'knowledge-dot--' + level.key"></span>
+                  </button>
+                </template>
+              </div>
+              <button class="favorite-button" type="button" :aria-pressed="app.isFavorite(song.id)" @click="app.toggleFavorite(song.id)" :aria-label="app.isFavorite(song.id) ? 'Fjern fra favoritter' : 'Legg til i favoritter'" :title="app.isFavorite(song.id) ? 'Fjern fra favoritter' : 'Legg til i favoritter'">
+                <svg aria-hidden="true"><use :href="app.isFavorite(song.id) ? '#icon-star-fill' : '#icon-star'"/></svg>
+              </button>
+            </div>
             <div class="song-materials__actions" x-show="activeTab === 'sheet' && sheetUrl">
               <!-- Marker (experimental): draw on the notes in blue. One finger or the mouse draws, two fingers scroll. Saved on your user. -->
               <button type="button" class="icon-button" :aria-pressed="marker" @click="marker = !marker; if (!marker) eraser = false" aria-label="Markør: tegn på notene" title="Markør: tegn på notene"><svg aria-hidden="true"><use href="#icon-marker"/></svg></button>
               <a class="icon-button" :href="sheetUrl" target="_blank" rel="noopener" aria-label="Åpne i ny fane" title="Åpne i ny fane"><svg aria-hidden="true"><use href="#icon-external"/></svg></a>
               <a class="icon-button" :href="sheetUrl" download aria-label="Last ned PDF" title="Last ned PDF"><svg aria-hidden="true"><use href="#icon-download"/></svg></a>
+            </div>
             </div>
           </div>
 

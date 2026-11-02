@@ -83,3 +83,7 @@
 .background-choice__option input:checked + .background-choice__image { border-color: var(--color-accent); box-shadow: 0 0 0 2px var(--color-accent); }
 .background-choice__option input:checked ~ .background-choice__name { color: var(--color-text); font-weight: 500; }
 .background-choice__option input:focus-visible + .background-choice__image { outline: 2px solid var(--color-accent); outline-offset: 3px; }
+
+/* Arkiv: the three buttons to RidderWiki, Videoarkiv and Bildearkiv, above the document list */
+.archive-links { margin-bottom: 1.75rem; }
+.archive-links .button svg { width: 1rem; height: 1rem; margin-right: 0.45rem; }

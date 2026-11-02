@@ -406,10 +406,7 @@ const MENU = [
       { page: 'medlemmer/medlemmer', label: 'Medlemmer' },
       { page: 'ridderdata/kalender', label: 'Kalender' },
       { page: 'noter/ovingsplan', label: 'Øvingsplan', access: 'active' },
-      { page: 'ridderdata/dokumenter', label: 'Dokumenter' },
-      { external: '/ridderwiki', label: 'RidderWiki' },
-      { external: '/ridderwiki/Videoarkiv', label: 'Videoarkiv' },
-      { external: 'https://armeriddere.smugmug.com', label: 'Bildearkiv' },
+      { page: 'ridderdata/dokumenter', label: 'Arkiv' },   // the links to RidderWiki, Videoarkiv and Bildearkiv are buttons at the top of this page
       { page: 'kontakt/epostlister', label: 'Epostlister' },
       { page: 'kontakt/forum', label: 'Anonym Forum' },
     ],
