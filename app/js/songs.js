@@ -58,16 +58,18 @@ function pitchPlayer() {
 
 /* ==================== Shared: song list (used by Sanger and Repertoar; the page provides `songs` and `emptySongListText`) ==================== */
 
-registerPiece('song-list', `
+/* `list` = the name of the song array on the page. `starred` = this is the main list: favorites get a star and the empty text shows.
+   The favorites box at the top of Sanger uses starred = false: its gold line (see css) marks them instead. */
+const songListMarkup = (list, starred) => `
 <ul class="list song-list">
-  <template x-for="song in songs" :key="song.id">
+  <template x-for="song in ${list}" :key="song.id">
     <li class="list__row song-list__row">
       <span class="knowledge-dot" :class="'knowledge-dot--' + knowledgeLevel($store.app.knowledgeOf(song.id)).key"
             :title="knowledgeLevel($store.app.knowledgeOf(song.id)).label" role="img" :aria-label="knowledgeLevel($store.app.knowledgeOf(song.id)).label"></span>
       <a class="song-list__link" :href="pageHref('noter/sang') + '?id=' + song.id">
         <span class="list__title">
           <span x-text="song.name"></span>
-          <svg class="song-list__favorite" x-show="$store.app.isFavorite(song.id)" aria-label="Favoritt"><use href="#icon-heart"/></svg>
+          ${starred ? '<svg class="song-list__favorite" x-show="$store.app.isFavorite(song.id)" aria-label="Favoritt"><use href="#icon-star-fill"/></svg>' : ''}
         </span>
         <span class="list__meta">
           <span x-text="$store.app.songGenreNames(song.id)"></span>
@@ -81,8 +83,9 @@ registerPiece('song-list', `
       <span class="badge badge--muted" x-show="song.is_secret">Hemmelig</span>
     </li>
   </template>
-</ul>
-<p class="empty-state" x-show="!songs.length" x-text="emptySongListText"></p>`);
+</ul>${starred ? '<p class="empty-state" x-show="!songs.length" x-text="emptySongListText"></p>' : ''}`;
+registerPiece('song-list', songListMarkup('songs', true));
+registerPiece('favorite-song-list', songListMarkup('favoriteSongs', false));
 
 /* ==================== Sanger (noter/sanger) ==================== */
 
@@ -92,6 +95,7 @@ function songLibraryPage() {
     knowledgeFilter: null,
     genreFilter: 0,
     get app() { return this.$store.app },
+    get favoriteSongs() { return this.songs.filter(song => this.app.isFavorite(song.id)) },   // same search and filters as the list; they also stay in the list below
     countWithKnowledge(level) { return this.app.visibleSongs.filter(song => this.app.knowledgeOf(song.id) === level).length },
     emptySongListText: 'Ingen sanger passer. Prøv et kortere søk eller en annen farge.',
     get songs() {
@@ -118,17 +122,11 @@ function repertoirePage() {
     emptySongListText: 'Repertoaret er tomt ennå.',
     get songs() { return this.repertoire ? this.app.repertoireSongIds(this.repertoire.id).map(id => this.app.song(id)).filter(Boolean) : [] },
     init() {
-      this.$watch('repertoire', () => this.showRepertoireMenu());
-      this.showRepertoireMenu();
+      this.$watch('repertoire', () => this.showRepertoireTitle());
+      this.showRepertoireTitle();
     },
-    showRepertoireMenu() {
-      const repertoires = this.app.visibleRepertoires;
-      this.$store.ui.nestedMenu = repertoires.length > 1 ? repertoires.map(repertoire => ({
-        label: repertoire.name,
-        href: 'repertoar.html?id=' + repertoire.id,
-        isActive: this.repertoire && repertoire.id === this.repertoire.id,
-        badge: repertoire.is_visible ? '' : 'Utkast',
-      })) : [];
+    /* The list of repertoires is in the Noter sub menu (see repertoireItems in global.js). */
+    showRepertoireTitle() {
       if (this.repertoire) document.title = `${this.repertoire.name} – Mannskoret Arme Riddere`;
     },
   };
@@ -147,7 +145,11 @@ function songPage() {
     songId: Number(new URLSearchParams(location.search).get('id')),
     tracks: [],
     selectedTrack: null,     // the sound file playing; the first in Note Admin's order by default
+    chosenIds: [],           // ticked boxes in the Stemmefiler tab
+    groupIds: null,          // ids playing together after "Spill valgte" / "Spill alle"; null = just selectedTrack
     showVoiceMenu: false,
+    showSpeedMenu: false,
+    SPEED_OPTIONS: [0.5, 0.75, 0.8, 0.9, 1, 1.1, 1.25, 1.5, 2],
     isPlaying: false,
     currentTime: 0,
     duration: 0,
@@ -159,7 +161,10 @@ function songPage() {
     get song() { const song = this.app.song(this.songId); return this.app.canSeeSong(song) ? song : null },
     get startNotes() { return this.app.songStartNotes(this.songId) },
     get noteGap() { return this.app.songNoteGap(this.songId) },
-    get playingTracks() { return this.selectedTrack ? [this.selectedTrack] : [] },
+    get playingTracks() {
+      if (this.groupIds) return this.tracks.filter(track => this.groupIds.includes(track.id));
+      return this.selectedTrack ? [this.selectedTrack] : [];
+    },
     get leadAudio() { return this.playingTracks.length ? audioByTrackId.get(this.playingTracks[0].id) : null },
     get sheetUrl() { return this.song ? songFileUrl('sheet', this.song.sheet_file) : '' },
     get youtubeId() { const match = /(?:youtube\.com\/watch\?v=|youtu\.be\/)([\w-]{6,})/.exec((this.song && this.song.choreography_url) || ''); return match ? match[1] : '' },
@@ -169,13 +174,17 @@ function songPage() {
         { key: 'sheet', label: 'Noter' },
         { key: 'video', label: 'Video' },
         { key: 'lyrics', label: 'Tekst' },
+        ...(this.tracks.length ? [{ key: 'voices', label: 'Stemmefiler' }] : []),
       ];
     },
 
     init() {
       if (!this.song) return;
       document.title = `${this.song.name} – Mannskoret Arme Riddere`;
-      this.tracks = this.app.songAudioFiles(this.song.id).map(file => ({ id: file.id, name: file.name, url: songFileUrl('audio', file.file) }));
+      this.tracks = this.app.songAudioFiles(this.song.id).map(file => ({
+        id: file.id, name: file.name, url: songFileUrl('audio', file.file),
+        downloadName: `${this.song.name} – ${file.name}.${(/\.(\w{2,5})$/.exec(file.file) || [])[1] || 'mp3'}`,   // name the saved file gets
+      }));
       this.selectedTrack = this.tracks[0] || null;
       if (!this.sheetUrl && this.song.choreography_url) this.activeTab = 'video';
       else if (!this.sheetUrl && this.song.lyrics) this.activeTab = 'lyrics';
@@ -189,6 +198,7 @@ function songPage() {
         audioByTrackId.set(track.id, audio);
       });
       window.addEventListener('pagehide', () => this.pause());
+      this.$watch('chosenIds', () => this.applyAudible());
       if (this.sheetUrl) this.renderPdf(this.sheetUrl);
     },
 
@@ -230,11 +240,13 @@ function songPage() {
       } catch (error) { audioContext = null; }
     },
     applySpeed() { audioByTrackId.forEach(audio => { audio.playbackRate = this.speed; }); },
+    setSpeed(speed) { this.speed = speed; this.applySpeed(); this.showSpeedMenu = false; },
 
     async play() {
       this.connectAudioGraph();
       if (audioContext && audioContext.state === 'suspended') await audioContext.resume();
       this.applySpeed();
+      this.applyAudible();
       const audios = this.playingTracks.map(track => audioByTrackId.get(track.id));
       audios.forEach(audio => { audio.currentTime = Math.min(this.currentTime, audio.duration || this.currentTime); });
       this.isPlaying = true;
@@ -251,15 +263,47 @@ function songPage() {
       this.playingTracks.forEach(track => { audioByTrackId.get(track.id).currentTime = this.currentTime; });
     },
     seekBy(seconds) { this.seekTo(this.currentTime + seconds) },
+    /* Keeps the voice button's text as big as the button allows: starts at the normal size and shrinks until it fits.
+       The extra arguments are only there so this re-runs when the shown voice changes. */
+    fitVoiceLabel(label, groupIds, selectedTrack) {
+      this.$nextTick(() => {
+        label.style.fontSize = '';
+        const button = label.parentElement;
+        const available = button.clientWidth - parseFloat(getComputedStyle(button).paddingLeft) - parseFloat(getComputedStyle(button).paddingRight);
+        let size = parseFloat(getComputedStyle(label).fontSize);
+        while (label.scrollWidth > available && size > 8) { size -= 0.5; label.style.fontSize = size + 'px'; }
+      });
+    },
     toggleVoiceMenu() { this.showVoiceMenu = !this.showVoiceMenu; },
     /* Switch to another sound file; keeps the position and keeps playing if it was playing. */
     selectTrack(track) {
-      if (track === this.selectedTrack) return;
+      if (track === this.selectedTrack && !this.groupIds) return;   // in Stemmefiler mode, picking the same voice still switches back to it alone
       const wasPlaying = this.isPlaying;
       this.pause();
       this.selectedTrack = track;
+      this.groupIds = null;
+      this.applyAudible();
       if (this.leadAudio && this.leadAudio.duration) this.duration = this.leadAudio.duration;
       if (wasPlaying) this.play();
+    },
+    /* Stemmefiler tab: every file plays in sync, and the ticked ones are heard (all of them when none is ticked).
+       Ticking and unticking while it plays turns a voice up or down at once, so nothing restarts. */
+    playChosen() {
+      if (this.groupIds && this.isPlaying) { this.pause(); return; }
+      this.pause();
+      this.groupIds = this.tracks.map(track => track.id);
+      if (this.leadAudio && this.leadAudio.duration) this.duration = this.leadAudio.duration;
+      this.play();
+    },
+    /* Sets the volume of every file: 1 for the ones to hear, 0 for the rest. Outside the Stemmefiler mode all are 1. */
+    applyAudible() {
+      const heard = !this.groupIds ? null : this.chosenIds.length ? this.chosenIds.map(Number) : this.groupIds;
+      this.tracks.forEach(track => {
+        const audible = !heard || heard.includes(track.id);
+        const gain = gainByTrackId.get(track.id);
+        if (gain) gain.gain.value = audible ? 1 : 0;
+        audioByTrackId.get(track.id).muted = !gain && !audible;   // fallback when the audio graph is not available
+      });
     },
     playStartTones() { this.playNotes(this.song.id, this.startNotes, this.noteGap) },
     onLeadTimeUpdate(lead) {
@@ -497,9 +541,28 @@ function adminRepertoiresPage() {
       const form = this.newRepertoire;
       form.showErrors = true;
       if (!form.name.trim()) { this.focusFirstInvalidField(); return; }
-      try { await this.app.save('repertoires', null, { name: form.name.trim(), is_visible: form.isVisible, hidden_for_former: form.hiddenForFormer }); } catch (error) { this.fail(error); return; }
+      const lastOrder = Math.max(0, ...this.db.repertoires.map(repertoire => repertoire.sort_order || 0));
+      try { await this.app.save('repertoires', null, { name: form.name.trim(), is_visible: form.isVisible, hidden_for_former: form.hiddenForFormer, sort_order: lastOrder + 1 }); } catch (error) { this.fail(error); return; }
       this.notify(`«${form.name.trim()}» er opprettet. Trykk Rediger for å legge til sanger.`);
       this.newRepertoire = { name: '', isVisible: false, hiddenForFormer: true, showErrors: false };
+    },
+    /* Moves a repertoire one step up or down. Numbers the whole list 1..n and saves only the rows whose number changed.
+       This is the order every member sees in the Noter menu. */
+    async moveRepertoire(repertoire, step) {
+      const list = this.app.repertoiresInOrder;
+      const index = list.indexOf(repertoire), target = index + step;
+      if (index < 0 || target < 0 || target >= list.length) return;
+      list.splice(target, 0, list.splice(index, 1)[0]);
+      try {
+        for (const [position, row] of list.entries()) {
+          if (row.sort_order !== position + 1) await this.app.save('repertoires', row.id, { sort_order: position + 1 });
+        }
+      } catch (error) { this.fail(error); }
+    },
+    /* The two switches in the list save at once, so the edit panel is not needed for them. */
+    async setFlag(repertoire, field, event, inverted = false) {
+      const checkbox = event.target;
+      try { await this.app.save('repertoires', repertoire.id, { [field]: checkbox.checked !== inverted }); } catch (error) { checkbox.checked = !checkbox.checked; this.fail(error); }
     },
     editRepertoire(repertoire, event) {
       this.editedRepertoire = { id: repertoire.id, name: repertoire.name, isVisible: repertoire.is_visible, hiddenForFormer: repertoire.hidden_for_former, songIds: this.app.repertoireSongIds(repertoire.id), showErrors: false };

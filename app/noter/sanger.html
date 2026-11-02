@@ -2,7 +2,7 @@
 <html lang="nb">
 <head>
 <meta charset="utf-8">
-<script>/* theme before anything is drawn, so light mode doesn't flash dark (see THEME in js/global.js) */ try { if (localStorage.getItem('theme') === 'light') document.documentElement.dataset.theme = 'light'; } catch (error) {}</script>
+<script>/* theme before anything is drawn, so light mode doesn't flash dark (see THEME in js/global.js) */ var savedTheme = null; try { savedTheme = localStorage.getItem('theme'); } catch (error) {} if (savedTheme === 'light' || (savedTheme !== 'dark' && matchMedia('(prefers-color-scheme: light)').matches)) document.documentElement.dataset.theme = 'light';</script>
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Sanger – Mannskoret Arme Riddere</title>
 <link rel="stylesheet" href="../css/global.css">
@@ -39,6 +39,12 @@
         <template x-for="genre in app.db.genres" :key="genre.id"><option :value="genre.id" x-text="genre.name"></option></template>
       </select>
     </div>
+
+    <!-- Favorite songs (star) first, in a box with a gold line; they are in the full list below too -->
+    <section class="favorite-box" x-show="favoriteSongs.length" aria-label="Favoritter">
+      <h2 class="favorite-box__title">Favoritter</h2>
+      <div data-piece="favorite-song-list"></div>
+    </section>
 
     <div data-piece="song-list"></div>
   </div>

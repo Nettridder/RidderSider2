@@ -2,7 +2,7 @@
 <html lang="nb">
 <head>
 <meta charset="utf-8">
-<script>/* theme before anything is drawn, so light mode doesn't flash dark (see THEME in js/global.js) */ try { if (localStorage.getItem('theme') === 'light') document.documentElement.dataset.theme = 'light'; } catch (error) {}</script>
+<script>/* theme before anything is drawn, so light mode doesn't flash dark (see THEME in js/global.js) */ var savedTheme = null; try { savedTheme = localStorage.getItem('theme'); } catch (error) {} if (savedTheme === 'light' || (savedTheme !== 'dark' && matchMedia('(prefers-color-scheme: light)').matches)) document.documentElement.dataset.theme = 'light';</script>
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Sang – Mannskoret Arme Riddere</title>
 <link rel="stylesheet" href="../css/global.css">
@@ -16,8 +16,6 @@
 
 <main>
   <div class="content content--wide" x-data="songPage()">
-    <a class="back-link" href="sanger.html"><svg aria-hidden="true"><use href="#icon-left"/></svg>Alle sanger</a>
-
     <template x-if="!song">
       <div class="access-notice">
         <h1>Fant ikke sangen</h1>
@@ -28,60 +26,33 @@
 
     <template x-if="song">
       <div class="song-page">
-        <header class="song-header">
-          <div class="song-header__text">
-            <h1 class="page-header__title" tabindex="-1" x-text="song.name"></h1>
-            <p class="page-header__intro">
-              <span x-text="app.songGenreNames(song.id)"></span>
-              <span class="badge badge--muted" x-show="song.is_secret">Hemmelig, ikke del</span>
-            </p>
-          </div>
-          <div class="song-header__actions">
-            <div class="knowledge-picker" role="group" aria-label="Hvor godt kan du sangen">
-              <template x-for="level in KNOWLEDGE_LEVELS" :key="level.value">
-                <button type="button" :aria-pressed="app.knowledgeOf(song.id) === level.value" @click="app.setKnowledge(song.id, level.value)" :aria-label="level.label" :title="level.label">
-                  <span class="knowledge-dot" :class="'knowledge-dot--' + level.key"></span>
-                </button>
-              </template>
-            </div>
-            <button class="favorite-button" type="button" :aria-pressed="app.isFavorite(song.id)" @click="app.toggleFavorite(song.id)" :aria-label="app.isFavorite(song.id) ? 'Fjern fra favoritter' : 'Legg til i favoritter'">
-              <svg aria-hidden="true"><use href="#icon-heart"/></svg>
-            </button>
-          </div>
-        </header>
-
-        <!-- Pitch pipe: hidden when Note Admin has not entered any tones for this song -->
-        <div class="start-notes-row" x-show="startNotes.length">
-          <span class="label">Starttoner</span>
-          <button type="button" class="button button--secondary button--small" @click="playStartTones()">
-            <svg aria-hidden="true"><use href="#icon-play"/></svg>Spill alle
-          </button>
-          <div class="start-notes">
-            <template x-for="(note, index) in startNotes" :key="index">
-              <button type="button" class="start-note" :class="isPlayingNote(song.id, index) && 'is-playing'" @click="playNote(song.id, startNotes, index)" :aria-label="'Spill ' + note">
-                <span class="start-note__pitch"><span x-text="noteParts(note).letter"></span><span class="start-note__accidental" x-show="noteParts(note).accidental" x-text="noteParts(note).accidental"></span><span x-text="noteParts(note).octave"></span></span>
-              </button>
-            </template>
-          </div>
-        </div>
-
         <section class="player" :class="!playerOpen && 'player--fixed'" aria-label="Lydspiller">
+          <!-- Top line of the song view: knowledge and favorite on the left, the song name centered, follow toggle and X (back to the song list) on the right -->
+          <div class="player__head">
+            <div class="player__head-left song-header__actions">
+              <div class="knowledge-picker" role="group" aria-label="Hvor godt kan du sangen">
+                <template x-for="level in KNOWLEDGE_LEVELS" :key="level.value">
+                  <button type="button" :aria-pressed="app.knowledgeOf(song.id) === level.value" @click="app.setKnowledge(song.id, level.value)" :aria-label="level.label" :title="level.label">
+                    <span class="knowledge-dot" :class="'knowledge-dot--' + level.key"></span>
+                  </button>
+                </template>
+              </div>
+              <button class="favorite-button" type="button" :aria-pressed="app.isFavorite(song.id)" @click="app.toggleFavorite(song.id)" :aria-label="app.isFavorite(song.id) ? 'Fjern fra favoritter' : 'Legg til i favoritter'">
+                <svg aria-hidden="true"><use :href="app.isFavorite(song.id) ? '#icon-star-fill' : '#icon-star'"/></svg>
+              </button>
+            </div>
+            <p class="player__title" x-text="song.name"></p>
+          </div>
           <template x-if="!tracks.length">
-            <p class="empty-state player__empty">Ingen lydfiler er lagt ut for denne sangen ennå.</p>
+            <div class="player__controls">
+              <p class="empty-state player__empty">Ingen lydfiler er lagt ut for denne sangen ennå.</p>
+            </div>
           </template>
           <template x-if="tracks.length">
             <div class="player__controls" role="group" aria-label="Lydspiller kontroller">
-              <label class="player__speed">
-                <select class="input" x-model.number="speed" @change="applySpeed()">
-                  <option value="0.5">50 %</option><option value="0.75">75 %</option><option value="0.8">80 %</option><option value="0.9">90 %</option><option value="1">100 %</option><option value="1.1">110 %</option><option value="1.25">125 %</option><option value="1.5">150 %</option><option value="2">200 %</option>
-                </select>
-              </label>
-
-              <button type="button" class="player__skip" @click="seekBy(-10)" aria-label="10 sekunder tilbake"><svg aria-hidden="true"><use href="#icon-back-10"/></svg></button>
               <button type="button" class="player__play" @click="togglePlay()" :aria-label="isPlaying ? 'Pause' : 'Spill av'">
                 <svg aria-hidden="true"><use :href="isPlaying ? '#icon-pause' : '#icon-play'"/></svg>
               </button>
-              <button type="button" class="player__skip" @click="seekBy(10)" aria-label="10 sekunder fram"><svg aria-hidden="true"><use href="#icon-forward-10"/></svg></button>
 
               <div class="player__timeline">
                 <input class="player__seek" type="range" min="0" :max="duration || 0" step="0.1" :value="currentTime" @input="seekTo(Number($event.target.value))" aria-label="Posisjon i sangen"
@@ -92,12 +63,12 @@
               <div class="player__voice-dropdown">
                 <div class="player__voice-select" @click.away="showVoiceMenu = false">
                   <button type="button" class="button button--secondary" @click="toggleVoiceMenu()" :aria-label="'Stemme: ' + (selectedTrack ? selectedTrack.name : '')">
-                    <span x-text="selectedTrack ? selectedTrack.name : 'Stemme'"></span>
+                    <span class="player__voice-label" x-text="groupIds ? 'Stemmefiler' : selectedTrack ? selectedTrack.name : 'Stemme'" x-effect="fitVoiceLabel($el, groupIds, selectedTrack)"></span>
                   </button>
                   <!-- The sound files in the order Note Admin set -->
                   <div class="dropdown" x-show="showVoiceMenu">
                     <template x-for="track in tracks" :key="track.id">
-                      <button type="button" class="dropdown-item" @click="selectTrack(track); showVoiceMenu = false" :class="selectedTrack === track && 'dropdown-item--active'">
+                      <button type="button" class="dropdown-item" @click="selectTrack(track); showVoiceMenu = false" :class="!groupIds && selectedTrack === track && 'dropdown-item--active'">
                         <span x-text="track.name"></span>
                       </button>
                     </template>
@@ -105,32 +76,45 @@
                 </div>
               </div>
 
-              <button type="button" class="player__minimize" @click="togglePlayer()" aria-label="Minimér spiller">
-                <svg aria-hidden="true"><use href="#icon-up"/></svg>
-              </button>
+              <!-- Tempo: only an icon; the speed list opens on click -->
+              <div class="player__speed" @click.away="showSpeedMenu = false">
+                <button type="button" class="player__skip" @click="showSpeedMenu = !showSpeedMenu" aria-label="Tempo" aria-haspopup="true" :aria-expanded="showSpeedMenu" title="Tempo">
+                  <svg aria-hidden="true"><use href="#icon-tempo"/></svg>
+                </button>
+                <div class="dropdown dropdown--narrow" x-show="showSpeedMenu" x-cloak>
+                  <template x-for="option in SPEED_OPTIONS" :key="option">
+                    <button type="button" class="dropdown-item" :class="speed === option && 'dropdown-item--active'" @click="setSpeed(option)" x-text="Math.round(option * 100) + ' %'"></button>
+                  </template>
+                </div>
+              </div>
             </div>
           </template>
         </section>
 
-        <button class="player-toggle" x-show="!playerOpen && tracks.length" @click="togglePlayer()" type="button" aria-label="Gjør spiller sticky">
-          <svg aria-hidden="true"><use href="#icon-down"/></svg>
-        </button>
+        <!-- Always on top of the page, in the empty spot at the right of the player's top line: follow toggle and X (back to the song list) -->
+        <div class="player-overlay" :class="playerOpen && 'player-overlay--following'">
+          <button type="button" @click="togglePlayer()" :aria-label="playerOpen ? 'Slutt å følge' : 'Fest spilleren'" :title="playerOpen ? 'Slutt å følge' : 'Fest spilleren'"><svg aria-hidden="true"><use :href="playerOpen ? '#icon-up' : '#icon-down'"/></svg></button>
+          <a href="sanger.html" aria-label="Tilbake til alle sanger" title="Alle sanger"><svg aria-hidden="true"><use href="#icon-close-bold"/></svg></a>
+        </div>
 
         <section class="song-materials" aria-label="Noter, video og tekst">
-          <div class="segmented song-materials__tabs" role="tablist" aria-label="Innhold">
-            <template x-for="tab in tabs" :key="tab.key">
-              <button type="button" role="tab" :aria-selected="activeTab === tab.key" :aria-pressed="activeTab === tab.key" @click="activeTab = tab.key" x-text="tab.label"></button>
-            </template>
+          <div class="song-materials__bar">
+            <div class="segmented song-materials__tabs" role="tablist" aria-label="Innhold">
+              <template x-for="tab in tabs" :key="tab.key">
+                <button type="button" role="tab" :aria-selected="activeTab === tab.key" :aria-pressed="activeTab === tab.key" @click="activeTab = tab.key" x-text="tab.label"></button>
+              </template>
+            </div>
+            <!-- PDF actions: icons only, to the right of the tabs (under them when there is no room) -->
+            <div class="song-materials__actions" x-show="activeTab === 'sheet' && sheetUrl">
+              <a class="icon-button" :href="sheetUrl" target="_blank" rel="noopener" aria-label="Åpne i ny fane" title="Åpne i ny fane"><svg aria-hidden="true"><use href="#icon-external"/></svg></a>
+              <a class="icon-button" :href="sheetUrl" download aria-label="Last ned PDF" title="Last ned PDF"><svg aria-hidden="true"><use href="#icon-download"/></svg></a>
+            </div>
           </div>
 
           <div x-show="activeTab === 'sheet'" role="tabpanel">
             <template x-if="sheetUrl">
               <div class="sheet-viewer">
                 <div class="sheet-pages" id="sheet-pages"></div>
-                <div class="button-row">
-                  <a class="button button--secondary button--small" :href="sheetUrl" target="_blank" rel="noopener"><svg aria-hidden="true"><use href="#icon-external"/></svg>Åpne i ny fane</a>
-                  <a class="button button--secondary button--small" :href="sheetUrl" download><svg aria-hidden="true"><use href="#icon-download"/></svg>Last ned PDF</a>
-                </div>
               </div>
             </template>
             <p class="empty-state" x-show="!sheetUrl">Notene er ikke lagt ut ennå.</p>
@@ -149,6 +133,23 @@
           <div x-show="activeTab === 'lyrics'" role="tabpanel">
             <p class="lyrics" x-show="song.lyrics" x-text="song.lyrics"></p>
             <p class="empty-state" x-show="!song.lyrics">Teksten er ikke lagt inn ennå.</p>
+          </div>
+
+          <div x-show="activeTab === 'voices'" role="tabpanel">
+            <div class="voice-files__play">
+              <button type="button" class="button" @click="playChosen()">
+                <svg aria-hidden="true"><use :href="groupIds && isPlaying ? '#icon-pause' : '#icon-play'"/></svg><span x-text="groupIds && isPlaying ? 'Pause' : chosenIds.length ? 'Spill valgte (' + chosenIds.length + ')' : 'Spill alle'"></span>
+              </button>
+              <button type="button" class="text-link" x-show="chosenIds.length" @click="chosenIds = []">Fjern valg</button>
+            </div>
+            <ul class="voice-files">
+              <template x-for="track in tracks" :key="track.id">
+                <li class="voice-files__row">
+                  <label class="voice-files__choice"><input type="checkbox" :value="track.id" x-model.number="chosenIds" :aria-label="'Velg ' + track.name"><span class="voice-files__name" x-text="track.name"></span></label>
+                  <a class="button button--secondary button--small" :href="track.url" :download="track.downloadName"><svg aria-hidden="true"><use href="#icon-download"/></svg>Last ned</a>
+                </li>
+              </template>
+            </ul>
           </div>
         </section>
       </div>

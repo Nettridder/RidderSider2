@@ -24,7 +24,10 @@
 .song-list__row { grid-template-columns: auto minmax(0, 1fr) auto; gap: 0.5rem 0.9rem; }
 .song-list__link { min-width: 0; }
 .song-list__link:hover .list__title > span:first-child { text-decoration: underline; text-decoration-color: var(--color-accent); text-underline-offset: 4px; }
-.song-list__favorite { width: 0.8rem; height: 0.8rem; color: var(--color-accent); margin-left: 0.4rem; vertical-align: -0.05em; }
+.song-list__favorite { width: 0.85rem; height: 0.85rem; color: var(--color-gold); margin-left: 0.4rem; vertical-align: -0.1em; }
+/* Favorites box at the top of Sanger: only this box has the gold line on the left */
+.favorite-box { border-left: 4px solid var(--color-gold); padding-left: 1rem; margin-bottom: 1.75rem; }
+.favorite-box__title { margin: 0 0 0.25rem; font-size: 0.8rem; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--color-gold); }
 .song-list__media { display: inline-flex; gap: 0.35rem; margin-left: 0.6rem; vertical-align: -0.15em; }
 .song-list__media svg { width: 0.9rem; height: 0.9rem; color: var(--color-text-faint); }
 
@@ -50,37 +53,57 @@
 .favorite-button { width: 2.5rem; height: 2.5rem; display: grid; place-items: center; background: var(--color-surface); border: 1px solid var(--color-border-soft); border-radius: 50%; color: var(--color-text-faint); cursor: pointer; }
 .favorite-button svg { width: 1.05rem; height: 1.05rem; }
 .favorite-button:hover { color: var(--color-text); }
-.favorite-button[aria-pressed="true"] { color: var(--color-accent-bright); border-color: var(--color-accent); background: var(--color-accent-soft); }
+.favorite-button[aria-pressed="true"] { color: var(--color-gold); border-color: var(--color-gold); background: transparent; }
 
 .start-notes-row { display: flex; flex-wrap: wrap; align-items: center; gap: 0.6rem 0.9rem; margin-bottom: 1.5rem; }
 
-.player { background: var(--color-surface); border: 1px solid var(--color-border); border-radius: 0; padding: 1.25rem 1.4rem; margin-left: calc(-50vw + 50%); margin-right: calc(-50vw + 50%); width: 100vw; position: sticky; top: 0; z-index: 30; margin-bottom: 2rem; }
+.player { background: var(--color-surface); border: 1px solid var(--color-border); border-radius: 0; padding: 0.6rem 1rem; margin-left: calc(-50vw + 50%); margin-right: calc(-50vw + 50%); width: 100vw; position: sticky; top: 0; z-index: 30; margin-bottom: 2rem; }
 .player--fixed { position: static; margin-left: calc(-50vw + 50%); margin-right: calc(-50vw + 50%); width: 100vw; }
-.player__empty { padding: 0.5rem 0; }
-.player__controls { display: flex; align-items: center; gap: 0.6rem; flex-wrap: nowrap; flex: 1; min-width: 0; }
-.player__voice-select { position: relative; }
-.player__voice-dropdown { display: flex; gap: 0.6rem; align-items: center; flex: none; width: 5rem; }
+.player__empty { padding: 0.5rem 0; flex: 1; }
+.player__head { position: relative; display: flex; align-items: center; justify-content: center; margin-bottom: 0.25rem; }
+.player__head-left { position: absolute; left: 0; top: 50%; transform: translateY(-50%); gap: 0.35rem; }   /* same line as the title, far left */
+.player__head-left .knowledge-picker { padding: 2px; }
+.player__head-left .knowledge-picker button { width: 1.6rem; height: 1.6rem; }
+.player__head-left .knowledge-picker .knowledge-dot { width: 0.75rem; height: 0.75rem; }
+.player__head-left .favorite-button { width: 1.9rem; height: 1.9rem; }
+.player__head-left .favorite-button svg { width: 0.95rem; height: 0.95rem; }
+.player__title { margin: 0; padding: 0 8rem; max-width: 100%; text-align: center; font-size: 1.4rem; font-weight: 600; line-height: 1.3; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+/* Follow toggle and X: always on top of the page, fixed in the empty spot at the right of the player's top line */
+/* One rounded box around both buttons; hovering a button shows a circle inside the box, so the circle follows the box */
+.player-overlay { position: fixed; top: 0.5rem; right: 1rem; z-index: 45; display: flex; align-items: center; gap: 2px; padding: 3px; border-radius: 999px; border: 1px solid var(--color-border); background: var(--color-surface); box-shadow: 0 2px 8px rgba(0, 0, 0, 0.18); }
+.player-overlay--following { box-shadow: none; border-color: transparent; }   /* while the player follows: no shadow and no border, so it reads as part of the controller (the border stays as an invisible 1px so nothing shifts) */
+.player-overlay > * { width: 2rem; height: 2rem; padding: 0; display: grid; place-items: center; border-radius: 50%; border: 0; background: none; color: var(--color-text); cursor: pointer; transition: background 0.15s; }
+.player-overlay > *:hover, .player-overlay > *:focus-visible { background: var(--color-surface-raised); }
+.player-overlay > *:focus-visible { outline-offset: 0; }
+.player-overlay button svg { width: 1.5rem; height: 1.5rem; }
+.player-overlay a svg { width: 1.55rem; height: 1.55rem; }
+.player__controls { display: flex; align-items: center; gap: 0.4rem; flex-wrap: nowrap; flex: 1; min-width: 0; }
+.player__voice-select { position: relative; width: 100%; }
+.player__voice-dropdown { display: flex; gap: 0.6rem; align-items: center; flex: none; width: 6rem; }
+/* The voice button is always this size; the text inside shrinks to fit (see fitVoiceLabel in songs.js). */
+.player__voice-select > .button { width: 100%; padding: 0.3rem 0.5rem; font-size: 0.85rem; overflow: hidden; justify-content: center; }
+.player__voice-label { display: inline-block; white-space: nowrap; }
 .button--active { background: var(--color-accent); color: var(--color-on-accent); border-color: var(--color-accent); }
 .dropdown { position: absolute; top: 100%; left: 0; background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--radius-small); min-width: 12rem; margin-top: 0.3rem; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1); z-index: 10; }
 .dropdown-item { display: flex; width: 100%; padding: 0.6rem 0.9rem; background: none; border: none; text-align: left; cursor: pointer; color: var(--color-text); font-size: 0.95rem; align-items: center; justify-content: space-between; gap: 0.6rem; }
 .dropdown-item:hover { background: var(--color-surface-raised); }
 .dropdown-item--active { background: var(--color-accent-soft); color: var(--color-accent-bright); font-weight: 500; }
-.player__speed { display: inline-flex; align-items: center; gap: 0.5rem; font-size: 0.88rem; color: var(--color-text-faint); flex: none; }
-.player__speed .input { width: auto; padding: 0.35rem 1.9rem 0.35rem 0.6rem; font-size: 0.88rem; }
-.player__timeline { flex: 1; min-width: 0; }
-.player__play { width: 2.8rem; height: 2.8rem; flex: none; display: grid; place-items: center; border-radius: 50%; border: 0; background: var(--color-accent); color: var(--color-on-accent); cursor: pointer; transition: background 0.15s, transform 0.15s; }
-.player__play:hover { background: var(--color-accent-bright); transform: scale(1.04); }
-.player__play svg { width: 1.1rem; height: 1.1rem; }
-.player__skip { width: 2rem; height: 2rem; flex: none; display: grid; place-items: center; border-radius: 50%; border: 0; background: none; color: var(--color-text-dim); cursor: pointer; }
+.player__speed { position: relative; flex: none; }
+.dropdown--narrow { min-width: 6rem; }
+.player__timeline { flex: 1; min-width: 0; margin: 0 0.5rem; }
+.player__speed .dropdown, .player__voice-select .dropdown { left: auto; right: 0; }   /* menus open towards the screen, not off its right edge */
+.player__play { width: 2.2rem; height: 2.2rem; flex: none; display: grid; place-items: center; border-radius: 50%; border: 0; background: var(--color-accent); color: var(--color-on-accent); cursor: pointer; transition: background 0.15s, transform 0.15s; }
+.player__play:hover { transform: scale(1.04); }
+.player__play svg { width: 0.9rem; height: 0.9rem; }
+.player__skip { width: 1.7rem; height: 1.7rem; flex: none; display: grid; place-items: center; border-radius: 50%; border: 0; background: none; color: var(--color-text-dim); cursor: pointer; }
 .player__skip:hover { color: var(--color-text); background: var(--color-surface-raised); }
-.player__skip svg { width: 1rem; height: 1rem; }
-.player__times { display: flex; justify-content: space-between; font-size: 0.8rem; color: var(--color-text-faint); font-variant-numeric: tabular-nums; margin-top: 0.2rem; }
-.player__minimize { background: none; border: none; color: var(--color-text-dim); cursor: pointer; display: grid; place-items: center; width: 2rem; height: 2rem; padding: 0; flex: none; }
+.player__skip { padding: 0; }   /* the browser's default button padding pushed larger icons off-center */
+.player__skip svg { width: 0.9rem; height: 0.9rem; }
+.player__speed .player__skip svg { width: 1.3rem; height: 1.3rem; }   /* bigger icon, same 1.7rem button, so nothing else moves */
+.player__times { display: flex; justify-content: space-between; font-size: 0.75rem; color: var(--color-text-faint); font-variant-numeric: tabular-nums; margin-top: 0; }
+.player__minimize { background: none; border: none; color: var(--color-text-dim); cursor: pointer; display: grid; place-items: center; width: 1.7rem; height: 1.7rem; padding: 0; flex: none; margin-left: 0.75rem; }   /* the gap keeps it clear of the voice button */
 .player__minimize:hover { color: var(--color-text); }
-.player__minimize svg { width: 1.2rem; height: 1.2rem; }
-.player-toggle { position: fixed; top: 0.75rem; right: 0.75rem; z-index: 40; width: 2.5rem; height: 2.5rem; border-radius: 50%; background: var(--color-surface); border: 1px solid var(--color-border); cursor: pointer; display: grid; place-items: center; color: var(--color-text); transition: background 0.15s, transform 0.15s; }
-.player-toggle:hover { background: var(--color-surface-raised); transform: scale(1.05); }
-.player-toggle svg { width: 1.2rem; height: 1.2rem; }
+.player__minimize svg { width: 1.4rem; height: 1.4rem; }   /* the button stays 1.7rem */
 
 .player__seek, .voice-track__volume {
   -webkit-appearance: none; appearance: none; width: 100%; height: 1.2rem; background: transparent; cursor: pointer; margin: 0;
@@ -92,7 +115,6 @@
 .player__seek::-moz-range-progress, .voice-track__volume::-moz-range-progress { height: 4px; border-radius: 4px; background: var(--color-text); }
 .player__seek::-webkit-slider-thumb, .voice-track__volume::-webkit-slider-thumb { -webkit-appearance: none; width: 0.85rem; height: 0.85rem; margin-top: -0.3rem; border-radius: 50%; background: var(--color-text); border: 0; }
 .player__seek::-moz-range-thumb, .voice-track__volume::-moz-range-thumb { width: 0.85rem; height: 0.85rem; border-radius: 50%; background: var(--color-text); border: 0; }
-.player__seek:hover::-webkit-slider-runnable-track { background: linear-gradient(to right, var(--color-accent-bright) var(--progress), var(--color-surface-raised) var(--progress)); }
 
 .voice-mixer { margin-top: 1.4rem; padding-top: 1.1rem; border-top: 1px solid var(--color-border-soft); }
 .voice-mixer__presets { display: flex; flex-wrap: wrap; gap: 0.45rem; margin-bottom: 0.9rem; }
@@ -106,20 +128,30 @@
 .voice-track__toggle:hover { color: var(--color-text); }
 .voice-track__toggle[aria-pressed="true"] { background: var(--color-text); color: var(--color-background); border-color: var(--color-text); }
 
-.song-materials { width: 100vw; position: relative; left: 50%; transform: translateX(-50%); padding: 0; }
-.song-materials__tabs { margin-bottom: 1rem; padding: 0 calc(50vw - 50%); }
-.sheet-viewer { display: grid; gap: 0.75rem; padding: 0 calc(50vw - 50%); position: relative; }
+/* Tabs, video, lyrics and voice files sit inside the normal page padding. Only the sheet music (PDF) breaks out
+   to the full screen width, so it always touches both sides. */
+.song-materials__bar { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 0.5rem 1rem; margin-bottom: 1rem; }
+.song-materials__actions { display: flex; align-items: center; gap: 0.25rem; margin-left: auto; }   /* right side; wraps under the tabs when too narrow */
+.song-materials__actions .icon-button svg { width: 1.25rem; height: 1.25rem; }
+.sheet-viewer { display: grid; gap: 0.75rem; position: relative; width: 100vw; margin-left: calc(50% - 50vw); }
 .sheet-pages { display: flex; flex-direction: column; }
-.sheet-page { display: block; width: 100%; height: auto; border: none; background: var(--color-paper); }
-.sheet-viewer .button-row { position: absolute; top: 0.75rem; right: calc(50vw - 50%); z-index: 10; }
-.video-frame { display: block; width: 100%; aspect-ratio: 16 / 9; border: 0; border-radius: var(--radius-small); background: #000; overflow: hidden; }
+.sheet-page { display: block; width: 100%; height: auto; border: none; background: var(--color-paper); }.video-frame { display: block; width: 100%; aspect-ratio: 16 / 9; border: 0; border-radius: var(--radius-small); background: #000; overflow: hidden; }
 .video-frame iframe { width: 100%; height: 100%; border: 0; }
+.voice-files { list-style: none; margin: 0; padding: 0; display: grid; gap: 0.6rem; }
+.voice-files__row { display: flex; align-items: center; justify-content: space-between; gap: 1rem; padding: 0.6rem 0; border-bottom: 1px solid var(--color-border-soft); }
+.voice-files__choice { display: flex; align-items: center; gap: 0.75rem; flex: 1; min-width: 0; cursor: pointer; }
+.voice-files__choice input { width: 1.1rem; height: 1.1rem; accent-color: var(--color-accent); flex: none; }
+.voice-files__name { font-weight: 500; }
+.voice-files__play { display: flex; align-items: center; gap: 1.25rem; margin-bottom: 1rem; }
+.voice-files__play .button svg { width: 1rem; height: 1rem; margin-right: 0.4rem; }
 .lyrics { margin: 0; white-space: pre-line; font-family: var(--font-heading); font-size: 1.15rem; line-height: 1.65; max-width: 34rem; }
 
 @media (max-width: 720px) {
-  .player { padding: 1rem; }
-  .player__transport { flex-wrap: wrap; justify-content: center; }
-  .player__timeline { flex: 1 1 100%; margin-left: 0; order: 4; }
+  /* The player has the same sizes as on PC: only the space around and between the parts is smaller, and the timeline is shorter. */
+  .player { padding: 0.6rem 0.75rem; }
+  .player__timeline { margin: 0 0.25rem; }
+  .player__controls { gap: 0.3rem; }
+  .player-overlay { right: 0.75rem; }
   .voice-track { grid-template-columns: minmax(0, 1fr) auto auto; }
   .voice-track__volume { grid-column: 1 / -1; }
   .sheet-viewer__frame { height: 70vh; }
@@ -178,7 +210,11 @@
 
 /* ==================== Note Admin: Repertoar (noter/admin/repertoar) ==================== */
 
-.repertoire-admin-list { --columns: minmax(0, 1fr) 6rem 5.5rem auto; --columns-narrow: minmax(0, 1fr) auto; }
+.repertoire-admin-list { --columns: minmax(0, 1fr) 6rem 20rem auto; --columns-narrow: minmax(0, 1fr) auto; }
+.repertoire-switches { display: flex; flex-wrap: wrap; gap: 0.5rem 1.25rem; }
+@media (max-width: 900px) {
+  .repertoire-switches { grid-column: 1 / -1; order: 3; }   /* own row under the name and buttons */
+}
 .repertoire-visibility-field { align-content: end; min-height: 4.2rem; }
 .add-song-row { display: flex; gap: 0.5rem; margin-top: 0.8rem; }
 .add-song-row select { flex: 1; }
