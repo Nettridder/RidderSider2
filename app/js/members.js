@@ -7,11 +7,17 @@ function membersPage() {
   return {
     group: 'active',
     view: 'list',
+    boardView: 'gallery',
     search: '',
     get app() { return this.$store.app },
+    get intro() {
+      if (this.group === 'active') return this.app.activeMembers.length + ' aktive riddere';
+      if (this.group === 'all') return this.app.db.members.length + ' medlemmer, nåværende og tidligere';
+      return this.boardView === 'gallery' ? 'Styret for ' + this.semesterName(this.app.currentBoard).toLowerCase() + '.' : 'Alle styrer, nyeste først.';
+    },
     get members() {
       const query = this.search.trim().toLowerCase();
-      const group = this.group === 'active' ? this.app.activeMembers : this.app.formerMembers;
+      const group = this.group === 'active' ? this.app.activeMembers : this.app.db.members;
       return group
         .filter(member => !query || this.app.memberName(member).toLowerCase().includes(query))
         .sort((a, b) => {
@@ -25,15 +31,8 @@ function membersPage() {
     },
     memberPeriod: format.memberPeriod,
     profileHref(member) { return pageHref('profil/profil') + '?id=' + member.id },
-  };
-}
 
-/* ==================== Styret (medlemmer/styret) ==================== */
-
-function boardPage() {
-  return {
-    view: 'gallery',
-    get app() { return this.$store.app },
+    /* ---------- Styre (the "Styre" choice on the same page) ---------- */
     semesterName(board) { return board ? format.semesterLong(board.year, board.term) : '' },
     get boardPositions() {
       return LABELS.boardPositions.map(position => ({
@@ -56,7 +55,6 @@ function boardPage() {
       if (!board) return null;
       return this.app.member(board[position.key + '_id']);
     },
-    profileHref(member) { return pageHref('profil/profil') + '?id=' + member.id },
   };
 }
 
@@ -65,7 +63,6 @@ function boardPage() {
 function profilePage() {
   const requestedId = Number(new URLSearchParams(location.search).get('id'));
   return {
-    contactMessage: '',
     get app() { return this.$store.app },
     get member() { return this.app.member(requestedId || this.app.currentMemberId) },
     get isOwnProfile() { return this.member && this.member.id === this.app.currentMemberId },
@@ -91,16 +88,6 @@ function profilePage() {
       return this.app.practiceLogs(this.member.id).sort((a, b) => b.date.localeCompare(a.date) || b.id - a.id).slice(0, 5);
     },
     get earnedAchievements() { return this.app.achievementsFor(this.member.id).filter(achievement => achievement.earnedAt) },
-    get contactSubject() { return `App: feil med bruker ${this.member.first_name} ${this.member.last_name}`; },
-    sendEmailToNettridder() {
-      const subject = this.contactSubject;
-      const body = this.contactMessage;
-      if (!body.trim()) return;
-      const mailto = `mailto:nettridder@armeriddere.no?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
-      window.location.href = mailto;
-      this.contactMessage = '';
-      this.$store.ui.notify('Email klar for sending.');
-    },
   };
 }
 
@@ -119,7 +106,24 @@ function settingsPage() {
   return {
     emailLevel: 'all',
     theme: THEME.get(),
+    contactMessage: '',
+    contactSending: false,
     get app() { return this.$store.app },
+    get contactSubject() { return `App: feil med bruker ${this.app.me.first_name} ${this.app.me.last_name}`; },
+    /* "Meld fra om feil": sends the message to Nettridder from the server (api/report-problem.php), as this member. */
+    async sendEmailToNettridder() {
+      const message = this.contactMessage.trim();
+      if (this.contactSending) return;
+      if (message.length < 5) { this.$store.ui.notify('Skriv hva som er galt først.', 'Minst 5 tegn.'); return; }
+      this.contactSending = true;
+      try {
+        await api.post('report-problem.php', { message, page: location.href });
+        this.contactMessage = '';
+        this.$store.ui.notify('Takk! Meldingen er sendt til Nettridder.');
+      } catch (error) {
+        this.$store.ui.notify(error.message, 'Meldingen ble ikke sendt.');
+      } finally { this.contactSending = false; }
+    },
     /* Appearance changes at once and is remembered on this device; nothing to save. */
     setTheme(theme) { this.theme = theme; THEME.set(theme); },
     init() { this.emailLevel = this.app.me.email_level },

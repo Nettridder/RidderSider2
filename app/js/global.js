@@ -11,20 +11,25 @@
 
 /* ==================== Data, member and rules ==================== */
 
-/* ==================== Theme (Mørk / Lys) ==================== */
+/* ==================== Theme (System / Mørk / Lys) ==================== */
 
 /* Chosen in Profil -> Innstillinger -> Utseende and remembered on this device (localStorage).
-   Every page's <head> has a one-line script that sets data-theme="light" before drawing, so it doesn't flash;
-   the colours are in css/global.css under "Light theme". */
+   The choice is 'system' (default: follow the phone or computer), 'dark' or 'light'. data-theme on <html> is always
+   the result, 'dark' or 'light'. Every page's <head> has a one-line script that sets data-theme="light" before
+   drawing, so it doesn't flash; the colours are in css/global.css under "Light theme". */
 const THEME = {
   key: 'theme',
-  get() { try { return localStorage.getItem(this.key) === 'light' ? 'light' : 'dark'; } catch (error) { return 'dark'; } },
-  set(theme) {
-    document.documentElement.dataset.theme = theme;
-    try { localStorage.setItem(this.key, theme); } catch (error) { /* private browsing: works until the page is closed */ }
+  systemQuery: matchMedia('(prefers-color-scheme: light)'),
+  get() { try { const saved = localStorage.getItem(this.key); return saved === 'light' || saved === 'dark' ? saved : 'system'; } catch (error) { return 'system'; } },
+  resolve(choice = this.get()) { return choice === 'system' ? (this.systemQuery.matches ? 'light' : 'dark') : choice; },
+  apply() { document.documentElement.dataset.theme = this.resolve(); },
+  set(choice) {
+    try { localStorage.setItem(this.key, choice); } catch (error) { /* private browsing: works until the page is closed */ }
+    this.apply();
   },
 };
-document.documentElement.dataset.theme = THEME.get();
+THEME.apply();
+THEME.systemQuery.addEventListener('change', () => { if (THEME.get() === 'system') THEME.apply(); });
 
 const PAGE_PATH = document.body.dataset.page || 'hjem';
 const APP_ROOT = '../'.repeat(PAGE_PATH.split('/').length - 1);
@@ -300,10 +305,14 @@ document.addEventListener('alpine:init', () => {
 
     /* ---------- repertoires ---------- */
     /* Active members: the visible ones (Note Admin: all). Former members (ypp.com.): visible ones not hidden for them. */
+    /* All repertoires in the order Note Admin chose (sort_order, then id). Same order in every member's menu. */
+    get repertoiresInOrder() {
+      return [...this.db.repertoires].sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0) || a.id - b.id);
+    },
     get visibleRepertoires() {
       if (!this.ready) return [];   // the menu asks before the data has loaded
-      if (!this.isActiveMember) return this.db.repertoires.filter(repertoire => repertoire.is_visible && !repertoire.hidden_for_former);
-      return this.db.repertoires.filter(repertoire => repertoire.is_visible || this.hasRole('noteadmin'));
+      if (!this.isActiveMember) return this.repertoiresInOrder.filter(repertoire => repertoire.is_visible && !repertoire.hidden_for_former);
+      return this.repertoiresInOrder.filter(repertoire => repertoire.is_visible || this.hasRole('noteadmin'));
     },
     repertoireSongIds(repertoireId) {
       return this.db.repertoire_songs.filter(link => link.repertoire_id === repertoireId).sort((a, b) => a.sort_order - b.sort_order).map(link => link.song_id);
@@ -373,11 +382,11 @@ const MENU = [
   { key: 'hjem', label: 'Hjem', href: 'index.html' },
   {
     key: 'noter', label: 'Noter',
+    defaultPage: 'noter/sanger',   // where the main menu link goes; without it, the first item
     items: [
-      { page: 'noter/sanger', label: 'Sanger' },
-      { page: 'noter/repertoar', label: 'Repertoar', access: 'repertoire' },
-      { page: 'noter/ovingsplan', label: 'Øvingsplan', access: 'active' },
       { page: 'noter/toneangiver', label: 'Toneangiver' },
+      { page: 'noter/sanger', label: 'Sanger' },
+      { repertoires: true },   // one entry per visible repertoire, see repertoireItems in siteLayout()
     ],
     admin: {
       label: 'Note Admin', access: 'noteadmin',
@@ -392,10 +401,11 @@ const MENU = [
   },
   {
     key: 'ridderdata', label: 'Ridderdata',
+    defaultPage: 'noter/ovingsplan',   // active members only; others fall back to the first item
     items: [
       { page: 'medlemmer/medlemmer', label: 'Medlemmer' },
-      { page: 'medlemmer/styret', label: 'Styret' },
       { page: 'ridderdata/kalender', label: 'Kalender' },
+      { page: 'noter/ovingsplan', label: 'Øvingsplan', access: 'active' },
       { page: 'ridderdata/dokumenter', label: 'Dokumenter' },
       { external: '/ridderwiki', label: 'RidderWiki' },
       { external: '/ridderwiki/Videoarkiv', label: 'Videoarkiv' },
@@ -418,6 +428,9 @@ const MENU = [
   },
 ];
 
+/* Pages that show no header, main menu or sub menu: the song view is a temporary view for the notes, so you go back through the X in the player. */
+const MENUS_HIDDEN_PAGES = ['noter/sang'];
+
 /* Pages reached from the profile button, not the main menu. */
 const PROFILE_SECTION = {
   key: 'profil', label: 'Profil',
@@ -431,6 +444,7 @@ const PROFILE_SECTION = {
 /* Pages that are not in a menu, shown under a menu item. */
 const PAGES_OUTSIDE_MENU = {
   'noter/sang': { parent: 'noter/sanger', label: 'Sang' },
+  'noter/repertoar': { parent: 'noter/sanger', label: 'Repertoar', highlightParent: false },   // its menu entries are made per repertoire
 };
 
 const CHOIR_NAME = 'Mannskoret Arme Riddere';
@@ -458,18 +472,39 @@ function siteLayout() {
     menu: MENU,
     current: CURRENT,
     profileMenuOpen: false,
-    menusOpen: localStorage.getItem('menusOpen') !== 'false',
+    showMenus: !MENUS_HIDDEN_PAGES.includes(PAGE_PATH),
     pageHref,
     get app() { return this.$store.app },
-    get visibleItems() { return (this.current.section.items || []).filter(item => this.app.canSee(item.access)) },
+    get visibleItems() {
+      return (this.current.section.items || []).flatMap(item => item.repertoires ? this.repertoireItems : this.app.canSee(item.access) ? [item] : []);
+    },
+    get repertoireItems() {
+      return this.app.visibleRepertoires.map(repertoire => ({
+        key: 'repertoire-' + repertoire.id,
+        label: repertoire.name,
+        href: pageHref('noter/repertoar') + '?id=' + repertoire.id,
+        repertoireId: repertoire.id,
+      }));
+    },
+    selectedRepertoireId() {
+      const id = Number(new URLSearchParams(location.search).get('id'));
+      const repertoires = this.app.visibleRepertoires;
+      return (repertoires.find(repertoire => repertoire.id === id) || repertoires[0] || {}).id;
+    },
     get showAdminLink() { return this.current.section.admin && this.app.canSee(this.current.section.admin.access) },
     get showAdminMenu() { return this.current.isAdmin && this.showAdminLink },
     firstPageOf(section) {
       if (section.href) return APP_ROOT + section.href;
+      const preferred = section.defaultPage && section.items.find(item => item.page === section.defaultPage);
+      if (preferred && this.app.canSee(preferred.access)) return pageHref(preferred.page);
       const first = section.items.find(item => item.page && this.app.canSee(item.access));
       return pageHref(first.page);
     },
-    isCurrentPage(item) { return !!item.page && (item.page === PAGE_PATH || item.page === (PAGES_OUTSIDE_MENU[PAGE_PATH] || {}).parent) },
+    isCurrentPage(item) {
+      if (item.repertoireId) return PAGE_PATH === 'noter/repertoar' && item.repertoireId === this.selectedRepertoireId();
+      const outside = PAGES_OUTSIDE_MENU[PAGE_PATH] || {};
+      return !!item.page && (item.page === PAGE_PATH || (outside.highlightParent !== false && item.page === outside.parent));
+    },
     toggleProfileMenu() {
       this.profileMenuOpen = !this.profileMenuOpen;
       if (this.profileMenuOpen) this.$nextTick(() => this.$refs.profileMenu.querySelector('a, button').focus());
@@ -480,6 +515,7 @@ function siteLayout() {
       items[(index + step + items.length) % items.length].focus();
     },
     init() {
+      document.body.classList.toggle('menus-hidden', !this.showMenus);   // lets the CSS drop the space kept for the menus
       this.$nextTick(() => requestAnimationFrame(() => {
         document.querySelectorAll('.sub-menu .sub-menu__link.is-active').forEach(link => {
           const strip = link.closest('.sub-menu__inner');
@@ -490,7 +526,6 @@ function siteLayout() {
     closeMenus() {
       if (this.profileMenuOpen) { this.profileMenuOpen = false; this.$refs.profileButton.focus(); }
     },
-    toggleMenus() { this.menusOpen = !this.menusOpen; localStorage.setItem('menusOpen', this.menusOpen); },
   };
 }
 
@@ -508,7 +543,8 @@ const ICON_SPRITE = `
 <svg width="0" height="0" style="position:absolute" aria-hidden="true">
   <symbol id="icon-external" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" d="M8 16 16 8M9.5 8H16v6.5"/></symbol>
   <symbol id="icon-play" viewBox="0 0 24 24"><path fill="currentColor" d="M7 4.5v15l12.5-7.5z"/></symbol>
-  <symbol id="icon-pause" viewBox="0 0 24 24"><path fill="currentColor" d="M6.5 4.5h4v15h-4zM13.5 4.5h4v15h-4z"/></symbol>
+  <symbol id="icon-tempo" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" d="M8 21 10 4h4l2 17zM12 17l4-9M9.4 8h5.2"/></symbol>
+  <symbol id="icon-pause"viewBox="0 0 24 24"><path fill="currentColor" d="M6.5 4.5h4v15h-4zM13.5 4.5h4v15h-4z"/></symbol>
   <symbol id="icon-back-10" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12a8 8 0 1 0 2.4-5.7"/><path d="M4 4v4h4"/></g></symbol>
   <symbol id="icon-forward-10" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 12a8 8 0 1 1-2.4-5.7"/><path d="M20 4v4h-4"/></g></symbol>
   <symbol id="icon-flame" viewBox="0 0 96 112"><path fill="currentColor" d="M48 4c4 17 30 29 30 62a30 30 0 0 1-60 0c0-14 7-23 14-29 0 12 5 18 11 20C40 43 38 26 48 4z"/></symbol>
@@ -518,9 +554,11 @@ const ICON_SPRITE = `
   <symbol id="icon-right" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" d="m9 5 7 7-7 7"/></symbol>
   <symbol id="icon-up" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" d="m5 15 7-7 7 7"/></symbol>
   <symbol id="icon-down" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" d="m5 9 7 7 7-7"/></symbol>
+  <symbol id="icon-close-bold" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="3.6" stroke-linecap="round" d="M6 6l12 12M18 6 6 18"/></symbol>
   <symbol id="icon-close" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" d="M6 6l12 12M18 6 6 18"/></symbol>
   <symbol id="icon-calendar" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3.5" y="5" width="17" height="15" rx="2"/><path d="M3.5 10h17M8 3v4M16 3v4"/></g></symbol>
-  <symbol id="icon-heart" viewBox="0 0 24 24"><path fill="currentColor" d="M12 20.3 4.6 13a4.7 4.7 0 0 1 6.6-6.7l.8.8.8-.8a4.7 4.7 0 0 1 6.6 6.7z"/></symbol>
+  <symbol id="icon-star" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" d="M12 3.4l2.7 5.5 6 .9-4.4 4.2 1 6-5.3-2.8-5.3 2.8 1-6-4.4-4.2 6-.9z"/></symbol>
+  <symbol id="icon-star-fill" viewBox="0 0 24 24"><path fill="currentColor" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" d="M12 3.4l2.7 5.5 6 .9-4.4 4.2 1 6-5.3-2.8-5.3 2.8 1-6-4.4-4.2 6-.9z"/></symbol>
   <symbol id="icon-sheet" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.9" stroke-linejoin="round"><path d="M6 3h8l4 4v14H6z"/><path d="M14 3v4h4M9 12h6M9 16h6"/></g></symbol>
   <symbol id="icon-audio" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"><path d="M4 10v4M8 7v10M12 4v16M16 8v8M20 11v2"/></g></symbol>
   <symbol id="icon-video" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.9" stroke-linejoin="round"><rect x="3" y="6" width="13" height="12" rx="2"/><path d="m16 10 5-3v10l-5-3z"/></g></symbol>
@@ -530,7 +568,7 @@ const ICON_SPRITE = `
 
 const SITE_HEADER = `
 <div x-data="siteLayout()" @keydown.escape.window="closeMenus()">
-  <header class="site-header">
+  <header class="site-header" x-show="showMenus">
     <div class="container site-header__inner">
       <a class="brand" :href="pageHref('hjem')">
         <img class="brand__logo" src="${LOGO_URL}" alt="">
@@ -557,7 +595,7 @@ const SITE_HEADER = `
     </div>
   </header>
 
-  <nav class="main-menu" x-show="menusOpen" aria-label="Hovedmeny">
+  <nav class="main-menu" x-show="showMenus" aria-label="Hovedmeny">
     <div class="container">
       <ul class="main-menu__list">
         <template x-for="section in menu" :key="section.key">
@@ -569,24 +607,19 @@ const SITE_HEADER = `
             </a>
           </li>
         </template>
-        <li style="position: absolute; right: 0.5rem; top: 50%; transform: translateY(-50%);">
-          <button class="main-menu__close" @click="toggleMenus()" type="button" aria-label="Skjul meny">
-            <svg aria-hidden="true"><use href="#icon-down"/></svg>
-          </button>
-        </li>
       </ul>
     </div>
   </nav>
 
   <template x-if="current.section.items">
-    <nav class="sub-menu" x-show="menusOpen" :aria-label="'Undermeny ' + current.section.label">
+    <nav class="sub-menu" x-show="showMenus" :aria-label="'Undermeny ' + current.section.label">
       <div class="container">
         <div class="sub-menu__inner" x-show="!showAdminMenu">
           <ul class="sub-menu__links">
-            <template x-for="item in visibleItems" :key="item.label">
+            <template x-for="item in visibleItems" :key="item.key || item.label">
               <li>
                 <a class="sub-menu__link" :class="isCurrentPage(item) && 'is-active'" :aria-current="isCurrentPage(item) ? 'page' : null"
-                   :href="item.external || pageHref(item.page)" :target="item.external ? '_blank' : null" :rel="item.external ? 'noopener' : null">
+                   :href="item.external || item.href || pageHref(item.page)" :target="item.external ? '_blank' : null" :rel="item.external ? 'noopener' : null">
                   <span x-text="item.label"></span>
                   <svg class="sub-menu__external-icon" x-show="item.external" aria-label="åpnes i ny fane"><use href="#icon-external"/></svg>
                 </a>
@@ -610,8 +643,8 @@ const SITE_HEADER = `
     </nav>
   </template>
 
-  <nav class="sub-menu sub-menu--nested" x-show="menusOpen && $store.ui.nestedMenu.length" x-cloak aria-label="Velg liste"
-       x-effect="document.body.classList.toggle('has-nested-menu', menusOpen && $store.ui.nestedMenu.length > 0)">
+  <nav class="sub-menu sub-menu--nested" x-show="showMenus && $store.ui.nestedMenu.length" x-cloak aria-label="Velg liste"
+       x-effect="document.body.classList.toggle('has-nested-menu', showMenus && $store.ui.nestedMenu.length > 0)">
     <div class="container">
       <div class="sub-menu__inner">
         <ul class="sub-menu__links">
@@ -627,9 +660,6 @@ const SITE_HEADER = `
     </div>
   </nav>
 
-  <button class="menu-toggle" x-show="!menusOpen" @click="toggleMenus()" type="button" aria-label="Vis meny">
-    <svg aria-hidden="true"><use href="#icon-up"/></svg>
-  </button>
 </div>`;
 
 const PAGE_STATES = `

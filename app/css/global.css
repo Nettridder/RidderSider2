@@ -17,6 +17,7 @@
   --color-accent-bright: #ff8a2b;
   --color-accent-soft: rgba(236, 108, 0, 0.13);
   --color-on-accent: #1a1004;
+  --color-gold: #e6b422;
 
   --color-known: #8fb87a;
   --color-partly-known: #d8bc5c;
@@ -220,6 +221,9 @@ select.input option { background: var(--color-surface); }
 .container { max-width: var(--page-max-width); margin: 0 auto; padding-left: var(--space-md); padding-right: var(--space-md); }
 .page { padding-top: clamp(2.25rem, 7vh, 4.5rem); padding-bottom: calc(var(--bottom-menu-height) + var(--nested-menu-height) + var(--sub-menu-height) + var(--safe-area-bottom)); }
 
+/* Pages without header and menus (the song view): the content starts at the very top and keeps no space for them at the bottom */
+.menus-hidden .page { padding-top: 0; padding-bottom: 3rem; }
+
 /* ---------- header ---------- */
 .site-header__inner { display: flex; align-items: center; justify-content: space-between; gap: 1rem; padding-top: 1rem; padding-bottom: 0.9rem; }
 .brand { display: flex; align-items: center; gap: 0.7rem; min-width: 0; }
@@ -242,9 +246,9 @@ select.input option { background: var(--color-surface); }
 /* ---------- main menu ---------- */
 .main-menu { position: fixed; left: 0; right: 0; bottom: 0; z-index: 36; border-bottom: 0; border-top: 1px solid var(--color-border); background: var(--color-surface); padding-bottom: var(--safe-area-bottom); }
 .main-menu .container { padding: 0; max-width: none; }
-.main-menu__list { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 0; height: var(--bottom-menu-height); list-style: none; margin: 0; padding: 0; }
+.main-menu__list { display: flex; justify-content: center; gap: 0; height: var(--bottom-menu-height); list-style: none; margin: 0; padding: 0; }
 .main-menu__link, .main-menu__list li:first-of-type .main-menu__link {
-  position: relative; height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 0.22rem; padding: 0.35rem 0.15rem; font-size: 0.7rem; font-weight: 500; color: var(--color-text-dim); white-space: nowrap; transition: color 0.15s;
+  position: relative; height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 0.22rem; padding: 0.35rem 2rem; font-size: 0.95rem; font-weight: 500; color: var(--color-text-dim); white-space: nowrap; transition: color 0.15s;
 }
 .main-menu__link:hover { color: var(--color-text); }
 .main-menu__link::after, .main-menu__list li:first-of-type .main-menu__link::after {
@@ -256,9 +260,6 @@ select.input option { background: var(--color-surface); }
 .main-menu__link:focus-visible { outline-offset: -2px; }
 .main-menu__icon { display: block; width: 1.3rem; height: 1.3rem; }
 .main-menu__link.is-active .main-menu__icon { color: var(--color-accent-bright); }
-.main-menu__close { background: none; border: none; color: var(--color-text-dim); cursor: pointer; display: grid; place-items: center; width: 2rem; height: 2rem; padding: 0; }
-.main-menu__close:hover { color: var(--color-text); }
-.main-menu__close svg { width: 1.2rem; height: 1.2rem; }
 
 /* ---------- sub menu (and the nested one below it, e.g. repertoires) ---------- */
 .sub-menu { position: fixed; left: 0; right: 0; bottom: var(--bottom-menu-height); z-index: 35; height: var(--sub-menu-height); background: var(--color-background); border-top: 1px solid var(--color-border-soft); border-bottom: 0; box-shadow: 0 -10px 24px rgba(0, 0, 0, 0.25); }
@@ -284,9 +285,6 @@ select.input option { background: var(--color-surface); }
 .sub-menu__label { flex: none; }
 .sub-menu--nested { position: fixed; left: 0; right: 0; bottom: calc(var(--bottom-menu-height) + var(--sub-menu-height)); z-index: 36; height: var(--nested-menu-height); background: var(--color-background); border-top: 1px solid var(--color-border-soft); border-bottom: 0; }
 
-.menu-toggle { position: fixed; bottom: 0.75rem; right: 0.75rem; z-index: 35; width: 2.5rem; height: 2.5rem; border-radius: 50%; background: var(--color-surface); border: 1px solid var(--color-border); cursor: pointer; display: grid; place-items: center; color: var(--color-text); transition: background 0.15s, transform 0.15s; }
-.menu-toggle:hover { background: var(--color-surface-raised); transform: scale(1.05); }
-.menu-toggle svg { width: 1.2rem; height: 1.2rem; }
 .sub-menu--nested .container { padding: 0; height: 100%; }
 .sub-menu--nested .sub-menu__inner { padding-top: 0.6rem; padding-bottom: 0.6rem; height: 100%; overflow-x: auto; scrollbar-width: none; padding: 0 var(--page-gutter); }
 .sub-menu--nested .sub-menu__inner::-webkit-scrollbar { display: none; }
@@ -335,11 +333,13 @@ select.input option { background: var(--color-surface); }
 
   .main-menu { position: fixed; left: 0; right: 0; bottom: 0; z-index: 36; border-bottom: 0; border-top: 1px solid var(--color-border); background: var(--color-surface); padding-bottom: var(--safe-area-bottom); }
   .main-menu .container { padding: 0; max-width: none; }
-  .main-menu__list { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 0; height: var(--bottom-menu-height); }
+  .main-menu__list { display: flex; justify-content: center; gap: 0; height: var(--bottom-menu-height); }
+  .main-menu__list > li { flex: 0 1 6rem; min-width: 0; }   /* each icon gets 6rem, shrinks together when the screen is too narrow */
   .main-menu__link, .main-menu__list li:first-of-type .main-menu__link {
     height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 0.22rem; padding: 0.35rem 0.15rem; font-size: 0.7rem;
   }
-  .main-menu__icon { display: block; width: 1.3rem; height: 1.3rem; }
+  .main-menu__icon { display: block; width: 1.6rem; height: 1.6rem; }
+  .main-menu__link span { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }   /* text stays for screen readers */
   .main-menu__link::after, .main-menu__list li:first-of-type .main-menu__link::after { left: 32%; right: 32%; top: -1px; bottom: auto; transform-origin: center; }
   .main-menu__link.is-active .main-menu__icon { color: var(--color-accent-bright); }
 
@@ -476,6 +476,7 @@ select.input option { background: var(--color-surface); }
   --color-accent-bright: #b8430a;
   --color-accent-soft: rgba(236, 108, 0, 0.1);
   --color-on-accent: #ffffff;
+  --color-gold: #b8860b;
 
   --color-known: #3f8a2f;
   --color-partly-known: #b0860b;

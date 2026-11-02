@@ -2,7 +2,7 @@
 <html lang="nb">
 <head>
 <meta charset="utf-8">
-<script>/* theme before anything is drawn, so light mode doesn't flash dark (see THEME in js/global.js) */ try { if (localStorage.getItem('theme') === 'light') document.documentElement.dataset.theme = 'light'; } catch (error) {}</script>
+<script>/* theme before anything is drawn, so light mode doesn't flash dark (see THEME in js/global.js) */ var savedTheme = null; try { savedTheme = localStorage.getItem('theme'); } catch (error) {} if (savedTheme === 'light' || (savedTheme !== 'dark' && matchMedia('(prefers-color-scheme: light)').matches)) document.documentElement.dataset.theme = 'light';</script>
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Medlemmer – Mannskoret Arme Riddere</title>
 <link rel="stylesheet" href="../css/global.css">
@@ -18,23 +18,28 @@
     <div class="page-header">
       <div>
         <h1 class="page-header__title" tabindex="-1">Medlemmer</h1>
-        <p class="page-header__intro" x-text="group === 'active' ? app.activeMembers.length + ' aktive riddere' : app.formerMembers.length + ' tidligere medlemmer (ypp.com.)'"></p>
+        <p class="page-header__intro" x-text="intro"></p>
       </div>
-      <input class="search-field" type="search" placeholder="Søk etter navn" aria-label="Søk i medlemmer" x-model="search">
+      <input class="search-field" x-show="group !== 'board'" type="search" placeholder="Søk etter navn" aria-label="Søk i medlemmer" x-model="search">
     </div>
 
     <div class="member-controls">
       <div class="segmented" role="group" aria-label="Vis medlemmer">
         <button type="button" :aria-pressed="group === 'active'" @click="group = 'active'">Aktive <span x-show="group === 'active'" class="count" x-text="app.activeMembers.length"></span></button>
-        <button type="button" :aria-pressed="group === 'former'" @click="group = 'former'">Tidligere <span x-show="group === 'former'" class="count" x-text="app.formerMembers.length"></span></button>
+        <button type="button" :aria-pressed="group === 'board'" @click="group = 'board'">Styre</button>
+        <button type="button" :aria-pressed="group === 'all'" @click="group = 'all'">Alle <span x-show="group === 'all'" class="count" x-text="app.db.members.length"></span></button>
       </div>
-      <div class="segmented" role="group" aria-label="Visning">
+      <div class="segmented" role="group" aria-label="Visning" x-show="group !== 'board'">
         <button type="button" :aria-pressed="view === 'list'" @click="view = 'list'">Liste</button>
         <button type="button" :aria-pressed="view === 'gallery'" @click="view = 'gallery'">Galleri</button>
       </div>
+      <div class="segmented" role="group" aria-label="Visning" x-show="group === 'board'">
+        <button type="button" :aria-pressed="boardView === 'gallery'" @click="boardView = 'gallery'">Galleri</button>
+        <button type="button" :aria-pressed="boardView === 'list'" @click="boardView = 'list'">Liste</button>
+      </div>
     </div>
 
-    <table class="members-table" x-show="view === 'list'">
+    <table class="members-table" x-show="group !== 'board' && view === 'list'">
       <thead>
         <tr>
           <th>Navn</th>
@@ -55,7 +60,7 @@
       </tbody>
     </table>
 
-    <ul class="member-gallery" x-show="view === 'gallery'">
+    <ul class="member-gallery" x-show="group !== 'board' && view === 'gallery'">
       <template x-for="member in members" :key="member.id">
         <li>
           <a class="member-gallery__card" :href="profileHref(member)">
@@ -66,7 +71,47 @@
         </li>
       </template>
     </ul>
-    <p class="empty-state" x-show="!members.length">Ingen medlemmer passer søket.</p>
+    <p class="empty-state" x-show="group !== 'board' && !members.length">Ingen medlemmer passer søket.</p>
+
+    <ul class="board-gallery" x-show="group === 'board' && boardView === 'gallery'">
+      <template x-for="seat in seats(app.currentBoard)" :key="seat.key">
+        <li>
+          <a class="board-gallery__card" :href="seat.member ? profileHref(seat.member) : null">
+            <span class="portrait board-gallery__portrait"><img :src="app.memberImage(seat.member)" alt="" loading="lazy"></span>
+            <span class="board-gallery__position" x-text="seat.title"></span>
+            <span class="board-gallery__name" x-text="seat.member ? app.memberName(seat.member) : 'Ikke valgt'"></span>
+          </a>
+        </li>
+      </template>
+    </ul>
+
+    <table class="board-table" x-show="group === 'board' && boardView === 'list'">
+      <thead>
+        <tr>
+          <th>År/Semester</th>
+          <template x-for="position in boardPositions" :key="position.key">
+            <th x-text="position.title"></th>
+          </template>
+        </tr>
+      </thead>
+      <tbody>
+        <template x-for="board in app.boardsNewestFirst" :key="board.id">
+          <tr>
+            <td class="board-table__semester" x-text="semesterName(board)"></td>
+            <template x-for="position in boardPositions" :key="position.key">
+              <td>
+                <template x-if="boardPositionMember(board, position)">
+                  <a class="person" :href="profileHref(boardPositionMember(board, position))" x-text="app.memberName(boardPositionMember(board, position))"></a>
+                </template>
+                <template x-if="!boardPositionMember(board, position)">
+                  <span class="muted">Ikke valgt</span>
+                </template>
+              </td>
+            </template>
+          </tr>
+        </template>
+      </tbody>
+    </table>
   </div>
 </main>
 
