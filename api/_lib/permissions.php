@@ -66,7 +66,7 @@ const WRITE_RULES = [
   'genres' => ['rules' => ['noteadmin' => ['ops' => ALL_OPS, 'columns' => ['name', 'sort_order']]]],
   'repertoires' => ['rules' => ['noteadmin' => [
     'ops' => ALL_OPS,
-    'columns' => ['name', 'is_visible', 'hidden_for_former'],
+    'columns' => ['name', 'is_visible', 'hidden_for_former', 'sort_order'],
     'children' => ['repertoire_songs' => ['fk' => 'repertoire_id', 'columns' => ['song_id', 'sort_order']]],
   ]]],
   // Song knowledge and favourites: every member sets their own.

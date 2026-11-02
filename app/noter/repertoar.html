@@ -2,7 +2,7 @@
 <html lang="nb">
 <head>
 <meta charset="utf-8">
-<script>/* theme before anything is drawn, so light mode doesn't flash dark (see THEME in js/global.js) */ try { if (localStorage.getItem('theme') === 'light') document.documentElement.dataset.theme = 'light'; } catch (error) {}</script>
+<script>/* theme before anything is drawn, so light mode doesn't flash dark (see THEME in js/global.js) */ var savedTheme = null; try { savedTheme = localStorage.getItem('theme'); } catch (error) {} if (savedTheme === 'light' || (savedTheme !== 'dark' && matchMedia('(prefers-color-scheme: light)').matches)) document.documentElement.dataset.theme = 'light';</script>
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Repertoar – Mannskoret Arme Riddere</title>
 <link rel="stylesheet" href="../css/global.css">
@@ -30,7 +30,7 @@
       <div>
         <div class="page-header">
           <div>
-            <h1 class="page-header__title" tabindex="-1"><span x-text="repertoire.name"></span> <span class="badge badge--muted" x-show="!repertoire.is_visible">Utkast</span></h1>
+            <h1 class="page-header__title" tabindex="-1"><span x-text="repertoire.name"></span></h1>
             <p class="page-header__intro" x-text="songs.length + ' sanger i konsertrekkefølge. Fargen viser hvor godt du kan sangen.'"></p>
           </div>
         </div>

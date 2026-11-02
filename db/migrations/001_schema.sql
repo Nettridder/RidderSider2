@@ -249,6 +249,8 @@ CREATE TABLE repertoires (
   is_visible  tinyint(1)   NOT NULL DEFAULT 0,
   -- 1 = former members (ypp.com.) don't see it even when it is visible. Turn off to show it to them too.
   hidden_for_former tinyint(1) NOT NULL DEFAULT 1,
+  -- Order in the Noter menu and in lists, lowest first. Note Admin changes it with the arrows.
+  sort_order  int(11)      NOT NULL DEFAULT 0,
   PRIMARY KEY (id),
   CONSTRAINT fk_repertoires_created_by FOREIGN KEY (created_by) REFERENCES members (id) ON DELETE SET NULL,
   CONSTRAINT fk_repertoires_updated_by FOREIGN KEY (updated_by) REFERENCES members (id) ON DELETE SET NULL
