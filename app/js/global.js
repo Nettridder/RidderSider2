@@ -391,10 +391,17 @@ const MENU = [
     },
   },
   {
-    key: 'medlemmer', label: 'Medlemmer',
+    key: 'ridderdata', label: 'Ridderdata',
     items: [
       { page: 'medlemmer/medlemmer', label: 'Medlemmer' },
       { page: 'medlemmer/styret', label: 'Styret' },
+      { page: 'ridderdata/kalender', label: 'Kalender' },
+      { page: 'ridderdata/dokumenter', label: 'Dokumenter' },
+      { external: '/ridderwiki', label: 'RidderWiki' },
+      { external: '/ridderwiki/Videoarkiv', label: 'Videoarkiv' },
+      { external: 'https://armeriddere.smugmug.com', label: 'Bildearkiv' },
+      { page: 'kontakt/epostlister', label: 'Epostlister' },
+      { page: 'kontakt/forum', label: 'Anonym Forum' },
     ],
     admin: {
       label: 'Admin', access: 'admin',
@@ -408,23 +415,6 @@ const MENU = [
         { page: 'admin/achievements', label: 'Achievements' },
       ],
     },
-  },
-  {
-    key: 'ridderdata', label: 'Ridderdata',
-    items: [
-      { page: 'ridderdata/kalender', label: 'Kalender' },
-      { page: 'ridderdata/dokumenter', label: 'Dokumenter' },
-      { external: '/ridderwiki', label: 'RidderWiki' },
-      { external: '/ridderwiki/Videoarkiv', label: 'Videoarkiv' },
-      { external: 'https://armeriddere.smugmug.com', label: 'Bildearkiv' },
-    ],
-  },
-  {
-    key: 'kontakt', label: 'Kontakt',
-    items: [
-      { page: 'kontakt/epostlister', label: 'Epostlister' },
-      { page: 'kontakt/forum', label: 'Anonym Forum' },
-    ],
   },
 ];
 
